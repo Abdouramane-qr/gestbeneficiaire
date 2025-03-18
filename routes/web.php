@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\EntrepriseController;
 use App\Models\Beneficiaire;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\BeneficiaireController;
+use App\Http\Controllers\ONGController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -16,6 +18,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 });
 Route::resource('beneficiaires', BeneficiaireController::class);
+Route::resource('entreprises', EntrepriseController::class);
+Route::resource('ong', ONGController::class);
+
+
 
 
 require __DIR__ . '/settings.php';
