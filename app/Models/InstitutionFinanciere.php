@@ -11,10 +11,18 @@ class InstitutionFinanciere extends Model
     use HasFactory;
 
     protected $fillable = ['nom','adresse','ville','description'];
+    protected $dates = ['deleted_at'];
+
+    protected $table = 'institution_financieres';
+
+    public function indicateur()
+    {
+        return $this->belongsTo(Indicateur::class, 'indicateur_id');
+    }
 
     public function  beneficiaires()
     {
-        return $this->hasMany(Beneficiaire::class);
+        return $this->hasMany(Beneficiaire::class,'institution_financiere_id');
     }
 
 }

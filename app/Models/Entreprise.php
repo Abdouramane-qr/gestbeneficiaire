@@ -1,25 +1,42 @@
 <?php
 
 namespace App\Models;
+use App\Models\Collecte;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Entreprise extends Model
 {
-    protected $fillable = ['beneficiaire_id', 'nom_entreprise', 'secteur_activite', 'date_creation',
-        'statut_juridique', 'adresse', 'ville', 'pays', 'description'];
-        protected $casts = [
-            'date_creation' => 'date', // Cast automatique en objet Date
-        ];
-         // Relation avec Beneficiaire
-    public function beneficiaire()
-    {
-        return $this->belongsTo(Beneficiaire::class);
-    }
+    protected $fillable = [
 
-     // Relation avec PerformanceEntreprise
-     public function performances()
+        'nom_entreprise',
+        'secteur_activite',
+        'date_creation',
+        'statut_juridique',
+        'adresse',
+        'ville',
+        'pays',
+        'description',
+        'beneficiaires_id' // 🔹 Ajoute ce champ pour la relation
+
+    ];
+    protected $casts = [
+        'date_creation' => 'date', // Cast automatique en objet Date
+    ];
+     // 🔹 Une entreprise appartient à un seul bénéficiaire
+     public function beneficiaire()
      {
-         return $this->hasMany(PerformanceEntreprise::class);
+         return $this->belongsTo(Beneficiaire::class,'beneficiaires_id');
      }
+
+    // Relation avec PerformanceEntreprise
+    public function performances()
+    {
+        return $this->hasMany(PerformanceEntreprise::class);
+    }
+    public function dataCollections()
+{
+    return $this->hasMany(Collecte::class);
+}
+
 }

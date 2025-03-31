@@ -16,7 +16,7 @@ class ONG extends Model
 
 public function beneficiaires()
 {
-return $this->hasMany(Beneficiaire::class);
+return $this->hasMany(Beneficiaire::class,'ong_id');
 
 }
 }

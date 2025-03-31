@@ -14,9 +14,13 @@ class EntrepriseController extends Controller
      * Display a listing of the resource.
      */
     public function index(): Response
-    {
-        return Inertia::render('entreprises', [
+    {/*
+        return Inertia::render('Entreprises/entreprises', [
             'entreprises' => Entreprise::with('beneficiaire')->get() // Inclut les bénéficiaires associés
+        ]); */
+        return Inertia::render('Entreprises/entreprises', [
+            'entreprises' => Entreprise::all(),
+            'beneficiaires' => Beneficiaire::all(), // Ajoute ceci si manquant
         ]);
     }
 
@@ -28,7 +32,7 @@ class EntrepriseController extends Controller
         // Récupère la liste des bénéficiaires pour lier une entreprise à un bénéficiaire
         $beneficiaires = Beneficiaire::all();
 
-        return Inertia::render('entreprises', [
+        return Inertia::render('Entreprises/entreprises', [
             'beneficiaires' => $beneficiaires
         ]);
     }
@@ -39,7 +43,7 @@ class EntrepriseController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'beneficiaire_id' => 'required|exists:beneficiaires,id', // Assurer qu'un bénéficiaire existe
+            'beneficiaires_id' => 'required|exists:beneficiaires,id', // Assurer qu'un bénéficiaire existe
             'nom_entreprise' => 'required|string|max:255',
             'secteur_activite' => 'required|string|max:255',
             'date_creation' => 'required|date',
@@ -62,7 +66,7 @@ class EntrepriseController extends Controller
     {
         $entreprise = Entreprise::with('beneficiaire')->findOrFail($id);
 
-        return Inertia::render('entreprises', [
+        return Inertia::render('Entreprises/entreprises', [
             'entreprise' => $entreprise
         ]);
     }
@@ -76,7 +80,7 @@ class EntrepriseController extends Controller
         $entreprise = Entreprise::findOrFail($id);
         $beneficiaires = Beneficiaire::all();
 
-        return Inertia::render('entreprises', [
+        return Inertia::render('Entreprises/entreprises', [
             'entreprise' => $entreprise,
             'beneficiaires' => $beneficiaires
         ]);
@@ -90,7 +94,7 @@ class EntrepriseController extends Controller
         $entreprise = Entreprise::findOrFail($id);
 
         $validated = $request->validate([
-            'beneficiaire_id' => 'required|exists:beneficiaires,id', // Assurer qu'un bénéficiaire existe
+            'beneficiaires_id' => 'required|exists:beneficiaires,id', // Assurer qu'un bénéficiaire existe
             'nom_entreprise' => 'required|string|max:255',
             'secteur_activite' => 'required|string|max:255',
             'date_creation' => 'required|date',

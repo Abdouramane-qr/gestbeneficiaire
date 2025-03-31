@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('beneficiaires', function (Blueprint $table) {
             $table->id();
-            $table->string('region');
+            $table->string('regions');
+            $table->string('provinces');
+            $table->string('communes');
             $table->string('village')->nullable();
             $table->enum('type_beneficiaire', ['Individuel', 'Coopérative', 'Autre']);
             $table->string('nom');
@@ -22,13 +24,14 @@ return new class extends Migration
             $table->enum('genre', ['Homme', 'Femme']);
             $table->boolean('handicap')->default(false);
             $table->string('contact');
-            $table->enum('niveau_instruction',['Analphabète', 'Alphabétise',  'Primaire',  'CEPE', 'BEPC','Baccalauréat ', 'Universitaire']);
+            $table->enum('niveau_instruction', ['Analphabète', 'Alphabétise',  'Primaire',  'CEPE', 'BEPC', 'Baccalauréat ', 'Universitaire']);
             $table->string('email')->nullable();
             $table->string('activite');
-            $table->enum('domaine_activite',['Agriculture','Artisanat','Commerce','Élevage','environnement ']);
+            $table->enum('domaine_activite', ['Agriculture', 'Artisanat', 'Commerce', 'Élevage', 'environnement ']);
             $table->enum('niveau_mise_en_oeuvre', ['Création', 'Renforcement']);
             $table->foreignId('ong_id')->nullable()->constrained('ongs')->nullOnDelete();
-            $table->foreignId('institution_financiere_id')->nullable()->constrained('institutions_financieres')->nullOnDelete();
+          //  $table->foreignId('entreprise_id')->nullable()->constrained('entreprises')->onDelete('set null');
+            $table->foreignId('institution_financiere_id')->nullable()->constrained('institution_financieres')->nullOnDelete();
             $table->date('date_inscription');
             $table->enum('statut_actuel', ['Actif', 'Inactif', 'En attente']);
 

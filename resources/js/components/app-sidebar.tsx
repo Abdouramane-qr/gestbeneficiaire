@@ -35,8 +35,26 @@ const mainNavItems: NavItem[] = [
 
     {
         title: 'Institution Financiere',
-        href: '/institution',
+        href: '/InstitutionFinanciere',
         icon: Wallet ,
+    },
+
+    {
+        title: 'Collecte',
+        href: '/DataCollections',
+        icon: Landmark ,
+    },
+
+    {
+        title: 'Frequence',
+        href: '/Frequencies',
+        icon: Landmark ,
+    },
+
+    {
+        title: 'Indicateurs',
+        href: '/Indicateurs',
+        icon: Landmark ,
     },
 ];
 

@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('entreprises', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('beneficiaires_id')->constrained('beneficiaires')->onDelete('cascade'); // Clé étrangère optimisée
+           $table->foreignId('beneficiaires_id')->constrained('beneficiaires')->onDelete('cascade'); // Clé étrangère optimisée
             $table->string('nom_entreprise');
             $table->string('secteur_activite');
             $table->date('date_creation')->nullable();
-            $table->enum('statut_juridique', ['SARL', 'SA', 'SAS', 'Auto-entrepreneur'])->nullable(); // Enum pour uniformiser les valeurs
+            $table->enum('statut_juridique', ['SARL', 'SA', 'SAS','SCS','SNC' ,'GIE','SCP','SCI','Auto-entrepreneur'])->nullable(); // Enum pour uniformiser les valeurs
             $table->string('adresse')->nullable();
             $table->string('ville')->nullable();
-            $table->char('pays', 2); // ISO 3166-1 alpha-2
+            $table->string('pays'); // ISO 3166-1 alpha-2
             $table->text('description')->nullable();
             $table->timestamps();
         });

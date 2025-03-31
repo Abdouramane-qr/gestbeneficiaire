@@ -304,7 +304,7 @@ const OngFormModal = ({ isOpen, closeModal, onSuccess, ong }: OngFormModalProps)
                                         ref={inputRef}
                                         value={data.nom}
                                         onChange={(e) => setData('nom', e.target.value)}
-                                        className="mt-1 p-2 w-full border rounded-md"
+                                        className="mt-1 p-2 w-full border rounded-md dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
                                     />
                                     {errors.nom && <span className="text-red-500 text-sm">{errors.nom}</span>}
                                 </div>
@@ -319,7 +319,7 @@ const OngFormModal = ({ isOpen, closeModal, onSuccess, ong }: OngFormModalProps)
                                         id="description"
                                         value={data.description}
                                         onChange={(e) => setData('description', e.target.value)}
-                                        className="mt-1 p-2 w-full border rounded-md"
+                                        className="mt-1 p-2 w-full border rounded-md dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
                                     />
                                     {errors.description && <span className="text-red-500 text-sm">{errors.description}</span>}
                                 </div>
@@ -334,7 +334,7 @@ const OngFormModal = ({ isOpen, closeModal, onSuccess, ong }: OngFormModalProps)
                                         id="adresse"
                                         value={data.adresse}
                                         onChange={(e) => setData('adresse', e.target.value)}
-                                        className="mt-1 p-2 w-full border rounded-md"
+                                        className="mt-1 p-2 w-full border rounded-md dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
                                     />
                                     {errors.adresse && <span className="text-red-500 text-sm">{errors.adresse}</span>}
                                 </div>

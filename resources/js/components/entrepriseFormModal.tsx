@@ -1,33 +1,52 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
+
+// // export default EntrepriseFormModal;
 import React, { useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { router, useForm } from '@inertiajs/react';
-import { Toaster, toast } from 'sonner';
+import { useForm } from '@inertiajs/react';
+import { toast } from 'sonner';
+
+// Définition des types
+interface Beneficiaire {
+  id: number;
+  nom: string;
+  prenom: string;
+}
+
+interface EntrepriseFormData {
+  id?: number;
+  beneficiaires_id?: number;
+  nom_entreprise: string;
+  secteur_activite: string;
+  date_creation: string;
+  statut_juridique: string;
+  adresse: string;
+  ville: string;
+  pays: string;
+  description: string;
+}
 
 interface EntrepriseFormModalProps {
   isOpen: boolean;
   closeModal: () => void;
-  entreprise?: {
-    id?: number;
-    beneficiaire_id?: number;
-    nom_entreprise: string;
-    secteur_activite: string;
-    date_creation: string;
-    statut_juridique: string;
-    adresse: string;
-    ville: string;
-    pays: string;
-    description: string;
-  };
+  entreprise?: EntrepriseFormData;
+  beneficiaires: Beneficiaire[]; // Liste des bénéficiaires passée en props
 }
 
-const EntrepriseFormModal = ({ isOpen, closeModal, entreprise }: EntrepriseFormModalProps) => {
+// Fonction pour formater la date au format `yyyy-MM-dd`
+const formatDateForInput = (dateString: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toISOString().split('T')[0];
+};
+
+const EntrepriseFormModal = ({ isOpen, closeModal, entreprise, beneficiaires }: EntrepriseFormModalProps) => {
   const { data, setData, post, put, errors, processing, reset } = useForm({
-    beneficiaire_id: entreprise?.beneficiaire_id || '',
+    beneficiaires_id: entreprise?.beneficiaires_id || '',
     nom_entreprise: entreprise?.nom_entreprise || '',
     secteur_activite: entreprise?.secteur_activite || '',
-    date_creation: entreprise?.date_creation || '',
+    date_creation: entreprise?.date_creation ? formatDateForInput(entreprise.date_creation) : '', // Utilisation de la fonction
     statut_juridique: entreprise?.statut_juridique || '',
     adresse: entreprise?.adresse || '',
     ville: entreprise?.ville || '',
@@ -38,10 +57,10 @@ const EntrepriseFormModal = ({ isOpen, closeModal, entreprise }: EntrepriseFormM
   useEffect(() => {
     if (entreprise) {
       setData({
-        beneficiaire_id: entreprise.beneficiaire_id || '',
+        beneficiaires_id: entreprise.beneficiaires_id || '',
         nom_entreprise: entreprise.nom_entreprise || '',
         secteur_activite: entreprise.secteur_activite || '',
-        date_creation: entreprise.date_creation || '',
+        date_creation: formatDateForInput(entreprise.date_creation), // Utilisation de la fonction
         statut_juridique: entreprise.statut_juridique || '',
         adresse: entreprise.adresse || '',
         ville: entreprise.ville || '',
@@ -68,6 +87,9 @@ const EntrepriseFormModal = ({ isOpen, closeModal, entreprise }: EntrepriseFormM
           toast.success(successMessage);
           closeModal();
           reset();
+        },
+        onError: () => {
+          toast.error(errorMessage);
         },
       });
     } else {
@@ -248,6 +270,30 @@ const EntrepriseFormModal = ({ isOpen, closeModal, entreprise }: EntrepriseFormM
                   )}
                 </div>
 
+                {/* Bénéficiaire associé */}
+                <div className="mt-4">
+                  <label htmlFor="beneficiaires_id" className="block text-sm font-medium text-gray-700">
+                    Bénéficiaire associé
+                  </label>
+                  <select
+                    id="beneficiaires_id"
+                    value={data.beneficiaires_id}
+                    onChange={(e) => setData('beneficiaires_id', e.target.value)}
+                    className="mt-1 p-2 w-full border rounded-md"
+                  >
+                    <option value="">Sélectionnez un bénéficiaire</option>
+                    {beneficiaires.map((beneficiaire) => (
+                      <option key={beneficiaire.id} value={beneficiaire.id}>
+                        {beneficiaire.nom} {beneficiaire.prenom}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.beneficiaires_id && (
+                    <span className="text-red-500 text-sm">{errors.beneficiaires_id}</span>
+                  )}
+                </div>
+
+                {/* Boutons */}
                 <div className="mt-6 flex justify-end">
                   <button
                     type="button"
