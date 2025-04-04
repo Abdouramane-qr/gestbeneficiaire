@@ -6,25 +6,25 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class IndicateurCommercial extends Model
+class IndicateurRH extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'rapport_id',
-        'nombre_clients',
-        'nouveaux_clients',
-        'taux_retention',
-        'panier_moyen',
-        'delai_paiement_moyen',
-        'export_pourcentage',
-        'top_5_clients_pourcentage',
-        'backlog',
-        'carnet_commandes'
+        'effectif_total',
+        'cadres_pourcentage',
+        'turnover',
+        'absenteisme',
+        'masse_salariale',
+        'cout_formation',
+        'anciennete_moyenne',
+        'accidents_travail',
+        'index_egalite'
     ];
 
     /**
-     * Obtenir le rapport associé aux indicateurs commerciaux.
+     * Obtenir le rapport associé aux indicateurs RH.
      */
     public function rapport(): BelongsTo
     {

@@ -6,25 +6,25 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class IndicateurCommercial extends Model
+class IndicateurProduction extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'rapport_id',
-        'nombre_clients',
-        'nouveaux_clients',
-        'taux_retention',
-        'panier_moyen',
-        'delai_paiement_moyen',
-        'export_pourcentage',
-        'top_5_clients_pourcentage',
-        'backlog',
-        'carnet_commandes'
+        'taux_utilisation',
+        'taux_rebut',
+        'delai_production_moyen',
+        'cout_production',
+        'stock_matieres_premieres',
+        'stock_produits_finis',
+        'rotation_stocks',
+        'incidents_qualite',
+        'certifications'
     ];
 
     /**
-     * Obtenir le rapport associé aux indicateurs commerciaux.
+     * Obtenir le rapport associé aux indicateurs de production.
      */
     public function rapport(): BelongsTo
     {

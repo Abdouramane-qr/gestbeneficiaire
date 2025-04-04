@@ -29,11 +29,7 @@ class Entreprise extends Model
          return $this->belongsTo(Beneficiaire::class,'beneficiaires_id');
      }
 
-    // Relation avec PerformanceEntreprise
-    public function performances()
-    {
-        return $this->hasMany(PerformanceEntreprise::class);
-    }
+    
     public function dataCollections()
 {
     return $this->hasMany(Collecte::class);

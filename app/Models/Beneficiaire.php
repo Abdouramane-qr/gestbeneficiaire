@@ -1,24 +1,41 @@
 <?php
 
 namespace App\Models;
-
+use App\Models\Entreprise;
 use Illuminate\Database\Eloquent\Model;
 
 class Beneficiaire extends Model
 {
     protected $fillable = [
-        'regions', 'provinces', 'communes', 'village', 'type_beneficiaire','entreprise_id',
-        'nom', 'prenom', 'date_de_naissance', 'genre', 'handicap', 'contact',
-        'email', 'niveau_instruction', 'activite', 'domaine_activite', 'niveau_mise_en_oeuvre',
-        'ong_id', 'institution_financiere_id', 'date_inscription', 'statut_actuel'
+        'regions',
+        'provinces',
+        'communes',
+        'village',
+        'type_beneficiaire',
+        'entreprise_id',
+        'nom',
+        'prenom',
+        'date_de_naissance',
+        'genre',
+        'handicap',
+        'contact',
+        'email',
+        'niveau_instruction',
+        'activite',
+        'domaine_activite',
+        'niveau_mise_en_oeuvre',
+        'ong_id',
+        'institution_financiere_id',
+        'date_inscription',
+        'statut_actuel'
     ];
 
 
 
     public function entreprise()
-{
-    return $this->hasMany(Entreprise::class, 'beneficiaires_id');
-}
+    {
+        return $this->hasMany(Entreprise::class, 'beneficiaires_id');
+    }
 
 
     // Relation avec ONG

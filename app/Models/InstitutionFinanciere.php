@@ -15,10 +15,7 @@ class InstitutionFinanciere extends Model
 
     protected $table = 'institution_financieres';
 
-    public function indicateur()
-    {
-        return $this->belongsTo(Indicateur::class, 'indicateur_id');
-    }
+
 
     public function  beneficiaires()
     {
