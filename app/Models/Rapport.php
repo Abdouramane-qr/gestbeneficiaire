@@ -55,10 +55,7 @@ class Rapport extends Model
     /**
      * Obtenir les indicateurs RH du rapport.
      */
-    public function indicateursRH(): HasOne
-    {
-        return $this->hasOne(IndicateurRH::class);
-    }
+    
 
     /**
      * Obtenir les indicateurs de production du rapport.

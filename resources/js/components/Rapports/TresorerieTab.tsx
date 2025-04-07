@@ -1,27 +1,58 @@
-import React, { useEffect, useState } from 'react';
 import { IndicateurCalculator } from '@/Utils/IndicateurCalculator';
+import React, { useEffect, useState } from 'react';
 
-interface IndicateurFinancierData {
+interface IndicateurTresorerieData {
   [key: string]: string;
 }
 
-interface FinancierTabProps {
-  data: IndicateurFinancierData;
-  onChange: (data: IndicateurFinancierData) => void;
+interface TresorerieTabProps {
+  data: IndicateurTresorerieData;
+  onChange: (data: IndicateurTresorerieData) => void;
   errors: string[];
+  financialData?: Record<string, string>; // Données financières pour les calculs dépendants
+  productionData?: Record<string, string>; // Données de production pour les calculs dépendants
 }
 
-const FinancierTab: React.FC<FinancierTabProps> = ({ data, onChange, errors }) => {
-  // Obtenir la définition des champs pour les indicateurs financiers
-  const fields = IndicateurCalculator.getFieldsByCategory('financier');
+const TresorerieTab: React.FC<TresorerieTabProps> = ({
+  data,
+  onChange,
+  errors,
+  financialData = {},
+  productionData = {}
+}) => {
+  // Obtenir la définition des champs pour les indicateurs de trésorerie
+  const fields = IndicateurCalculator.getFieldsByCategory('tresorerie');
 
   // Suivi local des valeurs des champs
-  const [values, setValues] = useState<IndicateurFinancierData>(data);
+  const [values, setValues] = useState<IndicateurTresorerieData>(data);
 
   // Mettre à jour les valeurs locales lorsque les données externes changent
   useEffect(() => {
     setValues(data);
   }, [data]);
+
+  // Mettre à jour les calculs dépendant des données financières
+  useEffect(() => {
+    if (Object.keys(financialData).length > 0 || Object.keys(productionData).length > 0) {
+      // Mettre à jour les indicateurs calculés qui dépendent d'autres catégories
+      const combinedData = {
+        ...values,
+        // Ajouter les champs nécessaires des données financières
+        chiffre_affaires: financialData.chiffre_affaires,
+        // Ajouter les champs nécessaires des données de production
+        cout_production: productionData.cout_production
+      };
+
+      // Calculer les indicateurs dérivés
+      const calculatedValues = IndicateurCalculator.calculateDerivedFields('tresorerie', combinedData);
+
+      // Ne mettre à jour que si les valeurs calculées sont différentes
+      if (JSON.stringify(calculatedValues) !== JSON.stringify(values)) {
+        setValues(calculatedValues);
+        onChange(calculatedValues);
+      }
+    }
+  }, [financialData, productionData, values, onChange]);
 
   // Gestionnaire de changement pour les champs de saisie
   const handleInputChange = (fieldId: string, value: string) => {
@@ -30,17 +61,28 @@ const FinancierTab: React.FC<FinancierTabProps> = ({ data, onChange, errors }) =
       ...values,
       [fieldId]: value
     };
-    setValues(updatedValues);
+
+    // Ajouter les données financières et de production nécessaires pour les calculs
+    const dataForCalculation = {
+      ...updatedValues,
+      chiffre_affaires: financialData.chiffre_affaires,
+      cout_production: productionData.cout_production
+    };
+
+    // Calculer les champs dérivés
+    const calculatedValues = IndicateurCalculator.calculateDerivedFields('tresorerie', dataForCalculation);
+
+    setValues(calculatedValues);
 
     // Propager les changements vers le parent
-    onChange(updatedValues);
+    onChange(calculatedValues);
   };
 
   return (
     <div className="space-y-6">
       <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-medium text-blue-600 dark:text-blue-400">
-          Indicateurs financiers
+          Indicateurs de trésorerie
           <span className="ml-2 text-sm text-yellow-600 dark:text-yellow-400 font-normal">
             {fields.filter(field => field.required && field.type !== 'calculated').length} indicateurs requis
           </span>
@@ -58,10 +100,31 @@ const FinancierTab: React.FC<FinancierTabProps> = ({ data, onChange, errors }) =
         </div>
       )}
 
+      {/* Avertissement si les données financières ou de production sont absentes */}
+      {(!financialData.chiffre_affaires || !productionData.cout_production) && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md mb-4">
+          <p className="text-sm text-yellow-600 dark:text-yellow-400">
+            Certains indicateurs de trésorerie nécessitent des données financières et de production pour être calculés correctement.
+            Veuillez remplir ces onglets pour des calculs précis.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {fields.map((field) => {
           const isCalculated = field.type === 'calculated';
           const unit = field.unite || '';
+
+          // Vérifier si ce champ calculé dépend de données externes
+          const dependsOnExternal = isCalculated && (
+            field.formula?.includes('chiffre_affaires') ||
+            field.formula?.includes('cout_production')
+          );
+
+          // Message d'avertissement pour les champs dépendants
+          const warningMessage = dependsOnExternal && (!financialData.chiffre_affaires || !productionData.cout_production)
+            ? "Nécessite des données des onglets Financiers et Production"
+            : "";
 
           return (
             <div key={field.id} className="space-y-1">
@@ -118,6 +181,13 @@ const FinancierTab: React.FC<FinancierTabProps> = ({ data, onChange, errors }) =
                   {field.description}
                 </p>
               )}
+
+              {/* Afficher l'avertissement pour les champs dépendants */}
+              {warningMessage && (
+                <p className="mt-1 text-xs text-yellow-500 dark:text-yellow-400">
+                  {warningMessage}
+                </p>
+              )}
             </div>
           );
         })}
@@ -126,4 +196,4 @@ const FinancierTab: React.FC<FinancierTabProps> = ({ data, onChange, errors }) =
   );
 };
 
-export default FinancierTab;
+export default TresorerieTab;

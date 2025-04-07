@@ -1,349 +1,127 @@
 import React, { useEffect, useState } from 'react';
-import { Save, TrendingUp, TrendingDown, Minus, HelpCircle } from 'lucide-react';
-import { IndicateurCommercial, Rapport, Entreprise } from '@/types/index';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { useForm } from '@inertiajs/react';
-import { Tooltip } from '../ui/tooltip';
-import {  Label } from '../ui/label';
-import { Alert, AlertDescription } from '../ui/alert';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
-import { TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { IndicateurCalculator } from '@/Utils/IndicateurCalculator';
 
-interface CommerciauxTabProps {
-  indicateurs: IndicateurCommercial;
-  rapport: Rapport;
-  entreprise: Entreprise;
-  rapportPrecedent?: Rapport;
-  errors: Record<string, string>;
-  readOnly?: boolean;
+interface IndicateurCommercialData {
+  [key: string]: string;
 }
 
-const CommerciauxTab: React.FC<CommerciauxTabProps> = ({
-  indicateurs,
-  rapport,
-  entreprise,
-  rapportPrecedent,
-  errors = {},
-  readOnly = false
-}) => {
-  const { data, setData, post, processing, reset } = useForm<IndicateurCommercial>({
-    ...indicateurs,
-  });
+interface CommerciauxTabProps {
+  data: IndicateurCommercialData;
+  onChange: (data: IndicateurCommercialData) => void;
+  errors: string[];
+}
 
-  const [showComparaison, setShowComparaison] = useState<boolean>(!!rapportPrecedent);
+const CommerciauxTab: React.FC<CommerciauxTabProps> = ({ data, onChange, errors }) => {
+  // Obtenir la définition des champs pour les indicateurs commerciaux
+  const fields = IndicateurCalculator.getFieldsByCategory('commercial');
 
-  // Récupérer les indicateurs du rapport précédent pour comparaison
-  const indicateursPrecedents = rapportPrecedent?.indicateursCommerciaux;
+  // Suivi local des valeurs des champs
+  const [values, setValues] = useState<IndicateurCommercialData>(data);
 
-  // Données client de la période précédente pour le taux de rétention
-  const clientsPeriodePrecedente = indicateursPrecedents?.nombre_clients;
-
-  // Effet pour calculer automatiquement le taux de rétention
+  // Mettre à jour les valeurs locales lorsque les données externes changent
   useEffect(() => {
-    // Si nous avons le nombre de clients de la période précédente et celui actuel,
-    // nous pouvons calculer le taux de rétention
-    if (data.nombre_clients !== undefined &&
-        clientsPeriodePrecedente !== undefined &&
-        clientsPeriodePrecedente > 0) {
+    setValues(data);
+  }, [data]);
 
-      // Taux de rétention = (Clients actuels - Nouveaux clients) / Clients période précédente * 100
-      if (data.nouveaux_clients !== undefined) {
-        const clientsRetenus = data.nombre_clients - data.nouveaux_clients;
-        if (clientsRetenus >= 0) {
-          const tauxRetention = (clientsRetenus / clientsPeriodePrecedente) * 100;
-          setData('taux_retention', Number(tauxRetention.toFixed(2)));
-        }
-      }
-    }
-  }, [data.nombre_clients, data.nouveaux_clients, clientsPeriodePrecedente, setData]);
+  // Gestionnaire de changement pour les champs de saisie
+  const handleInputChange = (fieldId: string, value: string) => {
+    // Mettre à jour l'état local
+    const updatedValues = {
+      ...values,
+      [fieldId]: value
+    };
+    setValues(updatedValues);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-
-    if (name === 'nombre_clients' || name === 'nouveaux_clients' || name === 'delai_paiement_moyen') {
-      setData(name as keyof IndicateurCommercial, value === '' ? undefined : parseInt(value));
-    } else {
-      setData(name as keyof IndicateurCommercial, value === '' ? undefined : parseFloat(value));
-    }
+    // Propager les changements vers le parent
+    onChange(updatedValues);
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    post(route('rapports.submitCommerciaux', { entreprise: entreprise.id, rapport: rapport.id }));
-  };
-
-  // Calculer la variation en pourcentage entre deux valeurs
-  const calculerVariation = (valeurActuelle?: number, valeurPrecedente?: number): number | undefined => {
-    if (valeurActuelle === undefined || valeurPrecedente === undefined || valeurPrecedente === 0) {
-      return undefined;
-    }
-    return ((valeurActuelle - valeurPrecedente) / Math.abs(valeurPrecedente)) * 100;
-  };
-
-  // Fonction pour afficher l'icône de tendance
-  const IconeTendance = ({ variation, inverse = false }: { variation?: number, inverse?: boolean }) => {
-    if (variation === undefined) return <Minus className="h-4 w-4" />;
-    // Pour certains indicateurs, une hausse est négative (ex: délai de paiement)
-    const isPositiveTrend = inverse ? variation < 0 : variation > 0;
-    if (isPositiveTrend) return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (!isPositiveTrend) return <TrendingDown className="h-4 w-4 text-red-600" />;
-    return <Minus className="h-4 w-4" />;
-  };
-
-  // Formatage des nombres pour l'affichage
-  const formatNumber = (value?: number, decimals: number = 2): string => {
-    if (value === undefined) return '-';
-    return Number(value).toLocaleString('fr-FR', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
-    });
-  };
-
-  // Liste des indicateurs commerciaux avec leurs descriptions, unités et si une hausse est négative
-  const indicateursList = [
-    {
-      id: 'nombre_clients',
-      label: 'Nombre de clients',
-      description: 'Nombre total de clients actifs sur la période',
-      unite: '',
-      inverseTrend: false,
-      calculated: false
-    },
-    {
-      id: 'nouveaux_clients',
-      label: 'Nouveaux clients',
-      description: 'Nombre de nouveaux clients acquis sur la période',
-      unite: '',
-      inverseTrend: false,
-      calculated: false
-    },
-    {
-      id: 'taux_retention',
-      label: 'Taux de rétention',
-      description: 'Pourcentage de clients de la période précédente conservés sur la période actuelle',
-      unite: '%',
-      inverseTrend: false,
-      calculated: !!clientsPeriodePrecedente
-    },
-    {
-      id: 'panier_moyen',
-      label: 'Panier moyen',
-      description: 'Montant moyen des achats par client',
-      unite: '€',
-      inverseTrend: false,
-      calculated: false
-    },
-    {
-      id: 'delai_paiement_moyen',
-      label: 'Délai de paiement moyen',
-      description: 'Nombre moyen de jours entre la facturation et le paiement',
-      unite: 'jours',
-      inverseTrend: true, // Une hausse est négative
-      calculated: false
-    },
-    {
-      id: 'export_pourcentage',
-      label: 'Export',
-      description: 'Pourcentage du chiffre d\'affaires réalisé à l\'export',
-      unite: '%',
-      inverseTrend: false,
-      calculated: false
-    },
-    {
-      id: 'top_5_clients_pourcentage',
-      label: 'Top 5 clients',
-      description: 'Pourcentage du chiffre d\'affaires réalisé avec les 5 plus grands clients',
-      unite: '%',
-      inverseTrend: true, // Une hausse est négative (dépendance clients)
-      calculated: false
-    },
-    {
-      id: 'backlog',
-      label: 'Backlog',
-      description: 'Montant des commandes confirmées mais non encore livrées',
-      unite: '€',
-      inverseTrend: false,
-      calculated: false
-    },
-    {
-      id: 'carnet_commandes',
-      label: 'Carnet de commandes',
-      description: 'Montant total des commandes à livrer (backlog + commandes en négociation)',
-      unite: '€',
-      inverseTrend: false,
-      calculated: false
-    }
-  ];
 
   return (
-    <div>
-      {/* Bouton pour afficher/masquer la comparaison avec la période précédente */}
-      {rapportPrecedent && (
-        <div className="flex justify-end mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowComparaison(!showComparaison)}
-          >
-            {showComparaison ? "Masquer la comparaison" : "Afficher la comparaison"}
-          </Button>
+    <div className="space-y-6">
+      <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-medium text-blue-600 dark:text-blue-400">
+          Indicateurs commerciaux
+          <span className="ml-2 text-sm text-yellow-600 dark:text-yellow-400 font-normal">
+            {fields.filter(field => field.required && field.type !== 'calculated').length} indicateurs requis
+          </span>
+        </h3>
+      </div>
+
+      {/* Afficher les erreurs s'il y en a */}
+      {errors.length > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+          <ul className="list-disc pl-5 text-sm text-red-600 dark:text-red-400">
+            {errors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
         </div>
       )}
 
-      {/* Alerte pour le taux de rétention calculé automatiquement */}
-      {clientsPeriodePrecedente && (
-        <Alert className="mb-6 bg-green-50 border-green-200">
-          <AlertDescription className="text-green-700 flex items-center">
-            <HelpCircle className="h-4 w-4 mr-2" />
-            Le taux de rétention est calculé automatiquement à partir du nombre de clients actuel, du nombre de nouveaux clients et du nombre de clients de la période précédente ({clientsPeriodePrecedente}).
-          </AlertDescription>
-        </Alert>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {fields.map((field) => {
+          const isCalculated = field.type === 'calculated';
+          const unit = field.unite || '';
 
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {indicateursList.map((indicateur) => (
-              <div className="space-y-2" key={indicateur.id}>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Label htmlFor={indicateur.id} className="flex items-center cursor-help">
-                        {indicateur.label} {indicateur.unite && <span className="ml-1 text-gray-500">({indicateur.unite})</span>}
-                      </Label>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">{indicateur.description}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                <div className="relative">
-                  <Input
-                    id={indicateur.id}
-                    name={indicateur.id}
-                    type="number"
-                    step={indicateur.unite === '%' || indicateur.unite === '€' ? "0.01" : "1"}
-                    value={data[indicateur.id as keyof IndicateurCommercial] || ''}
-                    onChange={handleChange}
-                    className={indicateur.calculated ? "bg-gray-50 pr-10" : "pr-10"}
-                    readOnly={indicateur.calculated || readOnly}
-                    disabled={readOnly}
-                  />
-
-                  {/* Affichage de la tendance si comparaison activée */}
-                  {showComparaison && indicateursPrecedents && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <IconeTendance
-                              variation={calculerVariation(
-                                data[indicateur.id as keyof IndicateurCommercial] as number,
-                                indicateursPrecedents[indicateur.id as keyof IndicateurCommercial] as number
-                              )}
-                              inverse={indicateur.inverseTrend}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              Précédent: {formatNumber(indicateursPrecedents[indicateur.id as keyof IndicateurCommercial] as number)}
-                              <br />
-                              Variation: {formatNumber(calculerVariation(
-                                data[indicateur.id as keyof IndicateurCommercial] as number,
-                                indicateursPrecedents[indicateur.id as keyof IndicateurCommercial] as number
-                              ))}%
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
+          return (
+            <div key={field.id} className="space-y-1">
+              <div className="flex justify-between">
+                <label
+                  htmlFor={field.id}
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {field.label}
+                  {field.required && !isCalculated && (
+                    <span className="ml-1 text-red-500">*</span>
                   )}
-                </div>
-
-                {indicateur.calculated && (
-                  <p className="text-xs text-gray-500">Calculé automatiquement</p>
-                )}
-
-                {errors[indicateur.id] && (
-                  <p className="text-red-500 text-sm">{errors[indicateur.id]}</p>
+                </label>
+                {isCalculated && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400 italic">
+                    Calculé automatiquement
+                  </span>
                 )}
               </div>
-            ))}
-          </div>
 
-          {/* Section d'analyse de la concentration client */}
-          {data.top_5_clients_pourcentage !== undefined && (
-            <Card className="mt-8">
-              <CardHeader>
-                <CardTitle>Analyse de concentration client</CardTitle>
-                <CardDescription>
-                  Répartition du chiffre d'affaires et niveau de dépendance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col space-y-4">
-                  <div className="w-full bg-gray-200 rounded-full h-4">
-                    <div
-                      className={`h-4 rounded-full ${
-                        data.top_5_clients_pourcentage > 70 ? 'bg-red-500' :
-                        data.top_5_clients_pourcentage > 50 ? 'bg-amber-500' :
-                        'bg-green-500'
-                      }`}
-                      style={{ width: `${Math.min(100, data.top_5_clients_pourcentage)}%` }}
-                    ></div>
+              <div className="relative mt-1 rounded-md shadow-sm">
+                <input
+                  type="text"
+                  id={field.id}
+                  name={field.id}
+                  value={values[field.id] || ''}
+                  onChange={(e) => handleInputChange(field.id, e.target.value)}
+                  readOnly={isCalculated}
+                  className={`
+                    block w-full rounded-md sm:text-sm
+                    ${isCalculated
+                      ? 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                      : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'}
+                    ${unit ? 'pr-12' : 'pr-3'}
+                    pl-3 py-2 border
+                    ${errors.length > 0
+                      ? 'border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-700 dark:focus:border-red-700'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-700 dark:focus:border-blue-700'}
+                  `}
+                  placeholder={isCalculated ? 'Calculé' : `Saisir ${field.label.toLowerCase()}`}
+                />
+                {unit && (
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <span className="text-gray-500 dark:text-gray-400 sm:text-sm">
+                      {unit}
+                    </span>
                   </div>
+                )}
+              </div>
 
-                  <div className="flex justify-between text-sm">
-                    <span>0%</span>
-                    <span className="text-green-600">25%</span>
-                    <span className="text-amber-600">50%</span>
-                    <span className="text-red-600">75%</span>
-                    <span>100%</span>
-                  </div>
-
-                  <div className="mt-2 text-sm">
-                    {data.top_5_clients_pourcentage > 70 ? (
-                      <p className="text-red-600">
-                        Concentration client élevée. Un effort de diversification est recommandé.
-                      </p>
-                    ) : data.top_5_clients_pourcentage > 50 ? (
-                      <p className="text-amber-600">
-                        Concentration client modérée. Surveillez l'évolution de cet indicateur.
-                      </p>
-                    ) : (
-                      <p className="text-green-600">
-                        Bonne diversification de la clientèle.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {!readOnly && (
-            <div className="flex justify-end space-x-4">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => reset()}
-                disabled={processing}
-              >
-                Annuler
-              </Button>
-              <Button
-                type="submit"
-                disabled={processing}
-              >
-                <Save className="mr-2 h-4 w-4" />
-                Enregistrer
-              </Button>
+              {/* Afficher la formule de calcul pour les champs calculés */}
+              {isCalculated && field.description && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {field.description}
+                </p>
+              )}
             </div>
-          )}
-        </div>
-      </form>
+          );
+        })}
+      </div>
     </div>
   );
 };

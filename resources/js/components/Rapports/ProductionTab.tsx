@@ -1,386 +1,127 @@
-import React, { useState } from 'react';
-import { useForm } from '@inertiajs/react';
-import { IndicateurProduction, Rapport, Entreprise } from '@/types/index';
-import { Button } from '../ui/button';
-import {Textarea } from '../ui/textarea';
-import { Input } from '../ui/input';
+import { IndicateurCalculator } from '@/Utils/IndicateurCalculator';
+import React, { useEffect, useState } from 'react';
 
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
-import { Activity, Factory, Minus, Save, TrendingDown, TrendingUp } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { Label } from '../ui/label';
-import { Badge } from '../ui/badge';
-
-interface ProductionTabProps {
-  indicateurs: IndicateurProduction;
-  rapport: Rapport;
-  entreprise: Entreprise;
-  rapportPrecedent?: Rapport;
-  errors: Record<string, string>;
-  readOnly?: boolean;
+interface IndicateurProductionData {
+  [key: string]: string;
 }
 
-const ProductionTab: React.FC<ProductionTabProps> = ({
-  indicateurs,
-  rapport,
-  entreprise,
-  rapportPrecedent,
-  errors = {},
-  readOnly = false
-}) => {
-  const { data, setData, post, processing, reset } = useForm<IndicateurProduction>({
-    ...indicateurs,
-  });
+interface ProductionTabProps {
+  data: IndicateurProductionData;
+  onChange: (data: IndicateurProductionData) => void;
+  errors: string[];
+}
 
-  const [showComparaison, setShowComparaison] = useState<boolean>(!!rapportPrecedent);
+const ProductionTab: React.FC<ProductionTabProps> = ({ data, onChange, errors }) => {
+  // Obtenir la définition des champs pour les indicateurs de production
+  const fields = IndicateurCalculator.getFieldsByCategory('production');
 
-  // Récupérer les indicateurs du rapport précédent pour comparaison
-  const indicateursPrecedents = rapportPrecedent?.indicateursProduction;
+  // Suivi local des valeurs des champs
+  const [values, setValues] = useState<IndicateurProductionData>(data);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  // Mettre à jour les valeurs locales lorsque les données externes changent
+  useEffect(() => {
+    setValues(data);
+  }, [data]);
 
-    if (name === 'delai_production_moyen' || name === 'incidents_qualite') {
-      setData(name as keyof IndicateurProduction, value === '' ? undefined : parseInt(value));
-    } else if (name === 'certifications') {
-      setData(name as keyof IndicateurProduction, value);
-    } else {
-      setData(name as keyof IndicateurProduction, value === '' ? undefined : parseFloat(value));
-    }
+  // Gestionnaire de changement pour les champs de saisie
+  const handleInputChange = (fieldId: string, value: string) => {
+    // Mettre à jour l'état local
+    const updatedValues = {
+      ...values,
+      [fieldId]: value
+    };
+    setValues(updatedValues);
+
+    // Propager les changements vers le parent
+    onChange(updatedValues);
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    post(route('rapports.submitProduction', { entreprise: entreprise.id, rapport: rapport.id }));
-  };
-
-  // Calculer la variation en pourcentage entre deux valeurs
-  const calculerVariation = (valeurActuelle?: number, valeurPrecedente?: number): number | undefined => {
-    if (valeurActuelle === undefined || valeurPrecedente === undefined || valeurPrecedente === 0) {
-      return undefined;
-    }
-    return ((valeurActuelle - valeurPrecedente) / Math.abs(valeurPrecedente)) * 100;
-  };
-
-  // Fonction pour afficher l'icône de tendance
-  const IconeTendance = ({ variation, inverse = false }: { variation?: number, inverse?: boolean }) => {
-    if (variation === undefined) return <Minus className="h-4 w-4" />;
-    // Pour certains indicateurs, une hausse est négative (ex: taux de rebut)
-    const isPositiveTrend = inverse ? variation < 0 : variation > 0;
-    if (isPositiveTrend) return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (!isPositiveTrend) return <TrendingDown className="h-4 w-4 text-red-600" />;
-    return <Minus className="h-4 w-4" />;
-  };
-
-  // Formatage des nombres pour l'affichage
-  const formatNumber = (value?: number, decimals: number = 2): string => {
-    if (value === undefined) return '-';
-    return Number(value).toLocaleString('fr-FR', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
-    });
-  };
-
-  // Traiter et afficher les certifications
-  const parseCertifications = (certifs?: string): string[] => {
-    if (!certifs) return [];
-    return certifs.split(',').map(cert => cert.trim()).filter(cert => cert !== '');
-  };
-
-  const certificationsList = parseCertifications(data.certifications);
-
-  // Liste des indicateurs de production avec leurs descriptions, unités et si une hausse est négative
-  const indicateursList = [
-    {
-      id: 'taux_utilisation',
-      label: 'Taux d\'utilisation',
-      description: 'Pourcentage d\'utilisation des capacités de production',
-      unite: '%',
-      inverseTrend: false,
-      required: true
-    },
-    {
-      id: 'taux_rebut',
-      label: 'Taux de rebut',
-      description: 'Pourcentage de produits non conformes ou défectueux',
-      unite: '%',
-      inverseTrend: true, // Une hausse est négative
-      required: true
-    },
-    {
-      id: 'delai_production_moyen',
-      label: 'Délai de production moyen',
-      description: 'Temps moyen nécessaire pour produire une unité ou un lot',
-      unite: 'jours',
-      inverseTrend: true, // Une hausse est négative
-      required: false
-    },
-    {
-      id: 'cout_production',
-      label: 'Coût de production',
-      description: 'Coût total de production sur la période',
-      unite: '€',
-      inverseTrend: true, // Une hausse est négative
-      required: true
-    },
-    {
-      id: 'stock_matieres_premieres',
-      label: 'Stock matières premières',
-      description: 'Valeur du stock de matières premières en fin de période',
-      unite: '€',
-      inverseTrend: false,
-      required: false
-    },
-    {
-      id: 'stock_produits_finis',
-      label: 'Stock produits finis',
-      description: 'Valeur du stock de produits finis en fin de période',
-      unite: '€',
-      inverseTrend: false,
-      required: false
-    },
-    {
-      id: 'rotation_stocks',
-      label: 'Rotation des stocks',
-      description: 'Nombre de fois que le stock est renouvelé sur une année',
-      unite: 'par an',
-      inverseTrend: false,
-      required: false
-    },
-    {
-      id: 'incidents_qualite',
-      label: 'Incidents qualité',
-      description: 'Nombre d\'incidents ou de non-conformités qualité signalés',
-      unite: '',
-      inverseTrend: true, // Une hausse est négative
-      required: true
-    }
-  ];
 
   return (
-    <div>
-      {/* Bouton pour afficher/masquer la comparaison avec la période précédente */}
-      {rapportPrecedent && (
-        <div className="flex justify-end mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowComparaison(!showComparaison)}
-          >
-            {showComparaison ? "Masquer la comparaison" : "Afficher la comparaison"}
-          </Button>
+    <div className="space-y-6">
+      <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-medium text-blue-600 dark:text-blue-400">
+          Indicateurs de production
+          <span className="ml-2 text-sm text-yellow-600 dark:text-yellow-400 font-normal">
+            {fields.filter(field => field.required && field.type !== 'calculated').length} indicateurs requis
+          </span>
+        </h3>
+      </div>
+
+      {/* Afficher les erreurs s'il y en a */}
+      {errors.length > 0 && (
+        <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-md">
+          <ul className="list-disc pl-5 text-sm text-red-600 dark:text-red-400">
+            {errors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          {/* Tableau de bord de production */}
-          {data.taux_utilisation !== undefined && data.taux_rebut !== undefined && (
-            <Card className="mb-6">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center">
-                  <Factory className="mr-2 h-5 w-5" />
-                  Tableau de bord de production
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Efficacité de production */}
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-medium">Efficacité de production</h3>
-                      <Activity className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div className="mt-4">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Taux d'utilisation</span>
-                        <span className="font-medium">{formatNumber(data.taux_utilisation)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            data.taux_utilisation >= 85 ? 'bg-green-500' :
-                            data.taux_utilisation >= 70 ? 'bg-amber-500' :
-                            'bg-red-500'
-                          }`}
-                          style={{ width: `${data.taux_utilisation}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Taux de rebut</span>
-                        <span className="font-medium">{formatNumber(data.taux_rebut)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${
-                            data.taux_rebut <= 2 ? 'bg-green-500' :
-                            data.taux_rebut <= 5 ? 'bg-amber-500' :
-                            'bg-red-500'
-                          }`}
-                          style={{ width: `${Math.min(100, data.taux_rebut * 5)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {fields.map((field) => {
+          const isCalculated = field.type === 'calculated';
+          const unit = field.unite || '';
 
-                  {/* Indicateurs de qualité */}
-                  <div className="p-4 border rounded-lg">
-                    <h3 className="font-medium mb-4">Indicateurs de qualité</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Incidents qualité</span>
-                        <span className={`font-medium ${
-                         (data.incidents_qualite ?? 0) === 0 ? 'text-green-600' :
-                         (data.incidents_qualite ?? 0) <= 3 ? 'text-amber-600' :
-                         'text-red-600'
-                        }`}>
-                          {data.incidents_qualite || 0}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Certifications</span>
-                        <span className="font-medium">{certificationsList.length}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Formulaire de saisie des indicateurs numériques */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {indicateursList.map((indicateur) => (
-              <div className="space-y-2" key={indicateur.id}>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Label htmlFor={indicateur.id} className="flex items-center cursor-help">
-                        {indicateur.label} {indicateur.unite && <span className="ml-1 text-gray-500">({indicateur.unite})</span>}
-                        {indicateur.required && <span className="ml-1 text-red-500">*</span>}
-                      </Label>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">{indicateur.description}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                <div className="relative">
-                  <Input
-                    id={indicateur.id}
-                    name={indicateur.id}
-                    type="number"
-                    step={indicateur.unite === '%' || indicateur.id === 'rotation_stocks' ? "0.1" : "1"}
-                    value={data[indicateur.id as keyof IndicateurProduction] || ''}
-                    onChange={handleChange}
-                    className="pr-10"
-                    readOnly={readOnly}
-                    disabled={readOnly}
-                  />
-
-                  {/* Affichage de la tendance si comparaison activée */}
-                  {showComparaison && indicateursPrecedents && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <IconeTendance
-                              variation={calculerVariation(
-                                data[indicateur.id as keyof IndicateurProduction] as number,
-                                indicateursPrecedents[indicateur.id as keyof IndicateurProduction] as number
-                              )}
-                              inverse={indicateur.inverseTrend}
-                            />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              Précédent: {formatNumber(indicateursPrecedents[indicateur.id as keyof IndicateurProduction] as number)}
-                              <br />
-                              Variation: {formatNumber(calculerVariation(
-                                data[indicateur.id as keyof IndicateurProduction] as number,
-                                indicateursPrecedents[indicateur.id as keyof IndicateurProduction] as number
-                              ))}%
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
+          return (
+            <div key={field.id} className="space-y-1">
+              <div className="flex justify-between">
+                <label
+                  htmlFor={field.id}
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {field.label}
+                  {field.required && !isCalculated && (
+                    <span className="ml-1 text-red-500">*</span>
                   )}
-                </div>
-
-                {errors[indicateur.id] && (
-                  <p className="text-red-500 text-sm">{errors[indicateur.id]}</p>
+                </label>
+                {isCalculated && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400 italic">
+                    Calculé automatiquement
+                  </span>
                 )}
               </div>
-            ))}
-          </div>
 
-          {/* Champ pour les certifications */}
-          <div className="space-y-2 mt-8">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Label htmlFor="certifications" className="flex items-center cursor-help">
-                    Certifications
-                  </Label>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">Liste des certifications et normes obtenues par l'entreprise (ISO, etc.). Séparez les certifications par des virgules.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <Textarea
-              id="certifications"
-              name="certifications"
-              value={data.certifications || ''}
-              onChange={handleChange}
-              placeholder="Ex: ISO 9001, ISO 14001, ..."
-              className="h-24"
-              readOnly={readOnly}
-              disabled={readOnly}
-            />
-
-            {errors.certifications && (
-              <p className="text-red-500 text-sm">{errors.certifications}</p>
-            )}
-
-            {/* Afficher les badges des certifications */}
-            {certificationsList.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {certificationsList.map((certification, index) => (
-                  <Badge key={index} variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {certification}
-                  </Badge>
-                ))}
+              <div className="relative mt-1 rounded-md shadow-sm">
+                <input
+                  type="text"
+                  id={field.id}
+                  name={field.id}
+                  value={values[field.id] || ''}
+                  onChange={(e) => handleInputChange(field.id, e.target.value)}
+                  readOnly={isCalculated}
+                  className={`
+                    block w-full rounded-md sm:text-sm
+                    ${isCalculated
+                      ? 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                      : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'}
+                    ${unit ? 'pr-12' : 'pr-3'}
+                    pl-3 py-2 border
+                    ${errors.length > 0
+                      ? 'border-red-300 dark:border-red-700 focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-700 dark:focus:border-red-700'
+                      : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-700 dark:focus:border-blue-700'}
+                  `}
+                  placeholder={isCalculated ? 'Calculé' : `Saisir ${field.label.toLowerCase()}`}
+                />
+                {unit && (
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <span className="text-gray-500 dark:text-gray-400 sm:text-sm">
+                      {unit}
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {!readOnly && (
-            <div className="flex justify-end space-x-4">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => reset()}
-                disabled={processing}
-              >
-                Annuler
-              </Button>
-              <Button
-                type="submit"
-                disabled={processing}
-              >
-                <Save className="mr-2 h-4 w-4" />
-                Enregistrer
-              </Button>
+              {/* Afficher la formule de calcul pour les champs calculés */}
+              {isCalculated && field.description && (
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {field.description}
+                </p>
+              )}
             </div>
-          )}
-        </div>
-      </form>
+          );
+        })}
+      </div>
     </div>
   );
 };

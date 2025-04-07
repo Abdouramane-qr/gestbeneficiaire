@@ -21,10 +21,13 @@ class DatabaseSeeder extends Seeder
         // ]);
 
 
+        // $this->call([
+        //     InstitutionsFinancieresSeeder::class,
+        //     ONGSeeder::class,
+        //     EntreprisesSeeder::class,
+        // ]);
         $this->call([
-            InstitutionsFinancieresSeeder::class,
-            ONGSeeder::class,
-            EntreprisesSeeder::class,
+            IndicateurSeeder::class,
         ]);
 
     }

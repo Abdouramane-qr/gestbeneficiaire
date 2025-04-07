@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, UserRoundSearch, Building2, Landmark, Wallet,  Database, BarChart, PieChart, TrendingUp, Clock, List, Plus, ClipboardCheck, FilePlus, DollarSign,  ShoppingCart } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus,  } from 'lucide-react';
 import AppLogo from './app-logo';
 
 // Créer un type pour les items avec sous-menus
@@ -39,20 +39,8 @@ const mainNavItems: NavItemWithSubmenu[] = [
         href: '/InstitutionFinanciere',
         icon: Wallet,
     },
-    {
-        title: 'Indicateurs Financiers',
-        href: route('rapports.edit', {
-            tab: 'financiers'
-        }),
-        icon: DollarSign,
-    },
-    {
-        title: 'Indicateurs Commerciaux',
-        href: route('rapports.edit', {
-            tab: 'commerciaux'
-        }),
-        icon: ShoppingCart,
-    },
+
+
 
     {
         title: 'Collecte de Données',
@@ -60,58 +48,42 @@ const mainNavItems: NavItemWithSubmenu[] = [
         href: '#',
         children: [
             {
-                title: 'Nouveau rapport',
-                href: '/Rapports', // Créer une route pour ça
+                title: 'Nouvelle collecte',
+                href: 'collectes', // Utiliser la fonction route() d'Inertia
                 icon: FilePlus,
             },
             {
-                title: 'Mes rapports',
-                href: '/rapports', // Liste tous les rapports
+                title: 'Liste des collectes',
+                href: route('collectes.index'), // Liste toutes les collectes
                 icon: Database,
-            }
+            },
+            {
+                title: 'Periode Creation',
+                href: route('periodes.create'), // Liste toutes les collectes
+                icon: Database,
+            },
+
+            {
+                title: 'Periode Liste',
+                href: route('periodes.index'), // Liste toutes les collectes
+                icon: Database,
+            },
+
+            {
+                title: 'Exercies Creation',
+                href: route('exercices.store'), // Liste toutes les collectes
+                icon: Database,
+            },
+
+            {
+                title: 'Exercies Liste',
+                href: route('exercices.index'), // Liste toutes les collectes
+                icon: Database,
+            },
         ]
     },
 
-    // Menu Analyses avec ses sous-menus
-    {
-        title: 'Analyses',
-        icon: BarChart,
-        href: '#',
-        children: [
 
-            {
-                title: 'Nouveaux rapports',
-                href: '/rapports/create', // Cette route devrait être adaptée à votre système
-                icon: Plus,
-            },
-            {
-                title: 'Mes rapports récents',
-                href: '/rapports/recent', // Cette route devrait être adaptée à votre système
-                icon: Clock,
-            },
-            {
-                title: 'Tous les rapports',
-                href: '/rapports', // Une page qui liste tous les rapports
-                icon: List,
-            },
-
-            {
-                title: 'Par secteur',
-                href: '/analyses/secteurs',
-                icon: PieChart,
-            },
-            {
-                title: 'Comparaison',
-                href: '/analyses/comparaison',
-                icon: BarChart,
-            },
-            {
-                title: 'Tendances',
-                href: '/analyses/tendances',
-                icon: TrendingUp,
-            }
-        ]
-    }
 ];
 
 const footerNavItems: NavItem[] = [
