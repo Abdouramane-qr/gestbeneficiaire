@@ -2,84 +2,110 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Collecte extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'entreprise_id',
         'exercice_id',
-        'user_id',
         'periode_id',
-        //'indicateur_id', // Ajoutez cette ligne
+        'user_id',
+        'date_collecte',
         'type_collecte',
         'periode',
-        'date_collecte',
-        'donnees'
+        'donnees',
     ];
 
     protected $casts = [
         'date_collecte' => 'date',
-        'donnees' =>  'array'
+        'donnees' => 'array',
     ];
 
     // Relations
-    public function entreprise()
+    public function entreprise(): BelongsTo
     {
         return $this->belongsTo(Entreprise::class);
     }
 
-    public function exercice()
+    public function exercice(): BelongsTo
     {
         return $this->belongsTo(Exercice::class);
     }
 
-    public function periode()
+    public function periode(): BelongsTo
     {
         return $this->belongsTo(Periode::class);
     }
 
-    public function indicateur()
-    {
-        return $this->belongsTo(Indicateur::class);
-    }
-
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    // Avant de sauvegarder, calculer les champs calculés
-    protected static function booted()
+    // Helpers
+    public function getCategoryData(string $category): array
     {
-        static::saving(function ($collecte) {
-            $donnees = $collecte->donnees;
-            $indicateur = $collecte->indicateur;
+        return is_array($this->donnees) ? ($this->donnees[$category] ?? []) : [];
+    }
 
-            if ($indicateur && is_array($donnees)) {
-                foreach ($indicateur->fields as $field) {
-                    if (isset($field['type']) && $field['type'] === 'calculated' && isset($field['formula'])) {
-                        // Exemple simple de formule: 'resultat_net / chiffre_affaires * 100'
-                        $formula = $field['formula'];
+    public function hasIndicateur(string $category, string $indicateur): bool
+    {
+        return isset($this->getCategoryData($category)[$indicateur]);
+    }
 
-                        // Remplacer les noms de champs par leurs valeurs
-                        foreach ($donnees as $key => $value) {
-                            $formula = str_replace($key, (float)$value, $formula);
-                        }
+    public function getIndicateurValue(string $category, string $indicateur)
+    {
+        return $this->getCategoryData($category)[$indicateur] ?? null;
+    }
 
-                        // Évaluer la formule de manière sécurisée
-                        try {
-                            // Utilisation de eval() déconseillée en production
-                            // Il faudrait idéalement utiliser une bibliothèque d'évaluation d'expressions mathématiques
-                            $donnees[$field['id']] = eval("return $formula;");
-                        } catch (\Exception $e) {
-                            $donnees[$field['id']] = null;
-                        }
-                    }
-                }
+    public function getCategories(): array
+    {
+        return is_array($this->donnees) ? array_keys($this->donnees) : [];
+    }
 
-                $collecte->donnees = $donnees;
-            }
-        });
+    public function isReadyForFinalization(): bool
+    {
+        return $this->entreprise_id &&
+               $this->exercice_id &&
+               $this->periode_id &&
+               $this->date_collecte &&
+               is_array($this->donnees) &&
+               count($this->donnees) > 0;
+    }
+
+    // Scopes
+    public function scopeStandard($query)
+    {
+        return $query->where('type_collecte', 'standard');
+    }
+
+    public function scopeBrouillon($query)
+    {
+        return $query->where('type_collecte', 'brouillon');
+    }
+
+    // Static Methods
+    public static function getCollectesForEntrepriseAndExercice(int $entrepriseId, int $exerciceId): array
+    {
+        return self::with('periode')
+            ->where('entreprise_id', $entrepriseId)
+            ->where('exercice_id', $exerciceId)
+            ->orderBy('date_collecte')
+            ->get()
+            ->groupBy('periode_id')
+            ->toArray();
+    }
+
+    public static function getLatestCollecteForEntrepriseAndCategory(int $entrepriseId, string $category): ?self
+    {
+        return self::where('entreprise_id', $entrepriseId)
+            ->whereJsonContains('donnees->' . $category, null)
+            ->orderByDesc('date_collecte')
+            ->first();
     }
 }

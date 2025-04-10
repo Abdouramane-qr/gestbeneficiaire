@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus,  } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp,  } from 'lucide-react';
 import AppLogo from './app-logo';
 
 // Créer un type pour les items avec sous-menus
@@ -14,11 +14,20 @@ type NavItemWithSubmenu = NavItem & {
 
 // Définir le menu principal avec le sous-menu Analyses
 const mainNavItems: NavItemWithSubmenu[] = [
+
     {
         title: 'Dashboard',
+        icon: ClipboardCheck,
         href: '/dashboard',
-        icon: LayoutGrid,
-    },
+        children: [
+          {
+            title: 'Analyse des Indicateurs',  // Nouveau sous-menu
+            href: '/analyse-indicateurs',
+            icon: TrendingUp,  // Ou BarChart selon votre préférence
+          }
+        ]
+
+},
     {
         title: 'Entreprises',
         href: '/entreprises',

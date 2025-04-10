@@ -6,6 +6,10 @@ use App\Models\Periode;
 use App\Models\Exercice;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Collecte;
+use App\Models\Entreprise;
+
+
 
 class PeriodeController extends Controller
 {
@@ -149,28 +153,50 @@ class PeriodeController extends Controller
         return redirect()->route('periodes.index')->with('success', 'Période mise à jour avec succès');
     }
 
-    /**
-     * Clôture une période.
-     */
-    public function cloture(Periode $periode)
-    {
-        $periode->cloturee = true;
-        $periode->save();
+    // /**
+    //  * Clôture une période.
+    //  */
+    // public function cloture(Periode $periode)
+    // {
+    //     $periode->cloturee = true;
+    //     $periode->save();
 
-        return redirect()->route('periodes.index')->with('success', 'Période clôturée avec succès');
+    //     return redirect()->route('periodes.index')->with('success', 'Période clôturée avec succès');
+    // }
+
+    /**
+ * Clôture une période.
+ */
+public function cloture(Periode $periode)
+{
+    if (!$periode->canBeClosed()) {
+        return back()->withErrors([
+            'error' => 'Cette période ne peut pas être clôturée.'
+        ]);
     }
 
-    /**
-     * Réouvre une période clôturée.
-     */
-    public function reouverture(Periode $periode)
-    {
-        $periode->cloturee = false;
-        $periode->save();
+    $periode->cloturee = true;
+    $periode->save();
 
-        return redirect()->route('periodes.index')->with('success', 'Période réouverte avec succès');
+    return redirect()->route('periodes.index')->with('success', 'Période clôturée avec succès');
+}
+
+  /**
+ * Réouvre une période clôturée.
+ */
+public function reouverture(Periode $periode)
+{
+    if (!$periode->canBeReopened()) {
+        return back()->withErrors([
+            'error' => 'Cette période ne peut pas être rouverte.'
+        ]);
     }
 
+    $periode->cloturee = false;
+    $periode->save();
+
+    return redirect()->route('periodes.index')->with('success', 'Période réouverte avec succès');
+}
     /**
      * Supprime une période.
      */
@@ -187,4 +213,24 @@ class PeriodeController extends Controller
 
         return redirect()->route('periodes.index')->with('success', 'Période supprimée avec succès');
     }
+
+    /**
+ * Affiche les collectes pour une période spécifique.
+ */
+public function collectes(Periode $periode)
+{
+    $collectes = Collecte::with(['entreprise', 'exercice', 'user'])
+        ->where('periode_id', $periode->id)
+        ->orderBy('date_collecte', 'desc')
+        ->paginate(10);
+
+    return Inertia::render('collectes/index', [
+        'collectes' => $collectes,
+        'filters' => ['periode_id' => $periode->id],
+        'periodeFiltre' => $periode,
+        'periodes' => Periode::all(),
+        'exercices' => Exercice::orderBy('annee', 'desc')->get(),
+        'entreprises' => Entreprise::select('id', 'nom_entreprise')->get()
+    ]);
+}
 }

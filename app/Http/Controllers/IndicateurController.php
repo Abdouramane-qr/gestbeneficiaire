@@ -2,187 +2,257 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Beneficiaire;
 use App\Models\Indicateur;
-use App\Models\Collecte;
+use App\Exports\IndicateursExport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class IndicateurController extends Controller
 {
     /**
-     * Affiche la liste des indicateurs.
+     * Page principale d'analyse des indicateurs
      */
     public function index()
     {
-        $indicateurs = Indicateur::orderBy('created_at', 'desc')->paginate(10);
+        // Préparer les données pour les filtres
+        return Inertia::render('Analyses/Analyse', [
+            'categories' => $this->getCategories(),
+            'regions' => $this->getRegions(),
+            'provinces' => $this->getProvinces(),
+            'communes' => $this->getCommunes(),
+            'typesBeneficiaires' => $this->getTypesBeneficiaires(),
+            'genres' => $this->getGenres(),
+            'niveauxInstruction' => $this->getNiveauxInstruction(),
+            'typesActivite' => $this->getTypesActivite(),
+            'niveauxDeveloppement' => $this->getNiveauxDeveloppement(),
 
-        return Inertia::render('Indicateurs/index', [
-            'indicateurs' => $indicateurs,
-            'toast' => session('success') ? [
-                'type' => 'success',
-                'message' => session('success')
-            ] : (session('error') ? [
-                'type' => 'error',
-                'message' => session('error')
-            ] : null)
+            // Données initiales pour le graphique
+            'donneesIndicateurs' => $this->getDonneesIndicateurs(),
         ]);
     }
 
     /**
-     * Affiche le formulaire de création d'un indicateur.
-     * Note: Dans notre cas, nous utilisons un modal, donc cette méthode n'est pas utilisée.
+     * Filtrer les indicateurs
      */
-    public function create()
-    {
-        return Inertia::render('Indicateurs/create');
-    }
-
-    /**
-     * Enregistre un nouvel indicateur.
-     */
-    public function store(Request $request)
+    public function filtrer(Request $request)
     {
         try {
-            $validated = $request->validate([
-                'categorie' => 'required|string|max:50|unique:indicateurs,categorie',
-                'nom' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'fields' => 'required|array|min:1',
-                'fields.*.id' => 'required|string',
-                'fields.*.name' => 'required|string|max:255',
-                'fields.*.type' => 'required|string|in:text,number,boolean,select,date,calculated',
-                'fields.*.required' => 'required|boolean',
-                'fields.*.options' => 'nullable|array',
-                'fields.*.formula' => 'nullable|string',
+            $filtres = $request->validate([
+                'categorie' => 'nullable|string',
+                'region' => 'nullable|string',
+                'province' => 'nullable|string',
+                'commune' => 'nullable|string',
+                'typeBeneficiaire' => 'nullable|string',
+                'genre' => 'nullable|string',
+                'handicap' => 'nullable|boolean',
+                'niveauInstruction' => 'nullable|string',
+                'typeActivite' => 'nullable|string',
+                'niveauDeveloppement' => 'nullable|string',
             ]);
 
-            // Debug log
-            Log::info('Création d\'un nouvel indicateur', $validated);
+            // Construire la requête de filtrage
+            $query = Indicateur::query();
 
-            $indicateur = new Indicateur();
-            $indicateur->categorie = $validated['categorie'];
-            $indicateur->nom = $validated['nom'];
-            $indicateur->description = $validated['description'] ?? null;
+            // Si des filtres de bénéficiaires sont présents, joindre la table des bénéficiaires
+            if (!empty(array_intersect_key($filtres, array_flip([
+                'region', 'province', 'commune',
+                'typeBeneficiaire', 'genre', 'handicap',
+                'niveauInstruction', 'typeActivite',
+                'niveauDeveloppement'
+            ]))) ) {
+                $query->whereHas('beneficiaire', function ($q) use ($filtres) {
+                    foreach ($filtres as $key => $value) {
+                        if ($value !== null && $value !== 'all') {
+                            // Mapper les noms de colonnes si nécessaire
+                            $columnMap = [
+                                'typeBeneficiaire' => 'type_beneficiaire',
+                                'niveauInstruction' => 'niveau_instruction',
+                                'typeActivite' => 'domaine_activite',
+                                'niveauDeveloppement' => 'niveau_mise_en_oeuvre'
+                            ];
 
-            // S'assurer que fields est en JSON
-            $indicateur->fields = is_array($validated['fields'])
-                ? json_encode($validated['fields'])
-                : $validated['fields'];
-
-            $indicateur->save();
-
-            Log::info('Indicateur créé avec succès. ID: ' . $indicateur->id);
-
-            return redirect()->route('indicateurs.index')->with('success', 'Indicateur créé avec succès');
-        } catch (\Exception $e) {
-            Log::error('Erreur lors de la création de l\'indicateur: ' . $e->getMessage());
-
-            return back()->withErrors(['general' => 'Une erreur est survenue lors de la création: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Affiche les détails d'un indicateur.
-     */
-    public function show(Indicateur $indicateur)
-    {
-        // Compter le nombre de collectes associées à cet indicateur
-        $collectesCount = Collecte::where('indicateur_id', $indicateur->id)->count();
-
-        // Assurer que les fields sont en format tableau
-        if (is_string($indicateur->fields)) {
-            $indicateur->fields = json_decode($indicateur->fields, true);
-        }
-
-        return Inertia::render('Indicateurs/Show', [
-            'indicateur' => $indicateur,
-            'collectesCount' => $collectesCount,
-            'toast' => session('success') ? [
-                'type' => 'success',
-                'message' => session('success')
-            ] : null
-        ]);
-    }
-
-    /**
-     * Affiche le formulaire d'édition d'un indicateur.
-     * Note: Dans notre cas, nous utilisons un modal, donc cette méthode n'est pas utilisée.
-     */
-    public function edit(Indicateur $indicateur)
-    {
-        // Assurer que les fields sont en format tableau
-        if (is_string($indicateur->fields)) {
-            $indicateur->fields = json_decode($indicateur->fields, true);
-        }
-
-        return Inertia::render('Indicateurs/Edit', [
-            'indicateur' => $indicateur
-        ]);
-    }
-
-    /**
-     * Met à jour un indicateur existant.
-     */
-    public function update(Request $request, Indicateur $indicateur)
-    {
-        try {
-            $validated = $request->validate([
-                'categorie' => 'required|string|max:50|unique:indicateurs,categorie,' . $indicateur->id,
-                'nom' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'fields' => 'required|array|min:1',
-                'fields.*.id' => 'required|string',
-                'fields.*.name' => 'required|string|max:255',
-                'fields.*.type' => 'required|string|in:text,number,boolean,select,date,calculated',
-                'fields.*.required' => 'required|boolean',
-                'fields.*.options' => 'nullable|array',
-                'fields.*.formula' => 'nullable|string',
-            ]);
-
-            Log::info('Mise à jour de l\'indicateur ID: ' . $indicateur->id, $validated);
-
-            $indicateur->categorie = $validated['categorie'];
-            $indicateur->nom = $validated['nom'];
-            $indicateur->description = $validated['description'] ?? null;
-
-            // S'assurer que fields est en JSON
-            $indicateur->fields = is_array($validated['fields'])
-                ? json_encode($validated['fields'])
-                : $validated['fields'];
-
-            $indicateur->save();
-
-            return redirect()->route('indicateurs.index')->with('success', 'Indicateur mis à jour avec succès');
-        } catch (\Exception $e) {
-            Log::error('Erreur lors de la mise à jour de l\'indicateur: ' . $e->getMessage());
-
-            return back()->withErrors(['general' => 'Une erreur est survenue lors de la mise à jour: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Supprime un indicateur.
-     */
-    public function destroy(Indicateur $indicateur)
-    {
-        try {
-            // Vérifier s'il y a des collectes liées à cet indicateur
-            $collectesCount = Collecte::where('indicateur_id', $indicateur->id)->count();
-
-            if ($collectesCount > 0) {
-                return back()->withErrors([
-                    'general' => 'Impossible de supprimer cet indicateur car il est utilisé dans ' . $collectesCount . ' collecte(s).'
-                ])->with('error', 'Impossible de supprimer cet indicateur car il est utilisé dans des collectes.');
+                            $column = $columnMap[$key] ?? $key;
+                            $q->where($column, $value);
+                        }
+                    }
+                });
             }
 
-            $indicateur->delete();
+            // Filtrer par catégorie si spécifiée
+            if (!empty($filtres['categorie']) && $filtres['categorie'] !== 'all') {
+                $query->where('categorie', $filtres['categorie']);
+            }
 
-            return redirect()->route('indicateurs.index')->with('success', 'Indicateur supprimé avec succès');
+            $indicateurs = $query->with('beneficiaire')->get();
+
+            return response()->json([
+                'donneesIndicateurs' => $indicateurs,
+                'statistiques' => $this->calculerStatistiques($indicateurs),
+            ]);
+
         } catch (\Exception $e) {
-            Log::error('Erreur lors de la suppression de l\'indicateur: ' . $e->getMessage());
+            Log::error('Erreur lors du filtrage des indicateurs : ' . $e->getMessage());
 
-            return back()->withErrors(['general' => 'Une erreur est survenue lors de la suppression: ' . $e->getMessage()]);
+            return response()->json([
+                'error' => 'Erreur lors du filtrage des indicateurs',
+                'message' => $e->getMessage()
+            ], 500);
         }
+    }
+
+    /**
+     * Exporter les indicateurs
+     */
+    public function exporter(Request $request)
+    {
+        try {
+            $filtres = $request->all();
+
+            // Construire la requête de filtrage
+            $query = Indicateur::query();
+
+            // Si des filtres de bénéficiaires sont présents, joindre la table des bénéficiaires
+            if (!empty(array_intersect_key($filtres, array_flip([
+                'region', 'province', 'commune',
+                'typeBeneficiaire', 'genre', 'handicap',
+                'niveauInstruction', 'typeActivite',
+                'niveauDeveloppement'
+            ]))) ) {
+                $query->whereHas('beneficiaire', function ($q) use ($filtres) {
+                    foreach ($filtres as $key => $value) {
+                        if ($value !== null && $value !== 'all') {
+                            // Mapper les noms de colonnes si nécessaire
+                            $columnMap = [
+                                'typeBeneficiaire' => 'type_beneficiaire',
+                                'niveauInstruction' => 'niveau_instruction',
+                                'typeActivite' => 'domaine_activite',
+                                'niveauDeveloppement' => 'niveau_mise_en_oeuvre'
+                            ];
+
+                            $column = $columnMap[$key] ?? $key;
+                            $q->where($column, $value);
+                        }
+                    }
+                });
+            }
+
+            // Filtrer par catégorie si spécifiée
+            if (!empty($filtres['categorie']) && $filtres['categorie'] !== 'all') {
+                $query->where('categorie', $filtres['categorie']);
+            }
+
+            $indicateurs = $query->with('beneficiaire')->get();
+
+            // Générer un fichier Excel
+            return Excel::download(new IndicateursExport($indicateurs), 'indicateurs_' . date('Y-m-d') . '.xlsx');
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'exportation des indicateurs : ' . $e->getMessage());
+
+            return back()->withErrors([
+                'export' => 'Impossible d\'exporter les indicateurs'
+            ]);
+        }
+    }
+
+    /**
+     * Méthodes privées pour récupérer les données de filtrage
+     */
+    private function getCategories()
+    {
+        return [
+            [
+                'id' => 'activites_entreprise',
+                'nom' => "Indicateurs d'activités de l'entreprise du promoteur",
+            ],
+            [
+                'id' => 'ratios_rentabilite',
+                'nom' => 'Ratios de Rentabilité et de solvabilité de l\'entreprise',
+            ],
+            [
+                'id' => 'rentabilite_promoteur',
+                'nom' => 'Indicateurs de Rentabilité et de solvabilité de l\'entreprise du promoteur',
+            ],
+            [
+                'id' => 'commerciaux',
+                'nom' => 'Indicateurs commerciaux de l\'entreprise du promoteur',
+            ],
+            [
+                'id' => 'sociaux_rh',
+                'nom' => 'Indicateurs Sociaux et ressources humaines de l\'entreprise du promoteur',
+            ],
+            [
+                'id' => 'performance_projet',
+                'nom' => 'Indicateurs de performance Projet',
+            ]
+        ];
+    }
+
+    private function getRegions()
+    {
+        return Beneficiaire::distinct('regions')->pluck('regions');
+    }
+
+    private function getProvinces()
+    {
+        return Beneficiaire::distinct('provinces')->pluck('provinces');
+    }
+
+    private function getCommunes()
+    {
+        return Beneficiaire::distinct('communes')->pluck('communes');
+    }
+
+    private function getTypesBeneficiaires()
+    {
+        return Beneficiaire::distinct('type_beneficiaire')->pluck('type_beneficiaire');
+    }
+
+    private function getGenres()
+    {
+        return Beneficiaire::distinct('genre')->pluck('genre');
+    }
+
+    private function getNiveauxInstruction()
+    {
+        return Beneficiaire::distinct('niveau_instruction')->pluck('niveau_instruction');
+    }
+
+    private function getTypesActivite()
+    {
+        return Beneficiaire::distinct('domaine_activite')->pluck('domaine_activite');
+    }
+
+    private function getNiveauxDeveloppement()
+    {
+        return Beneficiaire::distinct('niveau_mise_en_oeuvre')->pluck('niveau_mise_en_oeuvre');
+    }
+
+    /**
+     * Récupérer les données initiales des indicateurs
+     */
+    private function getDonneesIndicateurs()
+    {
+        return Indicateur::with('beneficiaire')
+            ->orderBy('created_at', 'desc')
+            ->take(50)
+            ->get();
+    }
+
+    /**
+     * Calculer des statistiques sur les indicateurs filtrés
+     */
+    private function calculerStatistiques($indicateurs)
+    {
+        return [
+            'total' => $indicateurs->count(),
+            'moyenne' => $indicateurs->avg('valeur'),
+            'min' => $indicateurs->min('valeur'),
+            'max' => $indicateurs->max('valeur'),
+            'distribution' => $indicateurs->groupBy('categorie')->map->count()
+        ];
     }
 }

@@ -46,4 +46,58 @@ class Periode extends Model
         $now = now();
         return $this->date_debut <= $now && $this->date_fin >= $now;
     }
+
+
+
+   
+
+    /**
+     * Vérifier si la période peut être clôturée
+     */
+    public function canBeClosed(): bool
+    {
+        // On peut clôturer une période si elle n'est pas déjà clôturée
+        return !$this->cloturee;
+    }
+
+    /**
+     * Vérifier si la période peut être rouverte
+     */
+    public function canBeReopened(): bool
+    {
+        // On peut rouvrir une période si elle est clôturée
+        // et que l'exercice auquel elle appartient n'est pas lui-même clôturé
+        return $this->cloturee && !$this->exercice->cloture;
+    }
+
+    /**
+     * Vérifier si la période est active (non clôturée)
+     */
+    public function isActive(): bool
+    {
+        return !$this->cloturee && $this->exercice && $this->exercice->actif;
+    }
+
+    /**
+     * Mappage du type de période vers un format standard
+     */
+    public function getTypePeriodeStandardAttribute(): string
+    {
+        $typeMap = [
+            'Mensuel' => 'Mensuelle',
+            'mensuel' => 'Mensuelle',
+            'Trimestriel' => 'Trimestrielle',
+            'trimestriel' => 'Trimestrielle',
+            'Semestriel' => 'Semestrielle',
+            'semestriel' => 'Semestrielle',
+            'Annuel' => 'Annuelle',
+            'annuel' => 'Annuelle',
+            // Mappings directs
+            'Trimestrielle' => 'Trimestrielle',
+            'Semestrielle' => 'Semestrielle',
+            'Annuelle' => 'Annuelle',
+        ];
+
+        return $typeMap[$this->type_periode] ?? $this->type_periode;
+    }
 }

@@ -2,7 +2,7 @@
 import React, { ReactNode } from 'react';
 import { Head } from '@inertiajs/react';
 
-interface AnalyseLayoutProps {
+export interface AnalyseLayoutProps {
   children: ReactNode;
   title: string;
 }

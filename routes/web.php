@@ -45,6 +45,23 @@ Route::post('/collectes/draft', [CollecteController::class, 'draft'])->name('col
  Route::patch('exercices/{exercice}/activate', [ExerciceController::class, 'activate'])->name('exercices.activate');
  Route::patch('periodes/{periode}/cloture', [PeriodeController::class, 'cloture'])->name('periodes.cloture');
  Route::patch('periodes/{periode}/reouverture', [PeriodeController::class, 'reouverture'])->name('periodes.reouverture');
+ Route::get('/periodes/{periode}/collectes', [PeriodeController::class, 'collectes'])->name('periodes.collectes');
+ Route::get('/periodes/{periode}/collectes/create', [PeriodeController::class, 'createCollecte'])->name('periodes.collectes.create');
+ // Dans routes/web.php, ajoutez cette route:
+Route::put('/collectes/{collecte}/convert-to-standard', [CollecteController::class, 'convertToStandard'])
+->name('collectes.convert-to-standard');
+
+Route::get('/analyse-indicateurs', [IndicateurController::class, 'index'])
+        ->name('analyse.indicateurs.index');
+
+    Route::get('/analyse-indicateurs/filtrer', [IndicateurController::class, 'filtrer'])
+        ->name('analyse.indicateurs.filtrer');
+
+    Route::get('/analyse-indicateurs/exporter', [IndicateurController::class, 'exporter'])
+        ->name('analyse.indicateurs.exporter');
+
+
+
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
