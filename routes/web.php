@@ -25,11 +25,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'periodes' => PeriodeController::class,
     ]);
 
+    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
 
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
 });
 Route::resource('beneficiaires', BeneficiaireController::class);
 Route::resource('entreprises', EntrepriseController::class);
@@ -51,17 +49,26 @@ Route::post('/collectes/draft', [CollecteController::class, 'draft'])->name('col
 Route::put('/collectes/{collecte}/convert-to-standard', [CollecteController::class, 'convertToStandard'])
 ->name('collectes.convert-to-standard');
 
-Route::get('/analyse-indicateurs', [IndicateurController::class, 'index'])
-        ->name('analyse.indicateurs.index');
+// Route::get('/analyse-indicateurs', [IndicateurController::class, 'index'])
+//         ->name('analyse.indicateurs.index');
 
-    Route::get('/analyse-indicateurs/filtrer', [IndicateurController::class, 'filtrer'])
-        ->name('analyse.indicateurs.filtrer');
+//     Route::get('/analyse-indicateurs/filtrer', [IndicateurController::class, 'filtrer'])
+//         ->name('analyse.indicateurs.filtrer');
 
-    Route::get('/analyse-indicateurs/exporter', [IndicateurController::class, 'exporter'])
-        ->name('analyse.indicateurs.exporter');
+//     Route::get('/analyse-indicateurs/exporter', [IndicateurController::class, 'exporter'])
+//         ->name('analyse.indicateurs.exporter');
 
+Route::get('/analyse', [App\Http\Controllers\AnalyseController::class, 'index'])->name('analyse.index');
 
+    // Endpoint API pour récupérer les données filtrées
+    Route::post('/analyse/donnees', [App\Http\Controllers\AnalyseController::class, 'getDonneesIndicateurs'])->name('analyse.donnees');
 
+    // Génération de rapport détaillé
+    Route::post('/analyse/rapport', [App\Http\Controllers\AnalyseController::class, 'genererRapport'])->name('analyse.rapport');
 
+    // Export des données
+    Route::post('/analyse/export', [App\Http\Controllers\AnalyseController::class, 'exporterDonnees'])->name('analyse.export');
+
+  ///  Route::get('/dashboard-temp', [App\Http\Controllers\DashboardTempController::class, 'index'])->name('dashboard.temp');
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

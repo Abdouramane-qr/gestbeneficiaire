@@ -3,113 +3,230 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entreprise;
-use App\Models\Rapport;
-use App\Models\IndicateurFinancier;
+use App\Models\Beneficiaire;
+use App\Models\Collecte;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    /**
-     * Affiche le tableau de bord avec les statistiques générales.
-     *
-     * @return \Inertia\Response
-     */
     public function index()
     {
-        // Récupération des derniers rapports avec les entreprises associées
-        $latestRapports = Rapport::with('entreprise')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+        // Debug de départ
+        \Log::info('==== TEST DASHBOARD CONTROLLER CORRIGÉ ====');
 
-        // Comptage des entreprises et rapports
-        $entreprisesCount = Entreprise::count();
-        $rapportsCount = Rapport::count();
+        // Statistiques de base
+        $totalEntreprises = Entreprise::count();
+        $totalBeneficiaires = Beneficiaire::count();
+        $totalCollectes = Collecte::count();
 
-        // Rapports à valider (statut "soumis")
-        $rapportsAValider = Rapport::where('statut', 'soumis')->count();
-
-        // Statistiques financières globales pour les graphiques
-        $statistiquesFinancieres = $this->getStatistiquesFinancieres();
-
-        // Distribution des entreprises par secteur d'activité
-        $entreprisesParSecteur = Entreprise::select('secteur_activite')
-            ->selectRaw('count(*) as total')
-            ->groupBy('secteur_activite')
-            ->orderByDesc('total')
-            ->get();
-
-        return Inertia::render('Dashboard', [
-            'latestRapports' => $latestRapports,
-            'entreprisesCount' => $entreprisesCount,
-            'rapportsCount' => $rapportsCount,
-            'rapportsAValider' => $rapportsAValider,
-            'statistiquesFinancieres' => $statistiquesFinancieres,
-            'entreprisesParSecteur' => $entreprisesParSecteur
+        \Log::info('Statistiques de base', [
+            'totalEntreprises' => $totalEntreprises,
+            'totalBeneficiaires' => $totalBeneficiaires,
+            'totalCollectes' => $totalCollectes
         ]);
-    }
 
-    /**
-     * Récupère les statistiques financières pour les graphiques.
-     *
-     * @return array
-     */
-    private function getStatistiquesFinancieres()
-    {
-        // Obtenir l'année en cours
-        $currentYear = Carbon::now()->year;
+        // Données des entreprises par mois (utilise la date de création)
+        $entreprisesParMois = collect(range(1, 12))->map(function ($mois) {
+            $date = Carbon::now()->setMonth($mois)->startOfMonth();
+            $entreprisesCount = 0;
+            $beneficiairesCount = 0;
 
-        // Récupérer les rapports de l'année en cours
-        $rapportsAnnuels = Rapport::where('periode', 'Annuel')
-            ->where('annee', $currentYear - 1)
-            ->with('indicateursFinanciers')
-            ->get();
+            try {
+                $entreprisesCount = Entreprise::whereMonth('created_at', $mois)
+                    ->whereYear('created_at', Carbon::now()->year)
+                    ->count();
 
-        // Regrouper les rapports trimestriels par période
-        $rapportsTrimestriels = Rapport::where('periode', 'Trimestriel')
-            ->where('annee', $currentYear)
-            ->with('indicateursFinanciers')
-            ->get()
-            ->groupBy('periode');
+                $beneficiairesCount = Beneficiaire::whereMonth('created_at', $mois)
+                    ->whereYear('created_at', Carbon::now()->year)
+                    ->count();
+            } catch (\Exception $e) {
+                \Log::error('Erreur dans le comptage par mois: ' . $e->getMessage());
+            }
 
-        // Calculer les moyennes des indicateurs financiers clés
-        $moyenneChiffreAffaires = IndicateurFinancier::whereHas('rapport', function ($query) use ($currentYear) {
-            $query->where('annee', $currentYear);
-        })->avg('chiffre_affaires');
-
-        $moyenneMargeEbitda = IndicateurFinancier::whereHas('rapport', function ($query) use ($currentYear) {
-            $query->where('annee', $currentYear);
-        })->avg('marge_ebitda');
-
-        $moyenneRatioEndettement = IndicateurFinancier::whereHas('rapport', function ($query) use ($currentYear) {
-            $query->where('annee', $currentYear);
-        })->avg('ratio_endettement');
-
-        // Préparer les données pour les graphiques
-        $donneesGraphique = [];
-
-        // Évolution du chiffre d'affaires sur les dernières années (simplifié pour l'exemple)
-        $evolutionCA = [];
-        for ($i = 2; $i >= 0; $i--) {
-            $annee = $currentYear - $i;
-            $ca = IndicateurFinancier::whereHas('rapport', function ($query) use ($annee) {
-                $query->where('annee', $annee)->where('periode', 'Annuel');
-            })->avg('chiffre_affaires') ?? 0;
-
-            $evolutionCA[] = [
-                'annee' => $annee,
-                'valeur' => round($ca, 2)
+            return [
+                'name' => $date->format('M'),
+                'entreprises' => $entreprisesCount,
+                'beneficiaires' => $beneficiairesCount
             ];
-        }
-        $donneesGraphique['evolutionCA'] = $evolutionCA;
+        })->values();
 
-        return [
-            'moyenneChiffreAffaires' => $moyenneChiffreAffaires,
-            'moyenneMargeEbitda' => $moyenneMargeEbitda,
-            'moyenneRatioEndettement' => $moyenneRatioEndettement,
-            'graphiques' => $donneesGraphique
-        ];
+        \Log::info('Entreprises par mois', ['data' => $entreprisesParMois]);
+
+        // Données des entreprises par secteur
+        try {
+            $entreprisesParSecteur = Entreprise::select('secteur_activite')
+                ->selectRaw('COUNT(*) as value')
+                ->groupBy('secteur_activite')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'name' => $item->secteur_activite ?: 'Non spécifié',
+                        'value' => (int)$item->value
+                    ];
+                });
+
+            if ($entreprisesParSecteur->isEmpty()) {
+                // Utiliser directement les entreprises si aucun groupement
+                $entreprisesParSecteur = Entreprise::get()->map(function ($entreprise) {
+                    return [
+                        'name' => $entreprise->secteur_activite ?: 'Non spécifié',
+                        'value' => 1
+                    ];
+                });
+            }
+        } catch (\Exception $e) {
+            \Log::error('Erreur dans entreprisesParSecteur: ' . $e->getMessage());
+            $entreprisesParSecteur = collect([]);
+        }
+
+        \Log::info('Entreprises par secteur', ['data' => $entreprisesParSecteur]);
+
+        // Régions des bénéficiaires
+        try {
+            $beneficiairesParRegion = Beneficiaire::select('regions')
+                ->selectRaw('COUNT(*) as total')
+                ->groupBy('regions')
+                ->get()
+                ->map(function ($item) {
+                    $entreprisesCount = 0;
+                    try {
+                        $entreprisesCount = Entreprise::whereHas('beneficiaire', function($query) use ($item) {
+                            $query->where('regions', $item->regions);
+                        })->count();
+                    } catch (\Exception $e) {
+                        \Log::error('Erreur dans le comptage des entreprises par région: ' . $e->getMessage());
+                    }
+
+                    return [
+                        'region' => $item->regions ?: 'Non spécifié',
+                        'total' => (int)$item->total,
+                        'entreprises' => $entreprisesCount
+                    ];
+                });
+        } catch (\Exception $e) {
+            \Log::error('Erreur dans beneficiairesParRegion: ' . $e->getMessage());
+            $beneficiairesParRegion = collect([]);
+        }
+
+        // IMPORTANT: Traitement des collectes avec données JSON
+        $collectesParCategorie = collect([]);
+        $collectesStats = collect([]);
+
+        try {
+            $collectes = Collecte::get();
+            \Log::info('Nombre de collectes récupérées: ' . $collectes->count());
+
+            $collectesParCategorie = $collectes->map(function ($collecte) {
+                // S'assurer que donnees est décodé correctement
+                $donnees = null;
+
+                if (is_string($collecte->donnees)) {
+                    try {
+                        $donnees = json_decode($collecte->donnees, true);
+                        \Log::info('Décodage JSON: ' . substr(json_encode($donnees), 0, 200) . '...');
+                    } catch (\Exception $e) {
+                        \Log::error('Erreur décodage JSON: ' . $e->getMessage());
+                        $donnees = [];
+                    }
+                } else {
+                    $donnees = $collecte->donnees ?: [];
+                }
+
+                if (!is_array($donnees)) {
+                    \Log::warning('Données non valides pour la collecte ' . $collecte->id);
+                    $donnees = [];
+                }
+
+                // Log pour déboguer
+                \Log::info('Structure des données:', ['donnees' => $donnees]);
+
+                // Données commerciales avec vérification robuste
+                $commercial = $donnees['commercial'] ?? [];
+                \Log::info('Données commerciales:', ['commercial' => $commercial]);
+
+                $donneesCommerciales = [
+                    'prospects_total' => intval($commercial['propects_grossites'] ?? 0) + intval($commercial['prospects_detaillant'] ?? 0),
+                    'clients_total' => intval($commercial['clients_grossistes'] ?? 0) + intval($commercial['clients_detaillant'] ?? 0),
+                    'contrats_total' => intval($commercial['nbr_contrat_conclu'] ?? 0) + intval($commercial['nbr_contrat_encours'] ?? 0),
+                ];
+
+                // Données trésorerie avec vérification robuste
+                $tresorerie = $donnees['tresorerie'] ?? [];
+                \Log::info('Données trésorerie:', ['tresorerie' => $tresorerie]);
+
+                $donneesTresorerie = [
+                    'montant_impayes' => floatval($tresorerie['montant_impaye_clients_12m'] ?? 0),
+                    'employes_total' => intval($tresorerie['nbr_employes_remunerer_f'] ?? 0) + intval($tresorerie['nbr_employes_remunerer_h'] ?? 0),
+                ];
+
+                return [
+                    'periode' => $collecte->periode ?: 'Non spécifié',
+                    'commercial' => $donneesCommerciales,
+                    'tresorerie' => $donneesTresorerie
+                ];
+            });
+
+            // Correction pour les graphiques
+            $collectesStats = $collectesParCategorie->map(function ($item) {
+                return [
+                    'name' => $item['periode'],
+                    'prospects' => $item['commercial']['prospects_total'],
+                    'clients' => $item['commercial']['clients_total'],
+                    'contrats' => $item['commercial']['contrats_total'],
+                    'employes' => $item['tresorerie']['employes_total'],
+                ];
+            })->values();
+
+        } catch (\Exception $e) {
+            \Log::error('Erreur globale dans le traitement des collectes: ' . $e->getMessage());
+            \Log::error('Trace: ' . $e->getTraceAsString());
+        }
+
+        \Log::info('Collectes statistiques', ['collectesStats' => $collectesStats]);
+        \Log::info('Collectes par catégorie', ['count' => $collectesParCategorie->count()]);
+
+        // FALLBACKS pour les données vides
+        if ($entreprisesParMois->isEmpty() && $totalEntreprises > 0) {
+            // Créer des données par défaut si aucune donnée n'est disponible mais que des entreprises existent
+            $entreprisesParMois = collect([
+                ['name' => 'Jan', 'entreprises' => $totalEntreprises, 'beneficiaires' => $totalBeneficiaires]
+            ]);
+        }
+
+        if ($entreprisesParSecteur->isEmpty() && $totalEntreprises > 0) {
+            // Utiliser directement les entreprises comme données
+            $entreprises = Entreprise::get();
+            $entreprisesParSecteur = $entreprises->map(function ($entreprise) {
+                return [
+                    'name' => $entreprise->secteur_activite ?: 'Non spécifié',
+                    'value' => 1
+                ];
+            });
+        }
+
+        // Log final
+        \Log::info('Données finales du dashboard', [
+            'totalEntreprises' => $totalEntreprises,
+            'totalBeneficiaires' => $totalBeneficiaires,
+            'totalCollectes' => $totalCollectes,
+            'entreprisesParMois_count' => $entreprisesParMois->count(),
+            'entreprisesParSecteur_count' => $entreprisesParSecteur->count(),
+            'beneficiairesParRegion_count' => $beneficiairesParRegion->count(),
+            'collectesStats_count' => $collectesStats->count(),
+            'collectesParCategorie_count' => $collectesParCategorie->count()
+        ]);
+
+        return Inertia::render('pages/dashboard', [
+            'totalEntreprises' => $totalEntreprises,
+            'totalBeneficiaires' => $totalBeneficiaires,
+            'totalCollectes' => $totalCollectes,
+            'entreprisesParMois' => $entreprisesParMois,
+            'entreprisesParSecteur' => $entreprisesParSecteur,
+            'beneficiairesParRegion' => $beneficiairesParRegion,
+            'collectesStats' => $collectesStats,
+            'collectesParCategorie' => $collectesParCategorie
+        ]);
     }
 }

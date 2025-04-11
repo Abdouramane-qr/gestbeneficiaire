@@ -2,549 +2,466 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Collecte;
 use App\Models\Entreprise;
-use App\Models\Rapport;
-use App\Models\IndicateurFinancier;
-use App\Models\IndicateurCommercial;
-use App\Models\IndicateurRH;
-use App\Models\IndicateurProduction;
+use App\Models\Exercice;
+use App\Models\Indicateur;
+use App\Models\Periode;
+use App\Models\Beneficiaire;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Log;
 
 class AnalyseController extends Controller
 {
     /**
-     * Affiche la page d'analyse par secteur d'activité.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Inertia\Response
+     * Affiche la page d'analyse des indicateurs
      */
-    public function secteurs(Request $request)
-    {
-        // Paramètres de filtrage
-        $annee = $request->input('annee', Carbon::now()->year);
-        $secteur = $request->input('secteur', '');
+    // Dans AnalyseController.php, mettre à jour la méthode index
 
-        // Liste des secteurs disponibles
-        $secteurs = Entreprise::select('secteur_activite')
-            ->distinct()
-            ->orderBy('secteur_activite')
-            ->pluck('secteur_activite');
+public function index()
+{
+    // Récupérer l'exercice actif
+    $exerciceActif = Exercice::where('actif', true)->first();
 
-        // Statistiques par secteur
-        $statistiquesParSecteur = [];
-
-        if (!empty($secteur)) {
-            // Récupérer toutes les entreprises du secteur sélectionné
-            $entreprises = Entreprise::where('secteur_activite', $secteur)->get();
-            $entreprisesIds = $entreprises->pluck('id')->toArray();
-
-            // Récupérer les indicateurs financiers des entreprises du secteur pour l'année sélectionnée
-            $indicateursFinanciers = IndicateurFinancier::whereHas('rapport', function ($query) use ($entreprisesIds, $annee) {
-                $query->whereIn('entreprise_id', $entreprisesIds)
-                    ->where('annee', $annee)
-                    ->where('periode', 'Annuel');
-            })->with('rapport.entreprise')->get();
-
-            // Calculer les moyennes des indicateurs financiers
-            $statistiquesParSecteur = $this->calculerMoyennesIndicateurs($indicateursFinanciers);
-
-            // Récupérer les données pour le graphique d'évolution
-            $evolutionSurAnnees = $this->getEvolutionSurAnnees($secteur, $annee);
-            $statistiquesParSecteur['evolution'] = $evolutionSurAnnees;
-        }
-
-        // Liste des années disponibles
-        $annees = Rapport::select('annee')
-            ->distinct()
-            ->orderBy('annee', 'desc')
-            ->pluck('annee');
-
-        return Inertia::render('Analyses/Secteurs', [
-            'secteurs' => $secteurs,
-            'secteurSelectionne' => $secteur,
-            'annees' => $annees,
-            'anneeSelectionnee' => $annee,
-            'statistiques' => $statistiquesParSecteur
+    if (!$exerciceActif) {
+        return Inertia::render('Analyses/Index', [
+            'error' => 'Aucun exercice actif trouvé. Veuillez activer un exercice pour continuer.'
         ]);
     }
 
+    // Récupérer les périodes de l'exercice actif
+    $periodes = Periode::where('exercice_id', $exerciceActif->id)->get();
+
+    // Récupérer tous les exercices pour les filtres
+    $exercices = Exercice::all();
+
+    // Récupérer les indicateurs
+    $indicateurs = Indicateur::all();
+
+    // Récupérer les filtres géographiques et démographiques
+    $regions = DB::table('beneficiaires')->select('regions')->distinct()->pluck('regions');
+    $provinces = DB::table('beneficiaires')->select('provinces')->distinct()->pluck('provinces');
+    $communes = DB::table('beneficiaires')->select('communes')->distinct()->pluck('communes');
+
+    $typesBeneficiaires = DB::table('beneficiaires')->select('type_beneficiaire')->distinct()->pluck('type_beneficiaire');
+    $genres = DB::table('beneficiaires')->select('genre')->distinct()->pluck('genre');
+
+    // Nouveaux filtres
+    $handicaps = ['Oui', 'Non'];
+    $niveauxInstruction = ['Analphabète', 'Alphabétisé', 'Primaire', 'CEPE', 'BEPC', 'BAC', 'Universitaire'];
+    $descriptionsActivite = DB::table('beneficiaires')->select('domaine_activite')->distinct()->pluck('domaine_activite');
+    $niveauxDeveloppement = DB::table('beneficiaires')->select('niveau_mise_en_oeuvre')->distinct()->pluck('niveau_mise_en_oeuvre');
+
+    // Récupérer les secteurs d'activité des entreprises
+    $secteursActivite = DB::table('entreprises')->select('secteur_activite')->distinct()->pluck('secteur_activite');
+
+    return Inertia::render('Analyses/Index', [
+        'exerciceActif' => $exerciceActif,
+        'exercices' => $exercices,
+        'periodes' => $periodes,
+        'indicateurs' => $indicateurs,
+        'filtres' => [
+            'regions' => $regions,
+            'provinces' => $provinces,
+            'communes' => $communes,
+            'typesBeneficiaires' => $typesBeneficiaires,
+            'genres' => $genres,
+            'secteursActivite' => $secteursActivite,
+            'handicaps' => $handicaps,
+            'niveauxInstruction' => $niveauxInstruction,
+            'descriptionsActivite' => $descriptionsActivite,
+            'niveauxDeveloppement' => $niveauxDeveloppement
+        ]
+    ]);
+}
+
+
+public function resume()
+{
+    $exerciceActif = Exercice::where('actif', true)->first();
+    $exercices = Exercice::all();
+    $periodes = $exerciceActif ? Periode::where('exercice_id', $exerciceActif->id)->get() : [];
+
+    $filtres = [
+        'regions' => DB::table('beneficiaires')->select('regions')->distinct()->pluck('regions'),
+        'provinces' => DB::table('beneficiaires')->select('provinces')->distinct()->pluck('provinces'),
+        'communes' => DB::table('beneficiaires')->select('communes')->distinct()->pluck('communes')
+    ];
+
+    return Inertia::render('Analyses/Index', [
+        'exerciceActif' => $exerciceActif,
+        'exercices' => $exercices,
+        'periodes' => $periodes,
+        'filtres' => $filtres
+    ]);
+}
+
     /**
-     * Affiche la page d'analyse comparative entre entreprises.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Inertia\Response
+     * Récupérer les données d'indicateurs filtrées
      */
-    public function comparaison(Request $request)
+    public function getDonneesIndicateurs(Request $request)
     {
-        // Paramètres de filtrage
-        $entreprise1Id = $request->input('entreprise1');
-        $entreprise2Id = $request->input('entreprise2');
-        $annee = $request->input('annee', Carbon::now()->year);
+        // Valider les filtres
+        $validated = $request->validate([
+            'exercice_id' => 'nullable|exists:exercices,id',
+            'periode_id' => 'nullable|exists:periodes,id',
+            'categorie' => 'nullable|string',
+            'region' => 'nullable|string',
+            'province' => 'nullable|string',
+            'commune' => 'nullable|string',
+            'secteur_activite' => 'nullable|string',
+            'type_beneficiaire' => 'nullable|string',
+            'genre' => 'nullable|string',
+        ]);
 
-        // Liste des entreprises
-        $entreprises = Entreprise::orderBy('nom_entreprise')->get();
-
-        // Données de comparaison
-        $donnees = [];
-
-        if (!empty($entreprise1Id) && !empty($entreprise2Id)) {
-            $entreprise1 = Entreprise::findOrFail($entreprise1Id);
-            $entreprise2 = Entreprise::findOrFail($entreprise2Id);
-
-            // Récupérer les derniers rapports annuels des deux entreprises
-            $rapport1 = Rapport::where('entreprise_id', $entreprise1Id)
-                ->where('periode', 'Annuel')
-                ->where('annee', $annee)
-                ->with(['indicateursFinanciers', 'indicateursCommerciaux', 'indicateursRH', 'indicateursProduction'])
-                ->first();
-
-            $rapport2 = Rapport::where('entreprise_id', $entreprise2Id)
-                ->where('periode', 'Annuel')
-                ->where('annee', $annee)
-                ->with(['indicateursFinanciers', 'indicateursCommerciaux', 'indicateursRH', 'indicateursProduction'])
-                ->first();
-
-            if ($rapport1 && $rapport2) {
-                $donnees = $this->prepareComparisonData($entreprise1, $rapport1, $entreprise2, $rapport2);
-            }
+        // Si l'exercice n'est pas spécifié, utiliser l'exercice actif
+        if (!isset($validated['exercice_id'])) {
+            $exercice = Exercice::where('actif', true)->first();
+            $validated['exercice_id'] = $exercice ? $exercice->id : null;
         }
 
-        // Liste des années disponibles
-        $annees = Rapport::select('annee')
-            ->distinct()
-            ->orderBy('annee', 'desc')
-            ->pluck('annee');
+        // Construire la requête
+        $query = Collecte::query()
+            ->where('exercice_id', $validated['exercice_id']);
 
-        return Inertia::render('Analyses/Comparaison', [
-            'entreprises' => $entreprises,
-            'entreprise1Id' => $entreprise1Id,
-            'entreprise2Id' => $entreprise2Id,
-            'annees' => $annees,
-            'anneeSelectionnee' => $annee,
-            'donnees' => $donnees
-        ]);
-    }
+        // Filtrer par période
+        if (isset($validated['periode_id'])) {
+            $query->where('periode_id', $validated['periode_id']);
+        }
 
-    /**
-     * Affiche la page d'analyse de tendances sur plusieurs années.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Inertia\Response
-     */
-    public function tendances(Request $request)
-    {
-        $entrepriseId = $request->input('entreprise');
-        $indicateur = $request->input('indicateur', 'chiffre_affaires');
+        // Récupérer les collectes
+        $collectes = $query->with(['entreprise', 'entreprise.beneficiaire'])->get();
 
-        // Liste des entreprises
-        $entreprises = Entreprise::orderBy('nom_entreprise')->get();
+        Log::debug('Nombre de collectes trouvées: ' . $collectes->count());
 
-        // Liste des indicateurs disponibles pour l'analyse
-        $indicateursDisponibles = [
-            'chiffre_affaires' => 'Chiffre d\'affaires',
-            'marge_ebitda' => 'Marge EBITDA',
-            'ratio_endettement' => 'Ratio d\'endettement',
-            'nombre_clients' => 'Nombre de clients',
-            'taux_retention' => 'Taux de rétention',
-            'effectif_total' => 'Effectif total',
-            'turnover' => 'Turnover',
-            'taux_utilisation' => 'Taux d\'utilisation',
-            'taux_rebut' => 'Taux de rebut'
+        // Mapping des catégories dans les données JSON vers les catégories dans l'interface
+        $categoriesMapping = [
+            'commercial' => 'commercial',
+            'tresorerie' => 'tresorerie'
         ];
 
-        // Données de tendance
-        $donneesTendance = [];
+        // Transformer les données
+        $donneesIndicateurs = [];
 
-        if (!empty($entrepriseId)) {
-            $entreprise = Entreprise::findOrFail($entrepriseId);
+        foreach ($collectes as $collecte) {
+            $entreprise = $collecte->entreprise;
+            $beneficiaire = $entreprise->beneficiaire;
 
-            // Déterminer le type d'indicateur (financier, commercial, RH, production)
-            $typeIndicateur = $this->determinerTypeIndicateur($indicateur);
+            Log::debug('Analyse collecte #' . $collecte->id . ' pour entreprise ' . $entreprise->nom_entreprise);
 
-            // Récupérer les rapports annuels de l'entreprise sur les 5 dernières années
-            $anneeActuelle = Carbon::now()->year;
-            $rapports = Rapport::where('entreprise_id', $entrepriseId)
-                ->where('periode', 'Annuel')
-                ->whereBetween('annee', [$anneeActuelle - 5, $anneeActuelle])
-                ->with([$typeIndicateur])
-                ->orderBy('annee')
-                ->get();
-
-            if ($rapports->isNotEmpty()) {
-                $donneesTendance = $this->prepareTendanceData($rapports, $indicateur, $typeIndicateur);
+            // Vérifier les filtres géographiques et démographiques
+            if (
+                (isset($validated['region']) && $beneficiaire->regions !== $validated['region']) ||
+                (isset($validated['province']) && $beneficiaire->provinces !== $validated['province']) ||
+                (isset($validated['commune']) && $beneficiaire->communes !== $validated['commune']) ||
+                (isset($validated['type_beneficiaire']) && $beneficiaire->type_beneficiaire !== $validated['type_beneficiaire']) ||
+                (isset($validated['genre']) && $beneficiaire->genre !== $validated['genre']) ||
+                (isset($validated['secteur_activite']) && $entreprise->secteur_activite !== $validated['secteur_activite'])
+            ) {
+                Log::debug('Collecte exclue par les filtres géographiques/démographiques');
+                continue; // Ignorer cette collecte si elle ne correspond pas aux filtres
             }
-        }
 
-        return Inertia::render('Analyses/Tendances', [
-            'entreprises' => $entreprises,
-            'entrepriseId' => $entrepriseId,
-            'indicateursDisponibles' => $indicateursDisponibles,
-            'indicateurSelectionne' => $indicateur,
-            'donneesTendance' => $donneesTendance
-        ]);
-    }
+            $donnees = $collecte->donnees; // Cast automatique en tableau grâce au cast 'array'
+            Log::debug('Catégories dans la collecte: ' . implode(', ', array_keys($donnees)));
 
-    /**
-     * Calcule les moyennes des indicateurs financiers.
-     *
-     * @param  \Illuminate\Database\Eloquent\Collection  $indicateurs
-     * @return array
-     */
-    private function calculerMoyennesIndicateurs($indicateurs)
-    {
-        if ($indicateurs->isEmpty()) {
-            return [];
-        }
+            // Si un filtre de catégorie est appliqué, ne prendre que cette catégorie
+            if (isset($validated['categorie']) && $validated['categorie'] !== 'all') {
+                // Vérifier si la catégorie existe directement
+                if (isset($donnees[$validated['categorie']])) {
+                    $donneesFiltrees = [$validated['categorie'] => $donnees[$validated['categorie']]];
+                }
+                // Sinon chercher dans le mapping
+                else {
+                    $categorieOriginal = array_search($validated['categorie'], $categoriesMapping);
+                    if ($categorieOriginal && isset($donnees[$categorieOriginal])) {
+                        $donneesFiltrees = [$validated['categorie'] => $donnees[$categorieOriginal]];
+                    } else {
+                        $donneesFiltrees = [];
+                    }
+                }
+            } else {
+                // Prendre toutes les catégories mais les transformer selon le mapping
+                $donneesFiltrees = [];
+                foreach ($donnees as $categorieOriginal => $valeurs) {
+                    $categorieNormalisee = $categoriesMapping[$categorieOriginal] ?? $categorieOriginal;
+                    $donneesFiltrees[$categorieNormalisee] = $valeurs;
+                }
+            }
 
-        // Initialiser les compteurs
-        $totaux = [
-            'chiffre_affaires' => 0,
-            'resultat_net' => 0,
-            'ebitda' => 0,
-            'marge_ebitda' => 0,
-            'cash_flow' => 0,
-            'ratio_dette_ebitda' => 0,
-            'ratio_endettement' => 0,
-            'entreprises_count' => 0
-        ];
+            Log::debug('Catégories filtrées: ' . implode(', ', array_keys($donneesFiltrees)));
 
-        // Pour chaque indicateur, ajouter les valeurs aux totaux
-        foreach ($indicateurs as $indicateur) {
-            $totaux['entreprises_count']++;
+            // Transformer les données pour l'affichage
+            foreach ($donneesFiltrees as $categorie => $indicateursData) {
+                foreach ($indicateursData as $nomIndicateur => $valeurs) {
+                    // Ajouter l'entrée aux données d'indicateurs même sans correspondance exacte dans la base
+                    // Pour permettre d'afficher les données existantes
 
-            foreach ($totaux as $key => $value) {
-                if ($key !== 'entreprises_count' && isset($indicateur->$key) && $indicateur->$key !== null) {
-                    $totaux[$key] += $indicateur->$key;
+                    // Calculer la tendance (stable par défaut)
+                    $tendance = 'stable';
+                    if (is_numeric($valeurs)) {
+                        $periodes = Periode::where('exercice_id', $collecte->exercice_id)
+                            ->orderBy('id', 'asc')
+                            ->pluck('id')
+                            ->toArray();
+
+                        $indexPeriode = array_search($collecte->periode_id, $periodes);
+
+                        if ($indexPeriode > 0) {
+                            $periodePrecedente = $periodes[$indexPeriode - 1];
+
+                            $collectePrecedente = Collecte::where('entreprise_id', $collecte->entreprise_id)
+                                ->where('exercice_id', $collecte->exercice_id)
+                                ->where('periode_id', $periodePrecedente)
+                                ->first();
+
+                            if ($collectePrecedente) {
+                                $donneesPrecedentes = $collectePrecedente->donnees;
+                                $categoriePrec = isset($categoriesMapping[$categorie]) ? array_search($categorie, $categoriesMapping) : $categorie;
+
+                                if (isset($donneesPrecedentes[$categoriePrec][$nomIndicateur])) {
+                                    $valeurPrecedente = $donneesPrecedentes[$categoriePrec][$nomIndicateur];
+
+                                    if ($valeurs > $valeurPrecedente) {
+                                        $tendance = 'hausse';
+                                    } elseif ($valeurs < $valeurPrecedente) {
+                                        $tendance = 'baisse';
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Créer un ID d'indicateur fictif s'il n'existe pas dans la base
+                    $indicateurId = Indicateur::where('nom', $nomIndicateur)
+                                              ->where('categorie', $categorie)
+                                              ->value('id') ?? 0;
+
+                    $donneesIndicateurs[] = [
+                        'id' => count($donneesIndicateurs) + 1,
+                        'indicateur_id' => $indicateurId,
+                        'nom' => $nomIndicateur,
+                        'valeur' => $valeurs,
+                        'categorie' => $categorie,
+                        'region' => $beneficiaire->regions,
+                        'province' => $beneficiaire->provinces,
+                        'commune' => $beneficiaire->communes,
+                        'secteur_activite' => $entreprise->secteur_activite,
+                        'typeBeneficiaire' => $beneficiaire->type_beneficiaire,
+                        'genre' => $beneficiaire->genre,
+                        'tendance' => $tendance,
+                        'entreprise_id' => $entreprise->id,
+                        'entreprise_nom' => $entreprise->nom_entreprise,
+                        'exercice_id' => $collecte->exercice_id,
+                        'periode_id' => $collecte->periode_id
+                    ];
                 }
             }
         }
 
+        Log::debug('Nombre total d\'indicateurs après filtrage: ' . count($donneesIndicateurs));
+
+        return response()->json([
+            'donneesIndicateurs' => $donneesIndicateurs
+        ]);
+    }
+
+    /**
+     * Générer un rapport d'analyse
+     */
+    public function genererRapport(Request $request)
+    {
+        // Valider les filtres
+        $validated = $request->validate([
+            'exercice_id' => 'required|exists:exercices,id',
+            'periode_id' => 'nullable|exists:periodes,id',
+            'categories' => 'required|array',
+            'region' => 'nullable|string',
+            'province' => 'nullable|string',
+            'commune' => 'nullable|string',
+            'secteur_activite' => 'nullable|string',
+            'type_beneficiaire' => 'nullable|string',
+            'genre' => 'nullable|string',
+        ]);
+
+        // Récupérer les données filtrées (réutilise la logique de la méthode précédente)
+        $donneesResponse = $this->getDonneesIndicateurs($request);
+        $donnees = json_decode($donneesResponse->getContent(), true)['donneesIndicateurs'];
+
+        // Organiser les données par catégorie
+        $donneesParCategorie = [];
+        foreach ($donnees as $indicateur) {
+            if (!isset($donneesParCategorie[$indicateur['categorie']])) {
+                $donneesParCategorie[$indicateur['categorie']] = [];
+            }
+
+            $donneesParCategorie[$indicateur['categorie']][] = $indicateur;
+        }
+
+        // Récupérer l'exercice et la période pour le rapport
+        $exercice = Exercice::find($validated['exercice_id']);
+        $periode = isset($validated['periode_id']) ? Periode::find($validated['periode_id']) : null;
+
+        // Calculer des statistiques supplémentaires pour le rapport
+        $statistiques = [
+            'total_entreprises' => Entreprise::count(),
+            'entreprises_analysees' => count(array_unique(array_column($donnees, 'entreprise_id'))),
+        ];
+
+        // Statistiques par région
+        $statistiquesRegions = [];
+        foreach ($donnees as $indicateur) {
+            $region = $indicateur['region'];
+
+            if (!isset($statistiquesRegions[$region])) {
+                $statistiquesRegions[$region] = [
+                    'count' => 0,
+                    'valeurs' => []
+                ];
+            }
+
+            $statistiquesRegions[$region]['count']++;
+
+            if (!isset($statistiquesRegions[$region]['valeurs'][$indicateur['categorie']])) {
+                $statistiquesRegions[$region]['valeurs'][$indicateur['categorie']] = [];
+            }
+
+            if (!isset($statistiquesRegions[$region]['valeurs'][$indicateur['categorie']][$indicateur['nom']])) {
+                $statistiquesRegions[$region]['valeurs'][$indicateur['categorie']][$indicateur['nom']] = [
+                    'somme' => 0,
+                    'count' => 0
+                ];
+            }
+
+            $statistiquesRegions[$region]['valeurs'][$indicateur['categorie']][$indicateur['nom']]['somme'] += $indicateur['valeur'];
+            $statistiquesRegions[$region]['valeurs'][$indicateur['categorie']][$indicateur['nom']]['count']++;
+        }
+
         // Calculer les moyennes
-        $moyennes = [];
-        foreach ($totaux as $key => $value) {
-            if ($key !== 'entreprises_count' && $totaux['entreprises_count'] > 0) {
-                $moyennes[$key] = $value / $totaux['entreprises_count'];
+        foreach ($statistiquesRegions as $region => $stats) {
+            foreach ($stats['valeurs'] as $categorie => $indicateurs) {
+                foreach ($indicateurs as $nomIndicateur => $valeurs) {
+                    $statistiquesRegions[$region]['valeurs'][$categorie][$nomIndicateur]['moyenne'] =
+                        $valeurs['count'] > 0 ? $valeurs['somme'] / $valeurs['count'] : 0;
+                }
             }
         }
 
-        // Ajouter le nombre d'entreprises
-        $moyennes['entreprises_count'] = $totaux['entreprises_count'];
-
-        return $moyennes;
+        return Inertia::render('Analyses/Rapport', [
+            'donnees' => $donneesParCategorie,
+            'exercice' => $exercice,
+            'periode' => $periode,
+            'statistiques' => $statistiques,
+            'statistiquesRegions' => $statistiquesRegions,
+            'filtres' => $validated
+        ]);
     }
 
     /**
-     * Récupère l'évolution d'un secteur sur plusieurs années.
-     *
-     * @param  string  $secteur
-     * @param  int  $anneeMax
-     * @return array
+     * Exporter les données d'analyse au format Excel ou CSV
      */
-    private function getEvolutionSurAnnees($secteur, $anneeMax)
+    public function exporterDonnees(Request $request)
     {
-        // Déterminer les années à analyser (5 dernières années)
-        $annees = range($anneeMax - 4, $anneeMax);
+        // Valider les filtres
+        $validated = $request->validate([
+            'exercice_id' => 'required|exists:exercices,id',
+            'periode_id' => 'nullable|exists:periodes,id',
+            'categories' => 'required|array',
+            'format' => 'required|in:excel,csv', // Format d'export
+            'region' => 'nullable|string',
+            'province' => 'nullable|string',
+            'commune' => 'nullable|string',
+            'secteur_activite' => 'nullable|string',
+            'type_beneficiaire' => 'nullable|string',
+            'genre' => 'nullable|string',
+        ]);
 
-        // Récupérer les entreprises du secteur
-        $entreprisesIds = Entreprise::where('secteur_activite', $secteur)
-            ->pluck('id')
-            ->toArray();
+        // Récupérer les données filtrées
+        $donneesResponse = $this->getDonneesIndicateurs($request);
+        $donnees = json_decode($donneesResponse->getContent(), true)['donneesIndicateurs'];
 
-        // Initialiser le tableau d'évolution
-        $evolution = [];
+        // Préparation des données pour l'export
+        $dataForExport = [];
 
-        // Pour chaque année, récupérer les moyennes des indicateurs
-        foreach ($annees as $annee) {
-            $indicateursFinanciers = IndicateurFinancier::whereHas('rapport', function ($query) use ($entreprisesIds, $annee) {
-                $query->whereIn('entreprise_id', $entreprisesIds)
-                    ->where('annee', $annee)
-                    ->where('periode', 'Annuel');
-            })->get();
+        // En-têtes du fichier
+        $headers = [
+            'Catégorie',
+            'Indicateur',
+            'Valeur',
+            'Tendance',
+            'Entreprise',
+            'Région',
+            'Province',
+            'Commune',
+            'Secteur d\'activité',
+            'Type de bénéficiaire',
+            'Genre'
+        ];
 
-            $moyennes = $this->calculerMoyennesIndicateurs($indicateursFinanciers);
+        $dataForExport[] = $headers;
 
-            $evolution[] = [
-                'annee' => $annee,
-                'chiffre_affaires' => $moyennes['chiffre_affaires'] ?? 0,
-                'marge_ebitda' => $moyennes['marge_ebitda'] ?? 0,
-                'ratio_endettement' => $moyennes['ratio_endettement'] ?? 0,
-                'entreprises_count' => $moyennes['entreprises_count'] ?? 0
+        // Données
+        foreach ($donnees as $indicateur) {
+            $dataForExport[] = [
+                $indicateur['categorie'],
+                $indicateur['nom'],
+                $indicateur['valeur'],
+                $indicateur['tendance'],
+                $indicateur['entreprise_nom'],
+                $indicateur['region'],
+                $indicateur['province'],
+                $indicateur['commune'],
+                $indicateur['secteur_activite'],
+                $indicateur['typeBeneficiaire'],
+                $indicateur['genre']
             ];
         }
 
-        return $evolution;
+        // Générer le nom du fichier
+        $exercice = Exercice::find($validated['exercice_id']);
+        $periode = isset($validated['periode_id']) ? Periode::find($validated['periode_id']) : null;
+
+        $fileName = 'analyse_indicateurs_' . $exercice->annee;
+        if ($periode) {
+            $fileName .= '_' . $periode->nom;
+        }
+        $fileName .= '_' . date('Y-m-d');
+
+        // Export au format demandé
+        if ($validated['format'] === 'excel') {
+            return Excel::download(
+                new \App\Exports\IndicateursExport($dataForExport),
+                $fileName . '.xlsx'
+            );
+        } else {
+            return Excel::download(
+                new \App\Exports\IndicateursExport($dataForExport),
+                $fileName . '.csv',
+                \Maatwebsite\Excel\Excel::CSV
+            );
+        }
     }
 
     /**
-     * Prépare les données pour la comparaison entre deux entreprises.
-     *
-     * @param  \App\Models\Entreprise  $entreprise1
-     * @param  \App\Models\Rapport  $rapport1
-     * @param  \App\Models\Entreprise  $entreprise2
-     * @param  \App\Models\Rapport  $rapport2
-     * @return array
+     * Méthode de débogage pour vérifier les données des collectes
      */
-    private function prepareComparisonData($entreprise1, $rapport1, $entreprise2, $rapport2)
+    public function debug()
     {
-        // Récupérer les noms des entreprises
-        $nomEntreprise1 = $entreprise1->nom;
-        $nomEntreprise2 = $entreprise2->nom;
+        $collectes = Collecte::with(['entreprise', 'entreprise.beneficiaire'])->limit(5)->get();
 
-        // Préparer les données de comparaison
-        $comparaison = [
-            'financiers' => $this->compareIndicateurs(
-                $rapport1->indicateursFinanciers,
-                $rapport2->indicateursFinanciers,
-                [
-                    'chiffre_affaires' => 'Chiffre d\'affaires',
-                    'resultat_net' => 'Résultat net',
-                    'ebitda' => 'EBITDA',
-                    'marge_ebitda' => 'Marge EBITDA',
-                    'ratio_dette_ebitda' => 'Ratio dette/EBITDA',
-                    'ratio_endettement' => 'Ratio d\'endettement'
-                ],
-                $nomEntreprise1,
-                $nomEntreprise2
-            ),
-
-            'commerciaux' => $this->compareIndicateurs(
-                $rapport1->indicateursCommerciaux,
-                $rapport2->indicateursCommerciaux,
-                [
-                    'nombre_clients' => 'Nombre de clients',
-                    'nouveaux_clients' => 'Nouveaux clients',
-                    'taux_retention' => 'Taux de rétention',
-                    'panier_moyen' => 'Panier moyen',
-                    'export_pourcentage' => 'Export (%)'
-                ],
-                $nomEntreprise1,
-                $nomEntreprise2
-            ),
-
-            'rh' => $this->compareIndicateurs(
-                $rapport1->indicateursRH,
-                $rapport2->indicateursRH,
-                [
-                    'effectif_total' => 'Effectif total',
-                    'cadres_pourcentage' => 'Cadres (%)',
-                    'turnover' => 'Turnover',
-                    'absenteisme' => 'Absentéisme',
-                    'masse_salariale' => 'Masse salariale'
-                ],
-                $nomEntreprise1,
-                $nomEntreprise2
-            ),
-
-            'production' => $this->compareIndicateurs(
-                $rapport1->indicateursProduction,
-                $rapport2->indicateursProduction,
-                [
-                    'taux_utilisation' => 'Taux d\'utilisation',
-                    'taux_rebut' => 'Taux de rebut',
-                    'delai_production_moyen' => 'Délai de production',
-                    'rotation_stocks' => 'Rotation des stocks'
-                ],
-                $nomEntreprise1,
-                $nomEntreprise2
-            ),
-
-            'entreprises' => [
-                'entreprise1' => [
-                    'id' => $entreprise1->id,
-                    'nom' => $nomEntreprise1,
-                    'forme_juridique' => $entreprise1->forme_juridique,
-                    'secteur_activite' => $entreprise1->secteur_activite,
-                    'date_creation' => $entreprise1->date_creation
-                ],
-                'entreprise2' => [
-                    'id' => $entreprise2->id,
-                    'nom' => $nomEntreprise2,
-                    'forme_juridique' => $entreprise2->forme_juridique,
-                    'secteur_activite' => $entreprise2->secteur_activite,
-                    'date_creation' => $entreprise2->date_creation
-                ]
-            ]
-        ];
-
-        return $comparaison;
-    }
-
-    /**
-     * Compare les indicateurs entre deux entités.
-     *
-     * @param  object  $indicateurs1
-     * @param  object  $indicateurs2
-     * @param  array  $champsAComparer
-     * @param  string  $nomEntite1
-     * @param  string  $nomEntite2
-     * @return array
-     */
-    private function compareIndicateurs($indicateurs1, $indicateurs2, $champsAComparer, $nomEntite1, $nomEntite2)
-    {
-        $comparaison = [];
-
-        foreach ($champsAComparer as $champ => $label) {
-            $valeur1 = $indicateurs1->$champ ?? null;
-            $valeur2 = $indicateurs2->$champ ?? null;
-
-            // Calculer la différence en pourcentage
-            $difference = null;
-            $differenceLabel = '';
-
-            if ($valeur1 !== null && $valeur2 !== null && $valeur2 != 0) {
-                $difference = (($valeur1 - $valeur2) / $valeur2) * 100;
-                $differenceLabel = $difference > 0 ? '+' . number_format($difference, 2) . '%' : number_format($difference, 2) . '%';
-            }
-
-            $comparaison[] = [
-                'label' => $label,
-                'champ' => $champ,
-                'valeur1' => $valeur1,
-                'valeur2' => $valeur2,
-                'difference' => $difference,
-                'differenceLabel' => $differenceLabel
+        $debug = [];
+        foreach ($collectes as $collecte) {
+            $debug[] = [
+                'id' => $collecte->id,
+                'entreprise' => $collecte->entreprise->nom_entreprise,
+                'categories' => array_keys($collecte->donnees),
+                'donnees' => $collecte->donnees
             ];
         }
 
-        return [
-            'indicateurs' => $comparaison,
-            'entite1' => $nomEntite1,
-            'entite2' => $nomEntite2
-        ];
-    }
-
-    /**
-     * Détermine le type d'indicateur à partir du nom d'un champ.
-     *
-     * @param  string  $indicateur
-     * @return string
-     */
-    private function determinerTypeIndicateur($indicateur)
-    {
-        $typeParChamp = [
-            // Financiers
-            'chiffre_affaires' => 'indicateursFinanciers',
-            'resultat_net' => 'indicateursFinanciers',
-            'ebitda' => 'indicateursFinanciers',
-            'marge_ebitda' => 'indicateursFinanciers',
-            'cash_flow' => 'indicateursFinanciers',
-            'dette_nette' => 'indicateursFinanciers',
-            'ratio_dette_ebitda' => 'indicateursFinanciers',
-            'ratio_endettement' => 'indicateursFinanciers',
-
-            // Commerciaux
-            'nombre_clients' => 'indicateursCommerciaux',
-            'nouveaux_clients' => 'indicateursCommerciaux',
-            'taux_retention' => 'indicateursCommerciaux',
-            'panier_moyen' => 'indicateursCommerciaux',
-            'export_pourcentage' => 'indicateursCommerciaux',
-
-            // RH
-            'effectif_total' => 'indicateursRH',
-            'cadres_pourcentage' => 'indicateursRH',
-            'turnover' => 'indicateursRH',
-            'absenteisme' => 'indicateursRH',
-            'masse_salariale' => 'indicateursRH',
-
-            // Production
-            'taux_utilisation' => 'indicateursProduction',
-            'taux_rebut' => 'indicateursProduction',
-            'delai_production_moyen' => 'indicateursProduction',
-            'rotation_stocks' => 'indicateursProduction'
-        ];
-
-        return $typeParChamp[$indicateur] ?? 'indicateursFinanciers';
-    }
-
-    /**
-     * Prépare les données pour l'analyse de tendances.
-     *
-     * @param  \Illuminate\Database\Eloquent\Collection  $rapports
-     * @param  string  $indicateur
-     * @param  string  $typeIndicateur
-     * @return array
-     */
-    private function prepareTendanceData($rapports, $indicateur, $typeIndicateur)
-    {
-        $donneesGraphique = [];
-
-        foreach ($rapports as $rapport) {
-            if (isset($rapport->$typeIndicateur) && isset($rapport->$typeIndicateur->$indicateur)) {
-                $donneesGraphique[] = [
-                    'annee' => $rapport->annee,
-                    'valeur' => $rapport->$typeIndicateur->$indicateur
-                ];
-            }
-        }
-
-        // Calculer les tendances (moyenne mobile, taux de croissance annuel moyen, etc.)
-        $statistiques = $this->calculerStatistiquesTendance($donneesGraphique, $indicateur);
-
-        return [
-            'graphique' => $donneesGraphique,
-            'statistiques' => $statistiques
-        ];
-    }
-
-    /**
-     * Calcule les statistiques de tendance.
-     *
-     * @param  array  $donnees
-     * @param  string  $indicateur
-     * @return array
-     */
-    private function calculerStatistiquesTendance($donnees, $indicateur)
-    {
-        if (empty($donnees)) {
-            return [];
-        }
-
-        // Extraire les valeurs
-        $valeurs = array_column($donnees, 'valeur');
-
-        // Calculer la variation globale
-        $premiereValeur = $valeurs[0] ?? null;
-        $derniereValeur = end($valeurs) ?? null;
-
-        $variationGlobale = null;
-        if ($premiereValeur !== null && $derniereValeur !== null && $premiereValeur != 0) {
-            $variationGlobale = (($derniereValeur - $premiereValeur) / $premiereValeur) * 100;
-        }
-
-        // Calculer le taux de croissance annuel moyen (TCAM)
-        $tcam = null;
-        $nombreAnnees = count($donnees) - 1;
-
-        if ($nombreAnnees > 0 && $premiereValeur !== null && $derniereValeur !== null && $premiereValeur != 0) {
-            $tcam = (pow(($derniereValeur / $premiereValeur), (1 / $nombreAnnees)) - 1) * 100;
-        }
-
-        // Calculer les variations annuelles
-        $variationsAnnuelles = [];
-        for ($i = 1; $i < count($valeurs); $i++) {
-            if ($valeurs[$i-1] != 0) {
-                $variation = (($valeurs[$i] - $valeurs[$i-1]) / $valeurs[$i-1]) * 100;
-                $variationsAnnuelles[] = [
-                    'annee' => $donnees[$i]['annee'],
-                    'variation' => $variation
-                ];
-            }
-        }
-
-        return [
-            'premiereAnnee' => $donnees[0]['annee'] ?? null,
-            'derniereAnnee' => $donnees[count($donnees) - 1]['annee'] ?? null,
-            'premiereValeur' => $premiereValeur,
-            'derniereValeur' => $derniereValeur,
-            'variationGlobale' => $variationGlobale,
-            'tcam' => $tcam,
-            'variationsAnnuelles' => $variationsAnnuelles,
-            'min' => min($valeurs),
-            'max' => max($valeurs),
-            'moyenne' => array_sum($valeurs) / count($valeurs)
-        ];
+        return response()->json($debug);
     }
 }

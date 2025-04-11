@@ -108,6 +108,34 @@ class PeriodeController extends Controller
         ]);
     }
 
+
+
+    public function show(Periode $periode)
+    {
+        $periode->load('exercice');
+
+        return Inertia::render('collectes/Show', [
+            'periode' => [
+                'id' => $periode->id,
+                'exercice' => $periode->exercice,
+                'code' => $periode->code,
+                'nom' => $periode->nom,
+                'type_periode' => $periode->type_periode,
+                'type_periode_standard' => $periode->type_periode_standard,
+                'numero' => $periode->numero,
+                'date_debut' => $periode->date_debut->toDateString(),
+                'date_fin' => $periode->date_fin->toDateString(),
+                'cloturee' => $periode->cloturee,
+                'est_active' => $periode->est_active,
+                'duree_en_jours' => $periode->duree_en_jours,
+                'can_be_closed' => $periode->canBeClosed(),
+                'can_be_reopened' => $periode->canBeReopened(),
+                'is_active' => $periode->isActive(),
+            ]
+        ]);
+    }
+
+
     /**
      * Met à jour une période existante.
      */

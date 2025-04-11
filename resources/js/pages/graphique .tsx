@@ -15,43 +15,65 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-// Types pour les différents graphiques
-type LineChartDataPoint = {
+// Types pour les données
+export type ChartDataPoint = {
   name: string;
   [key: string]: string | number;
 };
 
-type PieChartDataPoint = {
+export type PieChartDataPoint = {
   name: string;
   value: number;
 };
 
 interface GraphiqueProps {
-  data: LineChartDataPoint[] | PieChartDataPoint[];
+  data: Array<ChartDataPoint | PieChartDataPoint>;
   title?: string;
   type?: 'line' | 'bar' | 'pie';
   dataKeys?: string[];
   colors?: string[];
+  height?: number;
+  showGrid?: boolean;
 }
+
+const DEFAULT_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const Graphique: React.FC<GraphiqueProps> = ({
   data,
   title,
   type = 'line',
   dataKeys = ['value'],
-  colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#a4de6c']
+  colors = DEFAULT_COLORS,
+  height = 300,
+  showGrid = true,
 }) => {
-  // Rendre le graphique en fonction du type spécifié
+  if (!data || data.length === 0) {
+    return <div className="text-center text-gray-500">Aucune donnée disponible</div>;
+  }
+
+  // Transformation des données Entreprise en ChartDataPoint si nécessaire
+  const transformedData = data.map(item => {
+    // Si c'est déjà un objet avec name et value/autres propriétés, le retourner tel quel
+    if ('name' in item) return item;
+
+    // Sinon, le transformer en format compatible avec le graphique
+    return {
+      name: (item as any).nom_entreprise || (item as any).secteur_activite || 'Non spécifié',
+      value: 1, // Pour le comptage
+      // Ajouter d'autres propriétés si nécessaires
+    };
+  });
+
   const renderChart = () => {
     switch (type) {
       case 'line':
         return (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={height}>
             <LineChart
-              data={data as LineChartDataPoint[]}
+              data={transformedData}
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.2} />}
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip
@@ -59,7 +81,6 @@ const Graphique: React.FC<GraphiqueProps> = ({
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
                   border: '1px solid #ccc',
                   borderRadius: '5px',
-                  boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)'
                 }}
               />
               <Legend />
@@ -79,12 +100,12 @@ const Graphique: React.FC<GraphiqueProps> = ({
 
       case 'bar':
         return (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={height}>
             <BarChart
-              data={data as LineChartDataPoint[]}
+              data={transformedData}
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
             >
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.2} />}
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip
@@ -92,7 +113,6 @@ const Graphique: React.FC<GraphiqueProps> = ({
                   backgroundColor: 'rgba(255, 255, 255, 0.9)',
                   border: '1px solid #ccc',
                   borderRadius: '5px',
-                  boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)'
                 }}
               />
               <Legend />
@@ -109,35 +129,40 @@ const Graphique: React.FC<GraphiqueProps> = ({
         );
 
       case 'pie':
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={data as PieChartDataPoint[]}
-                cx="50%"
-                cy="50%"
-                labelLine={true}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {(data as PieChartDataPoint[]).map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  border: '1px solid #ccc',
-                  borderRadius: '5px',
-                  boxShadow: '0px 0px 10px rgba(0, 0, 0, 0.1)'
-                }}
-              />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        );
+        {
+          // S'assurer que chaque item a une propriété 'value'
+          const pieData = transformedData.map(item => {
+            if ('value' in item) return item;
+            // Si l'élément n'a pas de valeur, utiliser 1 par défaut (pour le comptage)
+            return { ...item, value: 1 };
+          });
+
+          return (
+            <ResponsiveContainer width="100%" height={height}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={true}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieData.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={colors[index % colors.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          );
+        }
 
       default:
         return <div>Type de graphique non supporté</div>;
@@ -145,15 +170,12 @@ const Graphique: React.FC<GraphiqueProps> = ({
   };
 
   return (
-    <div className="w-full h-full p-4 bg-background dark:bg-background-dark rounded-lg">
-      {/* Titre du graphique */}
+    <div className="w-full h-full bg-white dark:bg-gray-800 rounded-lg">
       {title && (
-        <h3 className="text-lg font-semibold text-center text-gray-800 dark:text-gray-200 mb-4">
+        <h3 className="text-lg font-semibold text-center text-gray-800 dark:text-gray-200 mb-4 pt-4">
           {title}
         </h3>
       )}
-
-      {/* Rendu du graphique selon le type */}
       {renderChart()}
     </div>
   );

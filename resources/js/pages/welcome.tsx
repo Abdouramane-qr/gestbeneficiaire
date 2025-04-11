@@ -1259,6 +1259,7 @@ export default function Welcome() {
     const { auth } = usePage().props;
     const [language, setLanguage] = useState<'fr' | 'en'>('fr');
     const [darkMode, setDarkMode] = useState(false);
+    const logo = "/logo.png";
 
     // Load theme from localStorage
     useEffect(() => {
@@ -1288,17 +1289,17 @@ export default function Welcome() {
     const translations = {
         fr: {
             heroTitle: 'JEM II Platform',
-            heroDescription: 'Jeunesse, Emploi et Migration II — Pour l’autonomisation des jeunes et la résilience des communautés face aux migrations environnementales.',
+            heroDescription: 'Jeunesse, Emploi et Migration II — Pour l\'autonomisation des jeunes et la résilience des communautés face aux migrations environnementales.',
             getStarted: 'Commencer →',
             learnMore: 'En savoir plus',
             dashboard: 'Tableau de bord',
             login: 'Connexion',
             register: 'Inscription',
             projectTitle: 'À propos du projet JEM II',
-            projectDescription: `Le projet Jeunesse, Emploi et Migration (JEM II), mis en œuvre par l’OIM et financé par l’AICS, vise à promouvoir l’emploi des jeunes et à réduire la migration irrégulière à travers des formations professionnelles, le soutien à l’entrepreneuriat et la création d’opportunités locales.`,
+            projectDescription: `Le projet Jeunesse, Emploi et Migration (JEM II), mis en œuvre par l'OIM et financé par l'AICS, vise à promouvoir l'emploi des jeunes et à réduire la migration irrégulière à travers des formations professionnelles, le soutien à l'entrepreneuriat et la création d'opportunités locales.`,
             projectKeyPoints: [
                 { title: 'Formation professionnelle', description: '400 jeunes bénéficient de formations techniques adaptées au marché du travail local.' },
-                { title: 'Soutien à l’entrepreneuriat', description: 'Appui à la création de microentreprises et à l’insertion professionnelle.' },
+                { title: 'Soutien à l\'entrepreneuriat', description: 'Appui à la création de microentreprises et à l\'insertion professionnelle.' },
                 { title: 'Réduction des migrations irrégulières', description: 'Le projet agit sur les causes profondes de la migration à travers le développement local.' }
             ],
             whyImportant: 'Dans un contexte de vulnérabilité climatique et socio-économique, renforcer les capacités des jeunes est essentiel pour un développement durable.'
@@ -1334,9 +1335,16 @@ export default function Welcome() {
             <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
                 <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 shadow-sm">
                     <div className="container mx-auto px-4 flex justify-between items-center h-16">
-                        <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                            JEM II
-                        </Link>
+                        <div className="flex items-center">
+                            <img
+                                src={logo}
+                                alt="JEM II Logo"
+                                className="h-10 w-auto mr-4 object-contain"
+                            />
+                            <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                JEM II
+                            </Link>
+                        </div>
                         <div className="flex items-center gap-4">
                             <select
                                 value={language}
@@ -1383,7 +1391,8 @@ export default function Welcome() {
                                 href={auth.user ? route('dashboard') : route('register')}
                                 className="px-6 py-3 bg-blue-600 text-white rounded-lg"
                             >
-                                {auth.user ? t.dashboard : t.getStarted}
+                                                                {auth.user ? t.dashboard : t.getStarted}
+
                             </Link>
                             <Link
                                 href="/about"

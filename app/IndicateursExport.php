@@ -2,59 +2,43 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class IndicateursExport implements FromCollection, WithHeadings, WithMapping
+class IndicateursExport implements FromArray, WithHeadings, WithStyles
 {
-    protected $indicateurs;
+    protected $data;
 
-    public function __construct($indicateurs)
+    public function __construct(array $data)
     {
-        $this->indicateurs = $indicateurs;
+        $this->data = $data;
     }
 
-    public function collection()
+    public function array(): array
     {
-        return $this->indicateurs;
+        // Retirer l'en-tête (première ligne) puisqu'elle sera ajoutée via la méthode headings()
+        return array_slice($this->data, 1);
     }
 
     public function headings(): array
     {
-        return [
-            'ID',
-            'Catégorie',
-            'Nom',
-            'Valeur',
-            'Région',
-            'Province',
-            'Commune',
-            'Type de bénéficiaire',
-            'Genre',
-            'Niveau d\'instruction',
-            'Type d\'activité',
-            'Niveau de développement',
-            'Créé le'
-        ];
+        // Utiliser la première ligne comme en-têtes
+        return $this->data[0];
     }
 
-    public function map($indicateur): array
+    public function styles(Worksheet $sheet)
     {
         return [
-            $indicateur->id,
-            $indicateur->categorie,
-            $indicateur->nom,
-            $indicateur->valeur,
-            $indicateur->region,
-            $indicateur->province,
-            $indicateur->commune,
-            $indicateur->type_beneficiaire,
-            $indicateur->genre,
-            $indicateur->niveau_instruction,
-            $indicateur->type_activite,
-            $indicateur->niveau_developpement,
-            $indicateur->created_at
+            // Style pour l'en-tête
+            1 => [
+                'font' => ['bold' => true],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'EEEEEE'],
+                ],
+            ],
         ];
     }
 }

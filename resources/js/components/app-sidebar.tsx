@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp,  } from 'lucide-react';
+import { BookOpen, Folder, UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp,  } from 'lucide-react';
 import AppLogo from './app-logo';
 
 // Créer un type pour les items avec sous-menus
@@ -22,7 +22,7 @@ const mainNavItems: NavItemWithSubmenu[] = [
         children: [
           {
             title: 'Analyse des Indicateurs',  // Nouveau sous-menu
-            href: '/analyse-indicateurs',
+            href: '/analyse',
             icon: TrendingUp,  // Ou BarChart selon votre préférence
           }
         ]
