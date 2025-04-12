@@ -5,6 +5,7 @@ import BeneficiaireFormModal from '@/components/beneFormModal';
 import { PlusIcon, PencilIcon, TrashIcon, ArrowLeftIcon } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import Show from './Show';
+import AppLayout from '@/layouts/app-layout';
 
 interface Entreprise {
     id: number;
@@ -137,7 +138,7 @@ const Beneficiaires = () => {
 
     if (showDetailView && selectedBeneficiaire) {
         return (
-            <>
+            <AppLayout title='Liste des Promoteurs'>
                 <Head title={`Détails de ${selectedBeneficiaire.nom} ${selectedBeneficiaire.prenom}`} />
                 <Toaster position='top-right' richColors></Toaster>
                 <div className="py-12">
@@ -190,12 +191,12 @@ const Beneficiaires = () => {
                     ongs={ongs}
                     institutions={institutions}
                 />
-            </>
+            </AppLayout>
         );
     }
 
     return (
-        <>
+        <AppLayout title="Gestion des Bénéficiaires">
             <Head title="Gestion des Bénéficiaires" />
             <Toaster position='top-right' richColors></Toaster>
             <div className="py-12">
@@ -203,12 +204,7 @@ const Beneficiaires = () => {
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 bg-white border-b border-gray-200">
                             <div className="flex justify-between items-center mb-6">
-                                <button
-                                    onClick={() => router.visit('/dashboard')}
-                                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
-                                >
-                                    ⬅ Retour au Dashboard
-                                </button>
+                               
 
                                 <button
                                     onClick={() => openModal(null)}
@@ -344,7 +340,7 @@ const Beneficiaires = () => {
                 ongs={ongs}
                 institutions={institutions}
             />
-        </>
+        </AppLayout>
     );
 };
 

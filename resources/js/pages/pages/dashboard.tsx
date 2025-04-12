@@ -117,7 +117,7 @@ export default function Dashboard({
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-semibold">
-                Bénéficiaires
+                Promoteurs
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -150,9 +150,9 @@ export default function Dashboard({
                 <Graphique
                   data={entreprisesParMois}
                   type="line"
-                  dataKeys={['entreprises', 'beneficiaires']}
+                  dataKeys={['entreprises', 'promoteurs']}
                   colors={['#0088FE', '#00C49F']}
-                  title="Entreprises et Bénéficiaires"
+                  title="Entreprises et Promoteurs"
                 />
               ) : (
                 <div className="text-center text-gray-500 py-10">Aucune donnée disponible</div>
@@ -265,7 +265,7 @@ export default function Dashboard({
                   <thead>
                     <tr className="border-b">
                       <th className="py-2 px-4 text-left">Région</th>
-                      <th className="py-2 px-4 text-left">Bénéficiaires</th>
+                      <th className="py-2 px-4 text-left">Promteurs</th>
                       <th className="py-2 px-4 text-left">Entreprises</th>
                       <th className="py-2 px-4 text-left">Ratio</th>
                     </tr>

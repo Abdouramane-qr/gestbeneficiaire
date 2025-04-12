@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { toast } from 'sonner';
-import { ArrowLeftIcon, PencilIcon, TrashIcon, CheckCircleIcon } from 'lucide-react';
-import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
+import {
+  ArrowLeftIcon,
+  PencilIcon,
+  TrashIcon,
+  CheckCircleIcon,
+  PrinterIcon,
+  FileTextIcon
+} from 'lucide-react';
 import { Head } from '@inertiajs/react';
 import { formatDate } from '@/Utils/dateUtils';
+import AppLayout from '@/layouts/app-layout';
 
 // Interfaces existantes...
 interface Entreprise {
@@ -81,6 +88,152 @@ const CollecteShow: React.FC<CollecteShowProps> = ({ collecte, categoriesDisponi
         return categoryLabels[categoryId] || categoryId.charAt(0).toUpperCase() + categoryId.slice(1);
     };
 
+    // Fonction pour gérer l'impression
+    const handlePrint = () => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            toast.error("Impossible d'ouvrir la fenêtre d'impression. Veuillez vérifier vos paramètres de navigateur.");
+            return;
+        }
+
+        const logoUrl = `${window.location.origin}/logo.png`;
+        // Contenu HTML à imprimer
+        let printContent = `
+        <html>
+         <head>
+        <title>Collecte - ${collecte.entreprise.nom_entreprise}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { display: flex; align-items: center; margin-bottom: 20px; }
+          .logo { width: 120px; height: auto; margin-right: 20px; }
+          .title-container { flex-grow: 1; }
+          h1 { color: #2c5282; font-size: 20px; margin: 0; }
+          .subtitle { color: #4a5568; font-size: 14px; margin-top: 5px; }
+          h2 { color: #4a5568; font-size: 16px; margin-top: 20px; }
+          .info-section { margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+          .info-row { display: flex; justify-content: space-between; border-bottom: 1px solid #edf2f7; padding: 8px 0; }
+          .label { font-weight: bold; color: #4a5568; }
+          .value { text-align: right; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background-color: #4F81BD; color: white; text-align: left; padding: 8px; }
+          td { border-bottom: 1px solid #e2e8f0; padding: 8px; }
+          .brouillon { color: #d97706; font-style: italic; }
+          .standard { color: #059669; }
+          @media print {
+            .no-print { display: none; }
+            body { margin: 0; padding: 15px; }
+          }
+        </style>
+      </head>
+          <body>
+           <div class="header">
+          <img src="${logoUrl}" alt="Logo" class="logo" />
+          <div class="title-container">
+            <h1>Détails de la collecte - ${collecte.entreprise.nom_entreprise}</h1>
+            <div class="subtitle">Période: ${collecte.periode.type_periode} | Exercice: ${collecte.exercice.annee}</div>
+          </div>
+        </div>
+            <h1>Détails de la collecte - ${collecte.entreprise.nom_entreprise}</h1>
+            <div class="info-section">
+              <h2>Informations de la Collecte</h2>
+              <div class="info-grid">
+                <div class="info-row">
+                  <span class="label">Date de collecte:</span>
+                  <span class="value">${formatDate(collecte.date_collecte)}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Statut:</span>
+                  <span class="value ${collecte.type_collecte === 'brouillon' ? 'brouillon' : 'standard'}">
+                    ${collecte.type_collecte === 'brouillon' ? 'Brouillon' : 'Standard'}
+                  </span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Créée par:</span>
+                  <span class="value">${collecte.user?.name || 'Non spécifié'}</span>
+                </div>
+                <div class="info-row">
+                  <span class="label">Créée le:</span>
+                  <span class="value">${formatDate(collecte.created_at)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-section">
+              <h2>Informations de l'Entreprise</h2>
+              <div class="info-grid">
+                <div class="info-row">
+                  <span class="label">Nom:</span>
+                  <span class="value">${collecte.entreprise.nom_entreprise}</span>
+                </div>
+                ${collecte.entreprise.secteur_activite ? `
+                <div class="info-row">
+                  <span class="label">Secteur d'activité:</span>
+                  <span class="value">${collecte.entreprise.secteur_activite}</span>
+                </div>
+                ` : ''}
+              </div>
+            </div>
+        `;
+
+        // Ajouter les données par catégorie
+        categoriesDisponibles.forEach(category => {
+            const categoryData = collecte.donnees[category];
+            if (categoryData && Object.keys(categoryData).length > 0) {
+                printContent += `
+                <h2>${getCategoryLabel(category)}</h2>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Indicateur</th>
+                      <th>Valeur</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                `;
+
+                Object.entries(categoryData).forEach(([key, value]) => {
+                    printContent += `
+                    <tr>
+                      <td>${key}</td>
+                      <td>${formatValue(value)}</td>
+                    </tr>
+                    `;
+                });
+
+                printContent += `
+                  </tbody>
+                </table>
+                `;
+            }
+        });
+
+        // Fermer le document HTML
+        printContent += `
+            <div class="no-print" style="margin-top: 20px; text-align: center;">
+              <button onclick="window.print()">Imprimer</button>
+              <button onclick="window.close()">Fermer</button>
+            </div>
+          </body>
+        </html>
+        `;
+
+        printWindow.document.open();
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+    };
+
+    // Fonction pour exporter en PDF
+   // Fonction pour exporter en PDF
+const handleExportPDF = () => {
+    window.location.href = route('collectes.export', {
+        format: 'pdf',
+        collecte_ids: [collecte.id],
+        mode: 'detail' // Indique que c'est un export de détail
+    });
+};
+
     // Gestion de la suppression
     const handleDelete = () => {
         if (confirmDelete) {
@@ -104,7 +257,7 @@ const CollecteShow: React.FC<CollecteShowProps> = ({ collecte, categoriesDisponi
         }
     };
 
-    // Nouvelle fonction pour convertir un brouillon en collecte standard
+    // Fonction pour convertir un brouillon en collecte standard
     const handleConvertToStandard = () => {
         if (confirmConversion) {
             setIsConverting(true);
@@ -142,7 +295,7 @@ const CollecteShow: React.FC<CollecteShowProps> = ({ collecte, categoriesDisponi
     };
 
     return (
-        <AuthenticatedLayout title={pageTitle}>
+        <AppLayout title={pageTitle}>
             <Head title={pageTitle} />
 
             <div className="py-12">
@@ -160,6 +313,24 @@ const CollecteShow: React.FC<CollecteShowProps> = ({ collecte, categoriesDisponi
                                     )}
                                 </h2>
                                 <div className="flex space-x-2">
+                                    {/* Bouton d'impression */}
+                                    <button
+                                        onClick={handlePrint}
+                                        className="inline-flex items-center px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                    >
+                                        <PrinterIcon className="w-4 h-4 mr-2" />
+                                        Imprimer
+                                    </button>
+
+                                    {/* Bouton d'export PDF */}
+                                    <button
+                                        onClick={handleExportPDF}
+                                        className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                                    >
+                                        <FileTextIcon className="w-4 h-4 mr-2" />
+                                        Exporter PDF
+                                    </button>
+
                                     {/* Bouton de conversion pour les brouillons */}
                                     {collecte.type_collecte === 'brouillon' && (
                                         <button
@@ -353,7 +524,7 @@ const CollecteShow: React.FC<CollecteShowProps> = ({ collecte, categoriesDisponi
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 };
 

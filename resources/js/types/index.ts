@@ -166,3 +166,10 @@ export type SetDataFunction = (data: Partial<CollecteFormData>) => void;
 export type ErrorMap = {
     [key: string]: string | undefined;
 };
+
+
+export type BreadcrumbItem = {
+    title: string;
+    href?: string;
+    disabled?: boolean;
+  };

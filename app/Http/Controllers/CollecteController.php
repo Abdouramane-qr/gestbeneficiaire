@@ -11,7 +11,10 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 class CollecteController extends Controller
 {
     public function index(Request $request)
@@ -273,20 +276,7 @@ class CollecteController extends Controller
     /**
      * Helper pour envoyer une réponse d'erreur cohérente
      */
-    private function sendErrorResponse(Request $request, string $field, string $message)
-    {
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => $message,
-                'field' => $field
-            ], 422);
-        }
 
-        return back()->withErrors([
-            $field => $message
-        ]);
-    }
 
     /**
      * Méthode spécifique pour convertir un brouillon en collecte standard
@@ -416,4 +406,406 @@ class CollecteController extends Controller
             ]);
         }
     }
+
+ /**
+     * Valider plusieurs collectes d'un coup (conversion de brouillon en standard)
+     */
+    public function validateMultiple(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'collecte_ids' => 'required|array',
+                'collecte_ids.*' => 'required|integer|exists:collectes,id',
+            ]);
+
+            $collecteIds = $validated['collecte_ids'];
+
+            // Récupérer toutes les collectes concernées
+            $collectes = Collecte::whereIn('id', $collecteIds)
+                ->where('type_collecte', 'brouillon')
+                ->with(['entreprise', 'periode'])
+                ->get();
+
+            if ($collectes->isEmpty()) {
+                return $this->sendErrorResponse($request, 'general', 'Aucun brouillon trouvé pour validation');
+            }
+
+            // Vérifier la présence de doublons potentiels
+            $conflictsFound = false;
+            $conflicts = [];
+
+            // Vérification des conflits (entreprise/période déjà utilisée dans une collecte standard)
+            foreach ($collectes as $collecte) {
+                $existingStandard = Collecte::where('entreprise_id', $collecte->entreprise_id)
+                    ->where('periode_id', $collecte->periode_id)
+                    ->where('type_collecte', 'standard')
+                    ->where('id', '!=', $collecte->id)
+                    ->first();
+
+                    if ($existingStandard) {
+                        $conflictsFound = true;
+
+                        // Récupérer le nom de la période, qu'elle soit un objet ou une chaîne
+                        $periodeNom = '';
+                        if (is_object($collecte->periode)) {
+                            $periodeNom = $collecte->periode->type_periode;
+                        } elseif (is_string($collecte->periode)) {
+                            $periodeNom = $collecte->periode;
+                        } else {
+                            $periodeNom = 'Non spécifié';
+                        }
+
+                        $conflicts[] = [
+                            'collecte_id' => $collecte->id,
+                            'entreprise' => $collecte->entreprise->nom_entreprise,
+                            'periode' => $periodeNom,
+                            'message' => 'Une collecte standard existe déjà pour cette entreprise et période'
+                        ];
+                    }
+            }
+
+            if ($conflictsFound) {
+                return $this->sendErrorResponse(
+                    $request,
+                    'conflicts',
+                    'Des conflits ont été détectés',
+                    422,
+                    ['conflicts' => $conflicts]
+                );
+            }
+
+            // Transaction DB pour s'assurer que toutes les mises à jour sont faites ensemble
+            DB::beginTransaction();
+
+            $updateCount = 0;
+
+            foreach ($collectes as $collecte) {
+                $collecte->type_collecte = 'standard';
+                $collecte->save();
+                $updateCount++;
+            }
+
+            DB::commit();
+
+            Log::info("Validation multiple réussie: $updateCount collectes converties");
+
+            // Réponse de succès
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "$updateCount collecte(s) validée(s) avec succès",
+                    'count' => $updateCount
+                ]);
+            }
+
+            return redirect()->route('collectes.index')
+                ->with('success', "$updateCount collecte(s) validée(s) avec succès");
+
+        } catch (QueryException $e) {
+            DB::rollBack();
+            Log::error('Erreur SQL lors de la validation multiple: ' . $e->getMessage());
+            return $this->sendErrorResponse($request, 'database', 'Erreur de base de données: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur lors de la validation multiple: ' . $e->getMessage());
+            return $this->sendErrorResponse($request, 'general', 'Une erreur est survenue: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Supprimer plusieurs collectes d'un coup
+     */
+    public function deleteMultiple(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'collecte_ids' => 'required|array',
+                'collecte_ids.*' => 'required|integer|exists:collectes,id',
+            ]);
+
+            $collecteIds = $validated['collecte_ids'];
+
+            // Transaction DB pour s'assurer que toutes les suppressions sont faites ensemble
+            DB::beginTransaction();
+
+            $deleteCount = Collecte::whereIn('id', $collecteIds)->delete();
+
+            DB::commit();
+
+            Log::info("Suppression multiple réussie: $deleteCount collectes supprimées");
+
+            // Réponse de succès
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "$deleteCount collecte(s) supprimée(s) avec succès",
+                    'count' => $deleteCount
+                ]);
+            }
+
+            return redirect()->route('collectes.index')
+                ->with('success', "$deleteCount collecte(s) supprimée(s) avec succès");
+
+        } catch (QueryException $e) {
+            DB::rollBack();
+            Log::error('Erreur SQL lors de la suppression multiple: ' . $e->getMessage());
+            return $this->sendErrorResponse($request, 'database', 'Erreur de base de données: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur lors de la suppression multiple: ' . $e->getMessage());
+            return $this->sendErrorResponse($request, 'general', 'Une erreur est survenue: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Exporter les collectes en PDF ou Excel
+     */
+    public function export(Request $request)
+    {
+        try {
+            // Valider les paramètres de requête
+            $validated = $request->validate([
+                'format' => 'required|in:pdf,excel',
+                'collecte_ids' => 'sometimes|array',
+                'collecte_ids.*' => 'integer|exists:collectes,id',
+                'entreprise_id' => 'sometimes|integer|exists:entreprises,id',
+                'exercice_id' => 'sometimes|integer|exists:exercices,id',
+                'periode_id' => 'sometimes|integer|exists:periodes,id',
+                'type_collecte' => 'sometimes|in:standard,brouillon',
+                'search' => 'sometimes|string|max:100',
+                'mode' => 'sometimes|string|in:detail,list',
+            ]);
+
+            // Si c'est un export détaillé d'une seule collecte
+            if ($request->has('mode') && $request->input('mode') === 'detail'
+                && $request->has('collecte_ids') && count($request->input('collecte_ids')) === 1) {
+
+                $collecteId = $request->input('collecte_ids')[0];
+                $collecte = Collecte::with(['entreprise', 'exercice', 'periode', 'user'])->findOrFail($collecteId);
+
+                // Vérifier et corriger la relation periode si nécessaire
+                if (!is_object($collecte->periode) || is_string($collecte->periode)) {
+                    $periodeObj = Periode::find($collecte->periode_id);
+                    if ($periodeObj) {
+                        $collecte->setRelation('periode', $periodeObj);
+                    } else {
+                        $fakePeriode = new \stdClass();
+                        $fakePeriode->id = $collecte->periode_id;
+                        $fakePeriode->type_periode = is_string($collecte->periode) ? $collecte->periode : 'Non spécifié';
+                        $collecte->setRelation('periode', $fakePeriode);
+                    }
+                }
+
+                // Obtenir les catégories disponibles
+                $categoriesDisponibles = [];
+                if ($collecte->donnees && is_array($collecte->donnees)) {
+                    $categoriesDisponibles = array_keys($collecte->donnees);
+                }
+
+                $filename = 'collecte_detail_' . $collecteId . '_' . date('Y-m-d_His');
+
+                // Exporter selon le format demandé
+                if ($validated['format'] === 'excel') {
+                    return $this->exportDetailToExcel($collecte, $categoriesDisponibles, $filename);
+                } else { // pdf
+                    return $this->exportDetailToPdf($collecte, $categoriesDisponibles, $filename);
+                }
+            }
+
+            // Export de liste (comportement existant)
+            // Construire la requête de base
+            $query = Collecte::with(['entreprise', 'exercice', 'periode', 'user']);
+
+            // Appliquer les filtres
+            if ($request->has('entreprise_id')) {
+                $query->where('entreprise_id', $request->input('entreprise_id'));
+            }
+
+            if ($request->has('exercice_id')) {
+                $query->where('exercice_id', $request->input('exercice_id'));
+            }
+
+            if ($request->has('periode_id')) {
+                $query->where('periode_id', $request->input('periode_id'));
+            }
+
+            if ($request->has('type_collecte')) {
+                $query->where('type_collecte', $request->input('type_collecte'));
+            }
+
+            // Filtre de recherche
+            if ($request->has('search')) {
+                $searchTerm = $request->input('search');
+                $query->where(function($q) use ($searchTerm) {
+                    $q->whereHas('entreprise', function($subQuery) use ($searchTerm) {
+                        $subQuery->where('nom_entreprise', 'like', "%{$searchTerm}%");
+                    })
+                    ->orWhereHas('exercice', function($subQuery) use ($searchTerm) {
+                        $subQuery->where('annee', 'like', "%{$searchTerm}%");
+                    })
+                    ->orWhereHas('periode', function($subQuery) use ($searchTerm) {
+                        $subQuery->where('type_periode', 'like', "%{$searchTerm}%");
+                    });
+                });
+            }
+
+            // Si des IDs spécifiques sont fournis, filtrer par ces IDs
+            if ($request->has('collecte_ids') && is_array($request->input('collecte_ids'))) {
+                $query->whereIn('id', $request->input('collecte_ids'));
+            }
+
+            // Récupérer les collectes
+            $collectes = $query->orderBy('date_collecte', 'desc')->get();
+
+            // Vérifier et corriger les relations période avant l'export
+            foreach ($collectes as $collecte) {
+                if (!is_object($collecte->periode) || is_string($collecte->periode)) {
+                    // Si la relation periode n'est pas chargée correctement ou si c'est une chaîne
+                    $periodeObj = Periode::find($collecte->periode_id);
+                    if ($periodeObj) {
+                        // Définir manuellement la relation
+                        $collecte->setRelation('periode', $periodeObj);
+                    } else {
+                        // Créer un objet temporaire pour éviter les erreurs
+                        $fakePeriode = new \stdClass();
+                        $fakePeriode->id = $collecte->periode_id;
+                        $fakePeriode->type_periode = is_string($collecte->periode) ? $collecte->periode : 'Non spécifié';
+                        $collecte->setRelation('periode', $fakePeriode);
+                    }
+                }
+            }
+
+            // Nombre total de collectes à exporter
+            $totalCollectes = $collectes->count();
+
+            // Si aucune collecte trouvée, rediriger avec un message
+            if ($totalCollectes === 0) {
+                return back()->with('error', 'Aucune donnée à exporter.');
+            }
+
+            // Choix du format d'export
+            $format = $validated['format'];
+            $filename = 'collectes_' . date('Y-m-d_His');
+
+            if ($format === 'excel') {
+                return $this->exportToExcel($collectes, $filename);
+            } else { // pdf
+                return $this->exportToPdf($collectes, $filename);
+            }
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'export: ' . $e->getMessage());
+            Log::error($e->getTraceAsString()); // Ajouter la stack trace pour plus de détails
+            return back()->with('error', 'Une erreur est survenue lors de l\'export: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Exporter une collecte détaillée vers Excel
+     */
+    private function exportDetailToExcel($collecte, $categoriesDisponibles, $filename)
+    {
+        // Vous pouvez créer une classe spécifique pour l'export Excel détaillé
+        // Pour l'instant, on réutilise la classe existante
+        return Excel::download(new \App\Exports\CollecteDetailExport($collecte, $categoriesDisponibles), "{$filename}.xlsx");
+    }
+
+    /**
+     * Exporter une collecte détaillée vers PDF
+     */
+    private function exportDetailToPdf($collecte, $categoriesDisponibles, $filename)
+    {
+        $data = [
+            'collecte' => $collecte,
+            'categoriesDisponibles' => $categoriesDisponibles,
+            'date_export' => now()->format('d/m/Y H:i'),
+            'user' => Auth::user()->name,
+        ];
+
+        $pdf = PDF::loadView('exports.collecte_detail_pdf', $data);
+
+        // Personnalisation optionnelle du PDF
+        $pdf->setPaper('a4', 'portrait');
+
+        return $pdf->download("{$filename}.pdf");
+    }
+
+
+
+
+/**
+ * Exporter une seule collecte vers Excel
+ */
+private function exportSingleToExcel($collecte, $categoriesDisponibles, $filename)
+{
+    return Excel::download(new \App\Exports\CollecteSingleExport($collecte, $categoriesDisponibles), "{$filename}.xlsx");
 }
+
+/**
+ * Exporter une seule collecte vers PDF
+ */
+private function exportSingleToPdf($collecte, $categoriesDisponibles, $filename)
+{
+    $data = [
+        'collecte' => $collecte,
+        'categoriesDisponibles' => $categoriesDisponibles,
+        'date_export' => now()->format('d/m/Y H:i'),
+        'user' => Auth::user()->name,
+    ];
+
+    $pdf = PDF::loadView('exports.collecte_detail_pdf', $data);
+
+    // Personnalisation optionnelle du PDF
+    $pdf->setPaper('a4', 'portrait');
+
+    return $pdf->download("{$filename}.pdf");
+}
+
+
+    /**
+     * Exporter vers Excel
+     */
+    private function exportToExcel($collectes, $filename)
+    {
+        return Excel::download(new \App\Exports\CollectesExport($collectes), "{$filename}.xlsx");
+    }
+
+    /**
+     * Exporter vers PDF
+     */
+    private function exportToPdf($collectes, $filename)
+    {
+        $data = [
+            'collectes' => $collectes,
+            'date_export' => now()->format('d/m/Y H:i'),
+            'user' => Auth::user()->name,
+        ];
+
+        $pdf = PDF::loadView('exports.collectes_pdf', $data);
+
+        // Personnalisation optionnelle du PDF
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download("{$filename}.pdf");
+    }
+
+    /**
+     * Helper pour envoyer une réponse d'erreur cohérente
+     */
+    private function sendErrorResponse(Request $request, string $field, string $message, int $status = 422, array $extraData = [])
+    {
+        if ($request->wantsJson()) {
+            return response()->json(array_merge([
+                'success' => false,
+                'message' => $message,
+                'field' => $field
+            ], $extraData), $status);
+        }
+
+        return back()->withErrors([
+            $field => $message
+        ]);
+    }
+}
+
+
+

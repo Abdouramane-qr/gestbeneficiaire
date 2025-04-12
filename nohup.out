@@ -1,0 +1,489 @@
+> Composer\Config::disableProcessTimeout
+> npx concurrently -c "#93c5fd,#c4b5fd,#fb7185,#fdba74" "php artisan serve" "php artisan queue:listen --tries=1" "php artisan pail --timeout=0" "npm run dev" --names=server,queue,logs,vite
+[logs] 
+[logs]    INFO  Tailing application logs.                        Press Ctrl+C to exit  
+[logs]                                                Use -v|-vv to show more details  
+[queue] 
+[queue]    INFO  Processing jobs from the [default] queue.  
+[queue] 
+[vite] 
+[vite] > dev
+[vite] > vite
+[vite] 
+[server] 
+[server]    INFO  Server running on [http://127.0.0.1:8000].  
+[server] 
+[server]   Press Ctrl+C to stop the server
+[server] 
+[vite] Port 5173 is in use, trying another one...
+[vite] Port 5174 is in use, trying another one...
+[vite] 
+[vite]   VITE v6.2.5  ready in 1363 ms
+[vite] 
+[vite]   ➜  Local:   http://localhost:5175/
+[vite]   ➜  Network: use --host to expose
+[vite] 
+[vite]   LARAVEL v12.8.1  plugin v1.2.0
+[vite] 
+[vite]   ➜  APP_URL: http://localhost
+[server]   2025-04-11 16:48:05 / .......................................... ~ 500.36ms
+[server]   2025-04-11 16:48:09 /favicon.ico ................................. ~ 0.18ms
+[logs] 
+[queue] php artisan queue:listen --tries=1 exited with code SIGINT
+[logs] php artisan pail --timeout=0 exited with code SIGINT
+[server] php artisan serve exited with code SIGINT
+[vite] npm run dev exited with code SIGINT
+> Composer\Config::disableProcessTimeout
+> npx concurrently -c "#93c5fd,#c4b5fd,#fb7185,#fdba74" "php artisan serve" "php artisan queue:listen --tries=1" "php artisan pail --timeout=0" "npm run dev" --names=server,queue,logs,vite
+[logs] 
+[logs]    INFO  Tailing application logs.                        Press Ctrl+C to exit  
+[logs]                                                Use -v|-vv to show more details  
+[queue] 
+[queue]    INFO  Processing jobs from the [default] queue.  
+[queue] 
+[vite] 
+[vite] > dev
+[vite] > vite
+[vite] 
+[server] 
+[server]    INFO  Server running on [http://127.0.0.1:8000].  
+[server] 
+[server]   Press Ctrl+C to stop the server
+[server] 
+[vite] 
+[vite]   VITE v6.2.5  ready in 1328 ms
+[vite] 
+[vite]   ➜  Local:   http://localhost:5175/
+[vite]   ➜  Network: http://198.27.69.14:5175/
+[vite]   ➜  Network: http://172.18.0.1:5175/
+[vite]   ➜  Network: http://172.19.0.1:5175/
+[vite] 
+[vite]   LARAVEL v12.8.1  plugin v1.2.0
+[vite] 
+[vite]   ➜  APP_URL: http://jem2.hotp.org
+[server]   2025-04-11 17:08:35 / .......................................... ~ 500.34ms
+[server]   2025-04-11 17:08:38 /favicon.ico ................................. ~ 0.14ms
+[vite] 5:08:38 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:38 /logo.png .................................... ~ 0.19ms
+[vite] 5:08:39 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:39 / ............................................ ~ 0.13ms
+[vite] 5:08:39 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:40 /favicon.ico ................................. ~ 0.14ms
+[vite] 5:08:41 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:41 /logo.png .................................... ~ 0.13ms
+[vite] 5:08:41 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:41 / ............................................ ~ 0.14ms
+[vite] 5:08:42 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:43 /logo.png .................................... ~ 0.15ms
+[vite] 5:08:43 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:44 / .......................................... ~ 500.35ms
+[vite] 5:08:45 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:45 /favicon.ico ................................. ~ 0.15ms
+[vite] 5:08:46 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:46 /logo.png .................................... ~ 0.15ms
+[vite] 5:08:46 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:46 / .......................................... ~ 500.75ms
+[vite] 5:08:47 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:48 /logo.png .................................... ~ 0.15ms
+[vite] 5:08:48 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:49 / ............................................ ~ 0.13ms
+[vite] 5:08:49 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:50 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-11 17:08:50 /logo.png .................................... ~ 0.09ms
+[vite] 5:08:51 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:51 / .......................................... ~ 500.33ms
+[vite] 5:08:52 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:54 /logo.png .................................... ~ 0.15ms
+[vite] 5:08:54 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:54 / .......................................... ~ 503.19ms
+[vite] 5:08:55 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:56 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-11 17:08:56 /logo.png .................................... ~ 0.10ms
+[vite] 5:08:57 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:57 / .......................................... ~ 500.73ms
+[vite] 5:08:58 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:59 /favicon.ico ................................. ~ 0.15ms
+[vite] 5:08:59 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:08:59 /logo.png .................................... ~ 0.14ms
+[vite] 5:09:00 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:00 / .......................................... ~ 502.71ms
+[vite] 5:09:00 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:01 /logo.png .................................... ~ 0.14ms
+[vite] 5:09:02 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:03 / .......................................... ~ 500.35ms
+[vite] 5:09:04 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:05 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-11 17:09:05 /logo.png .................................... ~ 0.09ms
+[vite] 5:09:05 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:06 / .......................................... ~ 503.10ms
+[vite] 5:09:06 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:07 /logo.png .................................... ~ 0.14ms
+[vite] 5:09:08 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:08 / .......................................... ~ 500.34ms
+[vite] 5:09:09 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:10 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-11 17:09:10 /logo.png .................................... ~ 0.08ms
+[vite] 5:09:10 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:11 / ............................................ ~ 0.14ms
+[vite] 5:09:11 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:12 /logo.png .................................... ~ 0.16ms
+[vite] 5:09:13 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:13 / ..........................................
+[vite] 5:09:14 PM [vite] (client) page reload nohup.out
+[server]  ~ 500.96ms
+[server]   2025-04-11 17:09:15 /favicon.ico ................................. ~ 0.19ms
+[server]   2025-04-11 17:09:15 /logo.png .................................... ~ 0.11ms
+[vite] 5:09:15 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:16 / .......................................... ~ 500.37ms
+[vite] 5:09:16 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:17 /logo.png .................................... ~ 0.15ms
+[vite] 5:09:18 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:18 / .......................................... ~ 500.35ms
+[vite] 5:09:19 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:20 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-11 17:09:20 /logo.png .................................... ~ 0.08ms
+[vite] 5:09:20 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:21 / .......................................... ~ 500.67ms
+[vite] 5:09:21 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:22 /logo.png .................................... ~ 0.14ms
+[vite] 5:09:23 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:24 / ................................................ ~ 1s
+[vite] 5:09:25 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:26 /favicon.ico ................................. ~ 0.11ms
+[server]   2025-04-11 17:09:27 /logo.png .................................... ~ 0.06ms
+[vite] 5:09:27 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:27 / .......................................... ~ 500.27ms
+[vite] 5:09:28 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:29 /favicon.ico ................................. ~ 0.14ms
+[vite] 5:09:29 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:29 /logo.png .................................... ~ 0.14ms
+[vite] 5:09:30 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:30 / ............................................ ~ 0.10ms
+[vite] 5:09:30 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:31 /logo.png .................................... ~ 0.15ms
+[vite] 5:09:32 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:32 / .......................................... ~ 500.36ms
+[vite] 5:09:33 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:34 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-11 17:09:35 /logo.png .................................... ~ 0.09ms
+[vite] 5:09:35 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:36 / .......................................... ~ 500.33ms
+[vite] 5:09:36 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:37 /logo.png .................................... ~ 0.14ms
+[vite] 5:09:38 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:39 / .......................................... ~ 500.67ms
+[vite] 5:09:39 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:41 /logo.png .................................... ~ 0.14ms
+[vite] 5:09:41 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:42 / .......................................... ~ 500.33ms
+[vite] 5:09:42 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:43 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-11 17:09:44 /logo.png .................................... ~ 0.07ms
+[vite] 5:09:44 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:44 / .......................................... ~ 500.82ms
+[vite] 5:09:45 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:46 /logo.png .................................... ~ 0.15ms
+[vite] 5:09:46 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:47 / ................................................ ~ 1s
+[vite] 5:09:48 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:49 /favicon.ico ................................. ~ 0.18ms
+[vite] 5:09:49 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:49 /logo.png .................................... ~ 0.13ms
+[vite] 5:09:50 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:50 / .......................................... ~ 500.33ms
+[vite] 5:09:51 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:52 /logo.png .................................... ~ 0.15ms
+[vite] 5:09:52 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:53 / .......................................... ~ 500.34ms
+[vite] 5:09:54 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:55 /favicon.ico ................................. ~ 0.15ms
+[vite] 5:09:55 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:55 /logo.png .................................... ~ 0.15ms
+[vite] 5:09:56 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:57 / .......................................... ~ 500.80ms
+[vite] 5:09:58 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:09:59 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-11 17:10:00 /logo.png .................................... ~ 0.08ms
+[vite] 5:10:00 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:01 / .......................................... ~ 503.10ms
+[vite] 5:10:01 PM [vite] (client) page reload nohup.out
+[vite] 5:10:01 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:02 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-11 17:10:03 /logo.png .................................... ~ 0.08ms
+[vite] 5:10:03 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:04 / .......................................... ~ 501.15ms
+[vite] 5:10:04 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:05 /logo.png .................................... ~ 0.14ms
+[vite] 5:10:06 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:07 / .......................................... ~ 500.34ms
+[vite] 5:10:07 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:08 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-11 17:10:09 /logo.png .................................... ~ 0.09ms
+[vite] 5:10:09 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:10 / .......................................... ~ 504.13ms
+[vite] 5:10:10 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:11 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-11 17:10:12 /logo.png .................................... ~ 0.08ms
+[vite] 5:10:12 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:13 / .......................................... ~ 500.38ms
+[vite] 5:10:13 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:14 /logo.png .................................... ~ 0.14ms
+[vite] 5:10:15 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:16 / .......................................... ~ 500.49ms
+[vite] 5:10:16 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:17 /favicon.ico ................................. ~ 0.16ms
+[vite] 5:10:17 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:18 /logo.png .................................... ~ 0.16ms
+[vite] 5:10:18 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:19 / .......................................... ~ 500.31ms
+[vite] 5:10:19 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:20 /favicon.ico ................................. ~ 0.17ms
+[vite] 5:10:20 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:21 /logo.png .................................... ~ 0.17ms
+[vite] 5:10:21 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:22 / .......................................... ~ 500.34ms
+[vite] 5:10:22 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:23 /logo.png .................................... ~ 0.13ms
+[vite] 5:10:23 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:25 / .......................................... ~ 501.23ms
+[vite] 5:10:25 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:26 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-11 17:10:27 /logo.png .................................... ~ 0.08ms
+[vite] 5:10:27 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:28 / .......................................... ~ 500.94ms
+[vite] 5:10:28 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:29 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-11 17:10:30 /logo.png .................................... ~ 0.09ms
+[vite] 5:10:30 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:31 / .......................................... ~ 501.49ms
+[vite] 5:10:31 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:33 /logo.png .................................... ~ 0.15ms
+[vite] 5:10:33 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:34 / .......................................... ~ 500.41ms
+[vite] 5:10:35 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:36 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-11 17:10:36 /logo.png .................................... ~ 0.09ms
+[vite] 5:10:36 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:37 / .......................................... ~ 500.33ms
+[vite] 5:10:38 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:39 /favicon.ico ................................. ~ 0.14ms
+[vite] 5:10:39 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:39 /logo.png .................................... ~ 0.16ms
+[vite] 5:10:39 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:40 / .......................................... ~ 500.41ms
+[vite] 5:10:41 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:42 /logo.png .................................... ~ 0.17ms
+[vite] 5:10:42 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:43 / .......................................... ~ 501.17ms
+[vite] 5:10:44 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:45 /favicon.ico ................................. ~ 0.14ms
+[vite] 5:10:45 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:45 /logo.png .................................... ~ 0.16ms
+[vite] 5:10:45 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:46 / .......................................... ~ 500.62ms
+[vite] 5:10:47 PM [vite] (client) page reload nohup.out
+[vite] 5:10:47 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:48 /favicon.ico ................................. ~ 0.16ms
+[server]   2025-04-11 17:10:48 /logo.png .................................... ~ 0.09ms
+[vite] 5:10:48 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:49 / .......................................... ~ 500.35ms
+[vite] 5:10:50 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:51 /logo.png .................................... ~ 0.17ms
+[vite] 5:10:52 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:53 / .......................................... ~ 504.05ms
+[vite] 5:10:54 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:55 /favicon.ico ................................. ~ 0.14ms
+[vite] 5:10:55 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:55 /logo.png .................................... ~ 0.15ms
+[vite] 5:10:55 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:56 / .......................................... ~ 504.06ms
+[vite] 5:10:57 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:58 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-11 17:10:58 /logo.png .................................... ~ 0.09ms
+[vite] 5:10:58 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:10:59 / ............................................ ~ 0.14ms
+[vite] 5:10:59 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:01 / .......................................... ~ 504.02ms
+[vite] 5:11:02 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:03 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-11 17:11:03 /logo.png .................................... ~ 0.09ms
+[vite] 5:11:03 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:03 / .......................................... ~ 504.03ms
+[vite] 5:11:04 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:05 /logo.png .................................... ~ 0.13ms
+[vite] 5:11:06 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:06 / .......................................... ~ 501.26ms
+[vite] 5:11:07 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:08 /favicon.ico ................................. ~ 0.16ms
+[server]   2025-04-11 17:11:08 /logo.png .................................... ~ 0.09ms
+[vite] 5:11:08 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:09 / .......................................... ~ 501.18ms
+[vite] 5:11:10 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:11 /logo.png .................................... ~ 0.14ms
+[vite] 5:11:11 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:11 / .......................................... ~ 502.73ms
+[vite] 5:11:12 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:13 /logo.png .................................... ~ 0.15ms
+[vite] 5:11:14 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:15 / ............................................ ~ 0.14ms
+[vite] 5:11:15 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:19 /favicon.ico ................................. ~ 0.14ms
+[vite] 5:11:19 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:19 /logo.png .................................... ~ 0.14ms
+[vite] 5:11:20 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:19 / .......................................... ~ 502.90ms
+[vite] 5:11:20 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:24 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-11 17:11:25 /logo.png .................................... ~ 0.09ms
+[vite] 5:11:25 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:25 / .......................................... ~ 504.06ms
+[vite] 5:11:26 PM [vite] (client) page reload nohup.out
+[vite] 5:11:26 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:28 /favicon.ico ................................. ~ 0.15ms
+[vite] 5:11:29 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:29 / ................................................ ~ 1s
+[vite] 5:11:31 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:34 /favicon.ico ................................. ~ 0.15ms
+[vite] 5:11:35 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:35 /logo.png .................................... ~ 0.14ms
+[vite] 5:11:35 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:35 / .......................................... ~ 501.48ms
+[vite] 5:11:36 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:39 /favicon.ico ................................. ~ 0.16ms
+[vite] 5:11:39 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:11:39 / .......................................... ~ 501.35ms
+[vite] 5:11:40 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:12:00 / .......................................... ~ 500.37ms
+[vite] 5:12:01 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:12:05 /logo.png .................................... ~ 0.16ms
+[vite] 5:12:05 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:12:05 / .......................................... ~ 500.38ms
+[vite] 5:12:06 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:12:07 /logo.png .................................... ~ 0.16ms
+[vite] 5:12:08 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:12:08 / .......................................... ~ 501.16ms
+[vite] 5:12:09 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:12:10 /logo.png .................................... ~ 0.16ms
+[vite] 5:12:10 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:12:11 / .......................................... ~ 502.42ms
+[vite] 5:12:11 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:12:13 /logo.png .................................... ~ 0.15ms
+[vite] 5:12:13 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:12:13 / .......................................... ~ 504.03ms
+[vite] 5:12:14 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:12:15 /logo.png .................................... ~ 0.17ms
+[vite] 5:12:15 PM [vite] (client) page reload nohup.out
+[logs] 
+[vite] 5:12:17 PM [vite] (client) page reload nohup.out
+[logs] php artisan pail --timeout=0 exited with code SIGINT
+[server] php artisan serve exited with code SIGINT
+[queue] php artisan queue:listen --tries=1 exited with code SIGINT
+[vite] npm run dev exited with code SIGINT
+> Composer\Config::disableProcessTimeout
+> npx concurrently -c "#93c5fd,#c4b5fd,#fb7185,#fdba74" "php artisan serve" "php artisan queue:listen --tries=1" "php artisan pail --timeout=0" "npm run dev" --names=server,queue,logs,vite
+[vite] 
+[vite] > dev
+[vite] > vite
+[vite] 
+[logs] 
+[logs]    INFO  Tailing application logs.                        Press Ctrl+C to exit  
+[logs]                                                Use -v|-vv to show more details  
+[queue] 
+[queue]    INFO  Processing jobs from the [default] queue.  
+[queue] 
+[server] 
+[server]    INFO  Server running on [http://127.0.0.1:8000].  
+[server] 
+[server]   Press Ctrl+C to stop the server
+[server] 
+[vite] 
+[vite]   VITE v6.2.5  ready in 624 ms
+[vite] 
+[vite]   ➜  Local:   http://localhost:5175/
+[vite]   ➜  Network: http://198.27.69.14:5175/
+[vite]   ➜  Network: http://172.18.0.1:5175/
+[vite]   ➜  Network: http://172.19.0.1:5175/
+[vite] 
+[vite]   LARAVEL v12.8.1  plugin v1.2.0
+[vite] 
+[vite]   ➜  APP_URL: http://jem2.hotp.org
+[server]   2025-04-11 17:14:26 /utilisateurs/login ........................ ~ 503.99ms
+[server]   2025-04-11 17:14:26 /favicon.ico ................................. ~ 0.08ms
+[server]   2025-04-11 17:14:31 / .......................................... ~ 501.18ms
+[server]   2025-04-11 17:14:35 /logo.png .................................... ~ 0.14ms
+[vite] 5:14:36 PM [vite] (client) page reload nohup.out
+[vite] 5:14:36 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:36 / .......................................... ~ 500.70ms
+[vite] 5:14:37 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:38 /logo.png .................................... ~ 0.16ms
+[vite] 5:14:38 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:39 / .......................................... ~ 501.37ms
+[vite] 5:14:39 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:40 /logo.png .................................... ~ 0.17ms
+[vite] 5:14:40 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:41 / .......................................... ~ 501.92ms
+[vite] 5:14:42 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:42 /logo.png .................................... ~ 0.14ms
+[vite] 5:14:43 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:43 / .......................................... ~ 500.34ms
+[vite] 5:14:44 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:45 /logo.png .................................... ~ 0.15ms
+[vite] 5:14:45 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:46 / .......................................... ~ 500.35ms
+[vite] 5:14:47 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:48 /logo.png .................................... ~ 0.16ms
+[vite] 5:14:48 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:49 / .......................................... ~ 500.37ms
+[vite] 5:14:49 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:50 /logo.png .................................... ~ 0.17ms
+[vite] 5:14:50 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:52 / .......................................... ~ 503.82ms
+[vite] 5:14:52 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:53 /logo.png .................................... ~ 0.17ms
+[vite] 5:14:53 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:55 / .......................................... ~ 500.42ms
+[vite] 5:14:55 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:56 /logo.png .................................... ~ 0.14ms
+[vite] 5:14:56 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:58 / .......................................... ~ 500.32ms
+[vite] 5:14:58 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:14:59 /logo.png .................................... ~ 0.17ms
+[vite] 5:14:59 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:01 / .......................................... ~ 500.34ms
+[vite] 5:15:02 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:02 /logo.png .................................... ~ 0.16ms
+[vite] 5:15:02 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:04 / .......................................... ~ 500.35ms
+[vite] 5:15:04 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:05 /logo.png .................................... ~ 0.17ms
+[vite] 5:15:06 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:07 / ............................................ ~ 0.13ms
+[vite] 5:15:07 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:08 /logo.png .................................... ~ 0.16ms
+[vite] 5:15:09 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:10 / .......................................... ~ 500.34ms
+[vite] 5:15:11 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:11 /logo.png .................................... ~ 0.14ms
+[vite] 5:15:12 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:13 / .......................................... ~ 500.33ms
+[vite] 5:15:14 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:15 /logo.png .................................... ~ 0.16ms
+[vite] 5:15:15 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:16 / .......................................... ~ 500.35ms
+[vite] 5:15:17 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:17 /logo.png .................................... ~ 0.14ms
+[vite] 5:15:18 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:19 / ............................................ ~ 0.13ms
+[vite] 5:15:19 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:20 /logo.png .................................... ~ 0.14ms
+[vite] 5:15:21 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:22 / .......................................... ~ 504.05ms
+[vite] 5:15:23 PM [vite] (client) page reload nohup.out
+[server]   2025-04-11 17:15:23 /logo.png .................................... ~ 0.15ms
+[vite] 5:15:24 PM [vite] (client) page reload nohup.out
+[vite] Killed
+[vite] npm run dev exited with code 137
+[logs] 
+[server] php artisan serve exited with code SIGINT
+[queue] php artisan queue:listen --tries=1 exited with code SIGINT
+[logs] php artisan pail --timeout=0 exited with code SIGINT

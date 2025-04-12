@@ -172,6 +172,7 @@
 import React from 'react';
 import { Head } from '@inertiajs/react';
 import CollecteForm from './CollecteForm';
+import AppLayout from '@/layouts/app-layout';
 
 interface Entreprise {
   id: number;
@@ -217,27 +218,28 @@ const Edit: React.FC<EditProps> = ({
   collecte,
 
 }) => {
-  return (
-    <>
-      <Head title={`Modifier la collecte #${collecte.id}`} />
-      <div className="py-12">
-        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-semibold text-gray-800">
-              Modifier la collecte #{collecte.id}
-            </h1>
-          </div>
+    return (
+        <AppLayout title={`Modifier la collecte #${collecte.id}`}>
+          <Head title={`Modifier la collecte #${collecte.id}`} />
+          <div className="py-12">
+            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-semibold text-gray-800">
+                  Modifier la collecte #{collecte.id}
+                </h1>
+              </div>
 
-          <CollecteForm
-            entreprises={entreprises}
-            exercices={exercices}
-            periodes={periodes}
-            collecte={collecte}
-            isEditing={true}
-          />
-        </div>
-      </div>
-    </>
+              <CollecteForm
+                entreprises={entreprises}
+                exercices={exercices}
+                periodes={periodes}
+                collecte={collecte}
+                isEditing={true}
+              />
+            </div>
+          </div>
+        </AppLayout>
+
   );
 };
 

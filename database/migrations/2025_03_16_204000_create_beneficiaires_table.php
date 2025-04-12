@@ -24,7 +24,7 @@ return new class extends Migration
             $table->enum('genre', ['Homme', 'Femme']);
             $table->boolean('handicap')->default(false);
             $table->string('contact');
-            $table->enum('niveau_instruction', ['Analphabète', 'Alphabétise',  'Primaire',  'CEPE', 'BEPC', 'Baccalauréat ', 'Universitaire']);
+            $table->enum('niveau_instruction', ['Analphabète', 'Alphabétise',  'Primaire',  'CEPE', 'BEPC', 'Baccalauréat', 'Universitaire']);
             $table->string('email')->nullable();
             $table->string('activite');
             $table->enum('domaine_activite', ['Agriculture', 'Artisanat', 'Commerce', 'Élevage', 'environnement ']);

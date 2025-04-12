@@ -3,6 +3,7 @@ import { Head, usePage, router } from '@inertiajs/react';
 import { PlusIcon, PencilIcon, TrashIcon, ArrowLeftIcon } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
 import OngFormModal from '@/components/ongFormModal';
+import AppLayout from '@/layouts/app-layout';
 
 interface ONG {
     id: number;
@@ -136,7 +137,7 @@ const Ongs = () => {
 
     // Vue liste des ONG
     return (
-        <>
+        <AppLayout  title="Gestion des ONG"  >
             <Head title="Gestion des ONG" />
             <Toaster position="top-right" richColors />
 
@@ -144,12 +145,7 @@ const Ongs = () => {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                         <div className="flex justify-between items-center mb-6">
-                            <button
-                                onClick={() => router.visit('/dashboard')}
-                                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
-                            >
-                                ⬅ Retour au Dashboard
-                            </button>
+
 
                             <button
                                 onClick={() => openModal(null)}
@@ -208,7 +204,7 @@ const Ongs = () => {
             </div>
 
             <OngFormModal isOpen={isModalOpen} closeModal={closeModal} ong={currentOng} onSuccess={fetchOngs}/>
-        </>
+        </AppLayout>
     );
 };
 

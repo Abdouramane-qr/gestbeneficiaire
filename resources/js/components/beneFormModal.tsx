@@ -530,7 +530,7 @@ const BeneficiaireFormModal = ({ isOpen, closeModal, onSuccess, beneficiaire, on
                                         <option value="Agriculture">Agriculture</option>
                                         <option value="Artisanat">Artisanat</option>
                                         <option value="Commerce">Commerce</option>
-                                        <option value="Elevage">Elevage</option>
+                                        <option value="Élevage">Elevage</option>
                                         <option value="Environnement">Environnement</option>
                                         <option value="Autre">Autre</option>
                                     </select>

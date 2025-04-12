@@ -132,7 +132,7 @@ type RegisterForm = {
     prenom: string;
     email: string;
     password: string;
-   
+
 };
 
 interface RegisterProps {
@@ -240,7 +240,21 @@ export default function Register({
                         </div>
 
 
-
+                        <div className="grid gap-2">
+                        <Label htmlFor="password_confirmation">Confirm password</Label>
+                         <Input
+                            id="password_confirmation"
+                            type="password"
+                            required
+                            tabIndex={4}
+                             autoComplete="new-password"
+                             value={data.password_confirmation}
+                             onChange={(e) => setData('password_confirmation', e.target.value)}
+                             disabled={processing}
+                             placeholder="Confirm password"
+                         />
+                         <InputError message={errors.password_confirmation} />
+                    </div>
 
                         <Button
                             type="submit"

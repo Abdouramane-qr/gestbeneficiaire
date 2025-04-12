@@ -480,30 +480,41 @@ export class IndicateurCalculator {
                 description: 'Nombre de commandes ou de contrats obtenus avec des grossistes ou des particuliers'
             },
 
-            // Indicateurs commerciaux semestriels
-            { id: 'nb_clients', label: 'Nombre de clients', type: 'number', required: true, periode: 'Semestrielle' },
-            { id: 'nb_clients_grossistes', label: 'Nombre de clients grossistes', type: 'number', required: true, periode: 'Semestrielle' },
-            { id: 'nb_clients_detaillants', label: 'Nombre de clients détaillants', type: 'number', required: true, periode: 'Semestrielle' },
-            { id: 'nb_commandes', label: 'Nombre de commandes', type: 'number', required: true, periode: 'Semestrielle' },
-            { id: 'valeur_commandes', label: 'Valeur des commandes', type: 'number', required: true, unite: 'FCFA', periode: 'Semestrielle' },
-            {
-                id: 'panier_moyen',
-                label: 'Panier moyen',
-                type: 'calculated',
-                formula: 'valeur_commandes / nb_commandes',
-                unite: 'FCFA',
-                description: 'Valeur des commandes / Nombre de commandes',
-                periode: 'Semestrielle'
-            },
-            {
-                id: 'taux_conversion',
-                label: 'Taux de conversion',
-                type: 'calculated',
-                formula: 'nb_commandes / nb_clients * 100',
-                unite: '%',
-                description: 'Nombre de commandes / Nombre de clients * 100',
-                periode: 'Semestrielle'
-            }
+             // Indicateurs commerciaux semestriels
+    { id: 'nb_clients_grossistes', label: 'Nombre de clients grossistes', type: 'number', required: true, periode: 'Semestrielle' },
+    { id: 'nb_clients_detaillants', label: 'Nombre de clients détaillants', type: 'number', required: true, periode: 'Semestrielle' },
+
+    {
+        id: 'nb_clients',
+        label: 'Nombre de clients',
+        type: 'calculated',
+        formula: 'nb_clients_grossistes + nb_clients_detaillants',
+        description: 'Nombre de clients grossistes + Nombre de clients détaillants',
+        periode: 'Semestrielle'
+    },
+
+    { id: 'nb_commandes', label: 'Nombre de commandes', type: 'number', required: true, periode: 'Semestrielle' },
+    { id: 'valeur_commandes', label: 'Valeur des commandes', type: 'number', required: true, unite: 'FCFA', periode: 'Semestrielle' },
+
+    {
+        id: 'panier_moyen',
+        label: 'Panier moyen',
+        type: 'calculated',
+        formula: 'valeur_commandes / nb_commandes',
+        unite: 'FCFA',
+        description: 'Valeur des commandes / Nombre de commandes',
+        periode: 'Semestrielle'
+    },
+    {
+        id: 'taux_conversion',
+        label: 'Taux de conversion',
+        type: 'calculated',
+        formula: 'nb_commandes / nb_clients * 100',
+        unite: '%',
+        description: 'Nombre de commandes / Nombre de clients * 100',
+        periode: 'Semestrielle'
+    }
+
         ],
         // 'production': [
         //     { id: 'quantite_production_totale', label: 'Quantité de production totale', type: 'number', required: true, periode: 'Trimestrielle' },

@@ -22,4 +22,18 @@ export default defineConfig({
             'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
         },
     },
+    server: {
+        host: 'jem2.hopto.org',
+        port: 5175,
+        hmr: {
+            host: 'jem2.hopto.org',
+        },
+        cors: {
+            origin: '*',
+            credentials: true,
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+        },
+    },
 });
+

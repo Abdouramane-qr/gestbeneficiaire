@@ -47,7 +47,18 @@ class Collecte extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Helpers
+    // Scopes
+    public function scopeStandard($query)
+    {
+        return $query->where('type_collecte', 'standard');
+    }
+
+    public function scopeBrouillon($query)
+    {
+        return $query->where('type_collecte', 'brouillon');
+    }
+
+    // Helpers pour accéder aux données
     public function getCategoryData(string $category): array
     {
         return is_array($this->donnees) ? ($this->donnees[$category] ?? []) : [];
@@ -66,46 +77,5 @@ class Collecte extends Model
     public function getCategories(): array
     {
         return is_array($this->donnees) ? array_keys($this->donnees) : [];
-    }
-
-    public function isReadyForFinalization(): bool
-    {
-        return $this->entreprise_id &&
-               $this->exercice_id &&
-               $this->periode_id &&
-               $this->date_collecte &&
-               is_array($this->donnees) &&
-               count($this->donnees) > 0;
-    }
-
-    // Scopes
-    public function scopeStandard($query)
-    {
-        return $query->where('type_collecte', 'standard');
-    }
-
-    public function scopeBrouillon($query)
-    {
-        return $query->where('type_collecte', 'brouillon');
-    }
-
-    // Static Methods
-    public static function getCollectesForEntrepriseAndExercice(int $entrepriseId, int $exerciceId): array
-    {
-        return self::with('periode')
-            ->where('entreprise_id', $entrepriseId)
-            ->where('exercice_id', $exerciceId)
-            ->orderBy('date_collecte')
-            ->get()
-            ->groupBy('periode_id')
-            ->toArray();
-    }
-
-    public static function getLatestCollecteForEntrepriseAndCategory(int $entrepriseId, string $category): ?self
-    {
-        return self::where('entreprise_id', $entrepriseId)
-            ->whereJsonContains('donnees->' . $category, null)
-            ->orderByDesc('date_collecte')
-            ->first();
     }
 }
