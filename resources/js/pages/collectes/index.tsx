@@ -1,205 +1,4 @@
-// import React, { useState } from 'react';
-// import { Head, usePage, router, Link } from '@inertiajs/react';
-// import { PageProps } from '@inertiajs/core';
-// import { formatDate } from '@/Utils/dateUtils';
-// import { toast } from 'sonner';
-// import { PlusIcon, PencilIcon, TrashIcon } from 'lucide-react';
-// import AppLayout from '@/layouts/app-layout';
-
-// interface Entreprise {
-//     id: number;
-//     nom_entreprise: string;
-// }
-
-// interface Exercice {
-//     id: number;
-//     annee: number;
-// }
-
-// interface Periode {
-//     id: number;
-//     type_periode: string;
-// }
-
-// interface Collecte {
-//     id: number;
-//     entreprise: Entreprise;
-//     exercice: Exercice;
-//     periode: Periode;
-//     date_collecte: string;
-//     type_collecte: string;
-//     donnees: Record<string, any>;
-// }
-
-// interface CollectesPageProps extends PageProps {
-//     collectes: {
-//         data: Collecte[];
-//         links: any[];
-//         from: number;
-//         to: number;
-//         total: number;
-//     };
-//     auth: unknown;
-// }
-
-// const CollectesIndex = () => {
-//     const { collectes } = usePage<CollectesPageProps>().props;
-//     const [searchTerm, setSearchTerm] = useState('');
-//     const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
-
-//     const handleDelete = (id: number, e: React.MouseEvent) => {
-//         e.preventDefault();
-//         e.stopPropagation();
-
-//         if (confirmDelete === id) {
-//             router.delete(route('collectes.destroy', id), {
-//                 onSuccess: () => {
-//                     toast.success('Collecte supprimée avec succès');
-//                 },
-//                 onError: () => {
-//                     toast.error("Échec de la suppression de la collecte");
-//                 },
-//             });
-//             setConfirmDelete(null);
-//         } else {
-//             setConfirmDelete(id);
-//             toast.info("Cliquez à nouveau pour confirmer la suppression");
-
-//             setTimeout(() => {
-//                 if (confirmDelete === id) {
-//                     setConfirmDelete(null);
-//                 }
-//             }, 3000);
-//         }
-//     };
-
-//     const filteredCollectes = collectes.data.filter((collecte) =>
-//         collecte.entreprise.nom_entreprise.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//         collecte.exercice.annee.toString().includes(searchTerm.toLowerCase()) ||
-//         collecte.periode.type_periode.toLowerCase().includes(searchTerm.toLowerCase())
-//     );
-
-//     return (
-//         <AppLayout
-//          title="Liste des collectes">
-//             <Head title="Liste des collectes" />
-
-//             <div className="py-12">
-//                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-//                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-//                         <div className="flex  items-center mb-6">
-
-
-//                             <Link
-//                                 href={route('collectes.create')}
-//                                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition mr-4"
-//                             >
-//                                 <PlusIcon className="w-4 h-4 mr-2" />
-//                                 Nouvelle Collecte
-//                             </Link>
-//                         </div>
-
-//                         <div className="flex items-center mb-6">
-//                             <h1 className="text-2xl font-semibold text-gray-800">Liste des Collectes</h1>
-//                         </div>
-
-//                         <input
-//                             type="text"
-//                             placeholder="Rechercher une collecte..."
-//                             className="w-full p-2 border rounded-md mb-4"
-//                             value={searchTerm}
-//                             onChange={(e) => setSearchTerm(e.target.value)}
-//                         />
-
-// {filteredCollectes.length > 0 ? (
-//     <table className="min-w-full divide-y divide-gray-300">
-//         <thead className="bg-gray-50">
-//             <tr>
-//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entreprise</th>
-//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Exercice</th>
-//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Période</th>
-//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Collecte</th>
-//                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-//             </tr>
-//         </thead>
-//         <tbody className="bg-white divide-y divide-gray-200">
-//             {filteredCollectes.map((collecte) => (
-//                 <tr
-//                     key={collecte.id}
-//                     onClick={() => router.visit(route('collectes.show', collecte.id))}
-//                     className="cursor-pointer hover:bg-gray-50 transition-colors duration-150"
-//                 >
-//                     <td className="px-6 py-4">{collecte.entreprise.nom_entreprise}</td>
-//                     <td className="px-6 py-4">{collecte.exercice.annee}</td>
-//                     <td className="px-6 py-4">{collecte.periode.type_periode}</td>
-//                     <td className="px-6 py-4">{formatDate(collecte.date_collecte)}</td>
-//                     <td className="px-6 py-4">
-//                         <div className="flex space-x-2" onClick={e => e.stopPropagation()}>
-//                             <Link
-//                                 href={route('collectes.edit', collecte.id)}
-//                                 className="text-indigo-600 hover:text-indigo-900"
-//                                 title="Modifier"
-//                             >
-//                                 <PencilIcon className="w-5 h-5" />
-//                             </Link>
-//                             <button
-//                                 onClick={(e) => handleDelete(collecte.id, e)}
-//                                 className={`text-gray-500 hover:text-red-600 ${
-//                                     confirmDelete === collecte.id ? 'text-red-600' : ''
-//                                 }`}
-//                                 title={confirmDelete === collecte.id ? "Confirmer la suppression" : "Supprimer"}
-//                             >
-//                                 <TrashIcon className="w-5 h-5" />
-//                             </button>
-//                         </div>
-//                     </td>
-//                 </tr>
-//             ))}
-//         </tbody>
-//     </table>
-// ) : (
-//     <div className="text-center py-4 text-gray-500">
-//         Aucune collecte trouvée
-//     </div>
-// )}
-
-//                         {/* Pagination */}
-//                         {collectes.links && collectes.links.length > 3 && (
-//                             <div className="mt-6">
-//                                 <nav className="flex items-center justify-between">
-//                                     <div className="text-sm text-gray-700">
-//                                         Affichage <span className="font-medium">{collectes.from}</span> à{' '}
-//                                         <span className="font-medium">{collectes.to}</span> sur{' '}
-//                                         <span className="font-medium">{collectes.total}</span> résultats
-//                                     </div>
-//                                     <div className="flex-1 flex justify-end space-x-2">
-//                                         {collectes.links.map((link, index) => (
-//                                             link.url && (
-//                                                 <Link
-//                                                     key={index}
-//                                                     href={link.url}
-//                                                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md ${
-//                                                         link.active
-//                                                             ? 'bg-blue-50 border-blue-500 text-blue-600'
-//                                                             : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-//                                                     }`}
-//                                                     dangerouslySetInnerHTML={{ __html: link.label }}
-//                                                 />
-//                                             )
-//                                         ))}
-//                                     </div>
-//                                 </nav>
-//                             </div>
-//                         )}
-//                     </div>
-//                 </div>
-//             </div>
-//         </AppLayout>
-//     );
-// };
-
-// export default CollectesIndex;
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
 import { toast } from 'sonner';
 import {
@@ -213,7 +12,9 @@ import {
   SlidersIcon,
   XIcon,
   DownloadIcon,
-  PrinterIcon
+  PrinterIcon,
+  MoonIcon,
+  SunIcon
 } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { Method } from 'node_modules/@inertiajs/core/types/types';
@@ -303,6 +104,29 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
     status: true,
     actions: true
   });
+
+  // État pour le mode sombre
+  const [darkMode, setDarkMode] = useState(() => {
+    // Récupérer la préférence de l'utilisateur depuis localStorage ou utiliser la préférence du système
+    const savedMode = localStorage.getItem('darkMode');
+    return savedMode !== null ? JSON.parse(savedMode) : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  // Sauvegarder la préférence de mode sombre
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    // Appliquer ou supprimer la classe dark sur le document
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // Basculer le mode sombre
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
 
   // Fonction pour appliquer les filtres
   const applyFilters = () => {
@@ -546,22 +370,31 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
     <AppLayout title="Liste des collectes">
       <Head title="Liste des collectes" />
 
-      <div className="py-12">
+      <div className={`py-12 transition-colors duration-200 ${darkMode ? 'dark' : ''}`}>
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-          <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+          <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-lg sm:rounded-xl p-6 transition-colors">
             {/* En-tête et actions principales */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 relative">
               <div>
-                <h1 className="text-2xl font-semibold text-gray-800">Liste des Collectes</h1>
-                <p className="text-sm text-gray-500 mt-1">
+                <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Liste des Collectes</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   Total: {collectes.total} collecte(s), dont {totalDrafts} brouillon(s)
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              {/* Bouton de basculement du mode sombre */}
+              <button
+                onClick={toggleDarkMode}
+                className="absolute right-0 top-0 p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                aria-label={darkMode ? "Activer le mode clair" : "Activer le mode sombre"}
+              >
+                {darkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+              </button>
+
+              <div className="flex flex-wrap gap-2 mt-8 md:mt-0">
                 <Link
                   href={route('collectes.create')}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                  className="inline-flex items-center px-5 py-3 bg-blue-600 dark:bg-blue-500 text-white rounded-lg border-2 border-blue-600 dark:border-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 transition shadow-md"
                 >
                   <PlusIcon className="w-4 h-4 mr-2" />
                   Nouvelle Collecte
@@ -569,7 +402,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
 
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                  className="inline-flex items-center px-5 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600 transition shadow-md"
                 >
                   <FilterIcon className="w-4 h-4 mr-2" />
                   {showFilters ? 'Masquer les filtres' : 'Filtres'}
@@ -578,7 +411,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                 <div className="relative">
                   <button
                     type="button"
-                    className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                    className="inline-flex items-center px-5 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600 transition shadow-md"
                     onClick={() => exportData('excel')}
                   >
                     <DownloadIcon className="w-4 h-4 mr-2" />
@@ -588,7 +421,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
 
                 <button
                   onClick={() => exportData('pdf')}
-                  className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                  className="inline-flex items-center px-5 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600 transition shadow-md"
                 >
                   <DownloadIcon className="w-4 h-4 mr-2" />
                   Exporter en PDF
@@ -596,7 +429,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
 
                 <button
                   onClick={printCollectes}
-                  className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+                  className="inline-flex items-center px-5 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600 transition shadow-md"
                 >
                   <PrinterIcon className="w-4 h-4 mr-2" />
                   Imprimer
@@ -606,12 +439,12 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
 
             {/* Filtres */}
             {showFilters && (
-              <div className="bg-gray-50 p-4 rounded-md mb-6">
+              <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg mb-6 shadow-inner border-2 border-gray-200 dark:border-gray-600">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-medium">Filtres</h2>
+                  <h2 className="text-lg font-medium text-gray-800 dark:text-white">Filtres</h2>
                   <button
                     onClick={resetFilters}
-                    className="text-sm text-blue-600 hover:text-blue-800"
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                   >
                     Réinitialiser
                   </button>
@@ -619,12 +452,12 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
-                    <label htmlFor="entreprise_filter" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="entreprise_filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Entreprise
                     </label>
                     <select
                       id="entreprise_filter"
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md py-3 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:border-blue-500 dark:focus:border-blue-400 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 focus:ring-opacity-50"
                       value={activeFilters.entreprise_id}
                       onChange={(e) => setActiveFilters({...activeFilters, entreprise_id: e.target.value})}
                     >
@@ -638,12 +471,12 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                   </div>
 
                   <div>
-                    <label htmlFor="exercice_filter" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="exercice_filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Exercice
                     </label>
                     <select
                       id="exercice_filter"
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md py-3 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:border-blue-500 dark:focus:border-blue-400 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 focus:ring-opacity-50"
                       value={activeFilters.exercice_id}
                       onChange={(e) => setActiveFilters({...activeFilters, exercice_id: e.target.value})}
                     >
@@ -657,12 +490,12 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                   </div>
 
                   <div>
-                    <label htmlFor="periode_filter" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="periode_filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Période
                     </label>
                     <select
                       id="periode_filter"
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md py-3 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:border-blue-500 dark:focus:border-blue-400 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 focus:ring-opacity-50"
                       value={activeFilters.periode_id}
                       onChange={(e) => setActiveFilters({...activeFilters, periode_id: e.target.value})}
                     >
@@ -676,12 +509,12 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                   </div>
 
                   <div>
-                    <label htmlFor="type_filter" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="type_filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Type
                     </label>
                     <select
                       id="type_filter"
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                      className="w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-md py-3 px-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:border-blue-500 dark:focus:border-blue-400 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 focus:ring-opacity-50"
                       value={activeFilters.type_collecte}
                       onChange={(e) => setActiveFilters({...activeFilters, type_collecte: e.target.value})}
                     >
@@ -695,7 +528,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                 <div className="mt-4 flex justify-end">
                   <button
                     onClick={applyFilters}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="inline-flex items-center px-5 py-3 bg-blue-600 dark:bg-blue-500 text-white rounded-lg border-2 border-blue-600 dark:border-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 shadow-md"
                   >
                     Appliquer les filtres
                   </button>
@@ -707,12 +540,12 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
             <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
               <div className="relative flex-grow max-w-lg">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <SearchIcon className="h-5 w-5 text-gray-400" />
+                  <SearchIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                 </div>
                 <input
                   type="text"
                   placeholder="Rechercher une collecte..."
-                  className="pl-10 w-full p-2 border rounded-md"
+                  className="pl-10 w-full p-3 border-2 rounded-lg shadow-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
@@ -721,7 +554,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
 
               {selectedCollectes.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
                     {selectedCollectes.length} collecte(s) sélectionnée(s)
                     {selectedDrafts > 0 && ` (${selectedDrafts} brouillon(s))`}
                   </span>
@@ -730,7 +563,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                     <button
                       onClick={validateSelectedCollectes}
                       disabled={isProcessing}
-                      className="inline-flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:bg-green-300"
+                      className="inline-flex items-center px-4 py-2 bg-green-600 dark:bg-green-500 text-white text-sm rounded-lg border-2 border-green-600 dark:border-green-500 hover:bg-green-700 dark:hover:bg-green-600 disabled:bg-green-300 dark:disabled:bg-green-800 shadow-md"
                     >
                       <CheckCircleIcon className="w-4 h-4 mr-1" />
                       Valider
@@ -740,7 +573,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                   <button
                     onClick={deleteSelectedCollectes}
                     disabled={isProcessing}
-                    className="inline-flex items-center px-3 py-1 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:bg-red-300"
+                    className="inline-flex items-center px-4 py-2 bg-red-600 dark:bg-red-500 text-white text-sm rounded-lg border-2 border-red-600 dark:border-red-500 hover:bg-red-700 dark:hover:bg-red-600 disabled:bg-red-300 dark:disabled:bg-red-800 shadow-md"
                   >
                     <TrashIcon className="w-4 h-4 mr-1" />
                     Supprimer
@@ -748,7 +581,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
 
                   <button
                     onClick={deselectAll}
-                    className="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300"
+                    className="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600 shadow-md"
                   >
                     <XIcon className="w-4 h-4 mr-1" />
                     Désélectionner
@@ -759,7 +592,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
               {selectedCollectes.length === 0 && totalDrafts > 0 && (
                 <button
                   onClick={selectAllDrafts}
-                  className="inline-flex items-center px-3 py-1 bg-amber-100 text-amber-800 text-sm rounded-md hover:bg-amber-200"
+                  className="inline-flex items-center px-4 py-2 bg-amber-100 dark:bg-amber-800 text-amber-800 dark:text-amber-100 text-sm rounded-lg border-2 border-amber-200 dark:border-amber-700 hover:bg-amber-200 dark:hover:bg-amber-700 shadow-md"
                 >
                   <CheckCircleIcon className="w-4 h-4 mr-1" />
                   Sélectionner tous les brouillons ({totalDrafts})
@@ -769,7 +602,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
               {/* Bouton pour gérer les colonnes visibles */}
               <div className="relative">
                 <button
-                  className="inline-flex items-center px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300"
+                  className="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-300 dark:hover:bg-gray-600 shadow-md"
                   onClick={() => {
                     // Toggle dialog pour gérer les colonnes
                   }}
@@ -782,14 +615,14 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
 
             {/* Tableau des collectes */}
             {collectes.data.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-300">
-                  <thead className="bg-gray-50">
+              <div className="overflow-x-auto rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-lg">
+                <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
                       <th className="w-10 px-2 py-3">
                         <input
                           type="checkbox"
-                          className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                          className="rounded-md border-2 border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 shadow-sm focus:border-blue-300 dark:focus:border-blue-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 focus:ring-opacity-50"
                           checked={selectedCollectes.length > 0 && selectedCollectes.length === collectes.data.length}
                           onChange={(e) => {
                             if (e.target.checked) {
@@ -801,37 +634,37 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                         />
                       </th>
                       {visibleColumns.entreprise && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entreprise</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Entreprise</th>
                       )}
                       {visibleColumns.exercice && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Exercice</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Exercice</th>
                       )}
                       {visibleColumns.periode && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Période</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Période</th>
                       )}
                       {visibleColumns.date && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Collecte</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date Collecte</th>
                       )}
                       {visibleColumns.status && (
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Statut</th>
                       )}
                       {visibleColumns.actions && (
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                       )}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {collectes.data.map((collecte) => (
                       <tr
                         key={collecte.id}
-                        className={`hover:bg-gray-50 transition-colors duration-150 ${
-                          selectedCollectes.includes(collecte.id) ? 'bg-blue-50' : ''
+                        className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 ${
+                          selectedCollectes.includes(collecte.id) ? 'bg-blue-50 dark:bg-blue-900/30' : ''
                         }`}
                       >
                         <td className="px-2 py-4">
                           <input
                             type="checkbox"
-                            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                            className="rounded-md border-2 border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-500 shadow-sm focus:border-blue-300 dark:focus:border-blue-500 focus:ring focus:ring-blue-200 dark:focus:ring-blue-700 focus:ring-opacity-50"
                             checked={selectedCollectes.includes(collecte.id)}
                             onChange={() => toggleSelect(collecte.id)}
                             onClick={(e) => e.stopPropagation()}
@@ -839,7 +672,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                         </td>
                         {visibleColumns.entreprise && (
                           <td
-                            className="px-6 py-4 cursor-pointer"
+                            className="px-6 py-4 cursor-pointer text-gray-900 dark:text-gray-200"
                             onClick={() => router.visit(route('collectes.show', collecte.id))}
                           >
                             {collecte.entreprise.nom_entreprise}
@@ -847,7 +680,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                         )}
                         {visibleColumns.exercice && (
                           <td
-                            className="px-6 py-4 cursor-pointer"
+                            className="px-6 py-4 cursor-pointer text-gray-900 dark:text-gray-200"
                             onClick={() => router.visit(route('collectes.show', collecte.id))}
                           >
                             {collecte.exercice.annee}
@@ -855,7 +688,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                         )}
                         {visibleColumns.periode && (
                           <td
-                            className="px-6 py-4 cursor-pointer"
+                            className="px-6 py-4 cursor-pointer text-gray-900 dark:text-gray-200"
                             onClick={() => router.visit(route('collectes.show', collecte.id))}
                           >
                             {collecte.periode.type_periode}
@@ -863,7 +696,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                         )}
                         {visibleColumns.date && (
                           <td
-                            className="px-6 py-4 cursor-pointer"
+                            className="px-6 py-4 cursor-pointer text-gray-900 dark:text-gray-200"
                             onClick={() => router.visit(route('collectes.show', collecte.id))}
                           >
                             {formatDate(collecte.date_collecte)}
@@ -875,11 +708,11 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                             onClick={() => router.visit(route('collectes.show', collecte.id))}
                           >
                             {collecte.type_collecte === 'brouillon' ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200">
                                 Brouillon
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
                                 Standard
                               </span>
                             )}
@@ -890,7 +723,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                             <div className="flex space-x-2 justify-end" onClick={e => e.stopPropagation()}>
                               <Link
                                 href={route('collectes.show', collecte.id)}
-                                className="text-gray-600 hover:text-gray-900"
+                                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                                 title="Voir"
                               >
                                 <FileTextIcon className="w-5 h-5" />
@@ -899,7 +732,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                               {/* Modifier - visible pour tous */}
                               <Link
                                 href={route('collectes.edit', collecte.id)}
-                                className="text-indigo-600 hover:text-indigo-900"
+                                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300"
                                 title="Modifier"
                               >
                                 <PencilIcon className="w-5 h-5" />
@@ -909,7 +742,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                               {collecte.type_collecte === 'brouillon' && (
                                 <Link
                                   href={route('collectes.edit', collecte.id)}
-                                  className="text-green-600 hover:text-green-900"
+                                  className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
                                   title="Convertir en standard"
                                 >
                                   <CheckCircleIcon className="w-5 h-5" />
@@ -920,7 +753,9 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                               <button
                                 onClick={(e) => handleDelete(collecte.id, e)}
                                 className={`${
-                                  confirmDelete === collecte.id ? 'text-red-600' : 'text-gray-500 hover:text-red-600'
+                                  confirmDelete === collecte.id
+                                   ? 'text-red-600 dark:text-red-400'
+                                   : 'text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
                                 }`}
                                 title={confirmDelete === collecte.id ? "Confirmer la suppression" : "Supprimer"}
                               >
@@ -935,10 +770,10 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                 </table>
               </div>
             ) : (
-              <div className="text-center py-10 bg-gray-50 rounded-md">
-                <FileTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <h3 className="text-lg font-medium text-gray-900">Aucune collecte trouvée</h3>
-                <p className="mt-1 text-gray-500">
+              <div className="text-center py-10 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <FileTextIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Aucune collecte trouvée</h3>
+                <p className="mt-1 text-gray-500 dark:text-gray-400">
                   {searchTerm || Object.values(activeFilters).some(v => v)
                     ? "Aucun résultat ne correspond à vos critères de recherche."
                     : "Commencez par créer une nouvelle collecte."}
@@ -946,7 +781,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                 {(searchTerm || Object.values(activeFilters).some(v => v)) && (
                   <button
                     onClick={resetFilters}
-                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                    className="mt-4 inline-flex items-center px-5 py-3 border-2 border-transparent rounded-lg shadow-md text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
                   >
                     Réinitialiser les filtres
                   </button>
@@ -958,7 +793,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
             {collectes.links && collectes.links.length > 3 && (
               <div className="mt-6">
                 <nav className="flex items-center justify-between">
-                  <div className="text-sm text-gray-700">
+                  <div className="text-sm text-gray-700 dark:text-gray-300">
                     Affichage <span className="font-medium">{collectes.from}</span> à{' '}
                     <span className="font-medium">{collectes.to}</span> sur{' '}
                     <span className="font-medium">{collectes.total}</span> résultats
@@ -969,10 +804,10 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                         <Link
                           key={index}
                           href={link.url}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-md ${
+                          className={`relative inline-flex items-center px-4 py-2 border-2 text-sm font-medium rounded-lg ${
                             link.active
-                              ? 'bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              ? 'bg-blue-50 dark:bg-blue-900 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-300'
+                              : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                           }`}
                           dangerouslySetInnerHTML={{ __html: link.label }}
                         />

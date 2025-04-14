@@ -1335,15 +1335,21 @@ export default function Welcome() {
             <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
                 <header className="sticky top-0 z-50 bg-white/90 dark:bg-gray-900/90 shadow-sm">
                     <div className="container mx-auto px-4 flex justify-between items-center h-16">
-                        <div className="flex items-center">
-                            <img
-                                src={logo}
-                                alt="JEM II Logo"
-                                className="h-10 w-auto mr-4 object-contain"
-                            />
-                            <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                                JEM II
-                            </Link>
+                        <div className="flex flex-col">
+                            <div className="flex items-center">
+                                <img
+                                    src={logo}
+                                    alt="JEM II Logo"
+                                    className="h-10 w-auto mr-4 object-contain"
+                                />
+                                 {/* <Link href="/" className="text-xl font-bold text-blue-600 dark:text-blue-200">
+          JEM II
+        </Link> */}
+        <Link href="/" className="text-base font-bold text-blue-600 dark:text-blue-200 ml-4">
+          Bienvenue sur la plateforme de suivi des jeunes promoteurs d'entreprise bénéficiaires du projet JEM II
+        </Link>
+                            </div>
+
                         </div>
                         <div className="flex items-center gap-4">
                             <select
@@ -1391,7 +1397,7 @@ export default function Welcome() {
                                 href={auth.user ? route('dashboard') : route('register')}
                                 className="px-6 py-3 bg-blue-600 text-white rounded-lg"
                             >
-                                                                {auth.user ? t.dashboard : t.getStarted}
+                                {auth.user ? t.dashboard : t.getStarted}
 
                             </Link>
                             <Link

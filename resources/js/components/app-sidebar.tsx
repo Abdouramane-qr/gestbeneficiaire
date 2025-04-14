@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp,  } from 'lucide-react';
+import { UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp, Settings, UserRoundPen, ShieldCheck,  } from 'lucide-react';
 import AppLogo from './app-logo';
 
 // Créer un type pour les items avec sous-menus
@@ -23,6 +23,11 @@ const mainNavItems: NavItemWithSubmenu[] = [
           {
             title: 'Analyse des Indicateurs',  // Nouveau sous-menu
             href: '/analyse',
+            icon: TrendingUp,  // Ou BarChart selon votre préférence
+          },
+          {
+            title: 'Analyse',  // Nouveau sous-menu
+            href: '/analyse/synthese',
             icon: TrendingUp,  // Ou BarChart selon votre préférence
           }
         ]
@@ -92,20 +97,37 @@ const mainNavItems: NavItemWithSubmenu[] = [
         ]
     },
 
+    {
+        title: 'Parametres',
+        icon: Settings,
+        href: '#',
+        children: [
+            {
+                title: 'Profiles',
+                href: 'collectes', // Utiliser la fonction route() d'Inertia
+                icon: UserRoundPen ,
+            },
+            {
+                title: 'Roles',
+                href: 'Analyse/RapportSynthetique', // Liste toutes les collectes
+                icon: ShieldCheck ,
+            },
 
+        ]
+    },
 ];
 
 const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits',
-        icon: BookOpen,
-    },
+    // {
+    //     title: 'Repository',
+    //     href: 'https://github.com/laravel/react-starter-kit',
+    //     icon: Folder,
+    // },
+    // {
+    //     title: 'Documentation',
+    //     href: 'https://laravel.com/docs/starter-kits',
+    //     icon: BookOpen,
+    // },
 ];
 
 export function AppSidebar() {

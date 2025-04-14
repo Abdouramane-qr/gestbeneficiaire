@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { toast } from 'sonner';
 import {
@@ -7,7 +7,9 @@ import {
   TrashIcon,
   CheckCircleIcon,
   PrinterIcon,
-  FileTextIcon
+  FileTextIcon,
+  MoonIcon,
+  SunIcon
 } from 'lucide-react';
 import { Head } from '@inertiajs/react';
 import { formatDate } from '@/Utils/dateUtils';
@@ -62,7 +64,30 @@ const CollecteShow: React.FC<CollecteShowProps> = ({ collecte, categoriesDisponi
     const [confirmConversion, setConfirmConversion] = useState<boolean>(false);
     const [isConverting, setIsConverting] = useState<boolean>(false);
 
+    // État pour le mode sombre
+    const [darkMode, setDarkMode] = useState(() => {
+        // Récupérer la préférence de l'utilisateur depuis localStorage ou utiliser la préférence du système
+        const savedMode = localStorage.getItem('darkMode');
+        return savedMode !== null ? JSON.parse(savedMode) : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    });
+
     const pageTitle = `Collecte - ${collecte.entreprise.nom_entreprise}`;
+
+    // Sauvegarder la préférence de mode sombre et appliquer les classes
+    useEffect(() => {
+        localStorage.setItem('darkMode', JSON.stringify(darkMode));
+        // Appliquer ou supprimer la classe dark sur le document
+        if (darkMode) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [darkMode]);
+
+    // Basculer le mode sombre
+    const toggleDarkMode = () => {
+        setDarkMode(!darkMode);
+    };
 
     // Formatage des valeurs numériques
     const formatValue = (value: string | number) => {
@@ -225,14 +250,13 @@ const CollecteShow: React.FC<CollecteShowProps> = ({ collecte, categoriesDisponi
     };
 
     // Fonction pour exporter en PDF
-   // Fonction pour exporter en PDF
-const handleExportPDF = () => {
-    window.location.href = route('collectes.export', {
-        format: 'pdf',
-        collecte_ids: [collecte.id],
-        mode: 'detail' // Indique que c'est un export de détail
-    });
-};
+    const handleExportPDF = () => {
+        window.location.href = route('collectes.export', {
+            format: 'pdf',
+            collecte_ids: [collecte.id],
+            mode: 'detail' // Indique que c'est un export de détail
+        });
+    };
 
     // Gestion de la suppression
     const handleDelete = () => {
@@ -298,25 +322,35 @@ const handleExportPDF = () => {
         <AppLayout title={pageTitle}>
             <Head title={pageTitle} />
 
-            <div className="py-12">
+            <div className={`py-12 transition-colors duration-200 ${darkMode ? 'dark' : ''}`}>
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-800 shadow-lg overflow-hidden sm:rounded-xl">
                         {/* En-tête */}
-                        <div className="border-b border-gray-200 px-4 py-4 sm:px-6">
+                        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-5 relative">
                             <div className="flex justify-between items-center">
-                                <h2 className="text-2xl font-semibold text-gray-800">
+                                <h2 className="text-2xl font-semibold text-gray-800 dark:text-white flex items-center">
                                     Détails de la collecte
                                     {collecte.type_collecte === 'brouillon' && (
-                                        <span className="ml-2 px-2 py-1 text-xs bg-amber-100 text-amber-800 rounded-full">
+                                        <span className="ml-2 px-2.5 py-1 text-xs bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full">
                                             Brouillon
                                         </span>
                                     )}
                                 </h2>
+
+                                {/* Bouton de basculement du mode sombre */}
+                                <button
+                                    onClick={toggleDarkMode}
+                                    className="absolute right-6 top-5 p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                    aria-label={darkMode ? "Activer le mode clair" : "Activer le mode sombre"}
+                                >
+                                    {darkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+                                </button>
+
                                 <div className="flex space-x-2">
                                     {/* Bouton d'impression */}
                                     <button
                                         onClick={handlePrint}
-                                        className="inline-flex items-center px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                        className="inline-flex items-center px-5 py-3 border-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 shadow-md transition-colors"
                                     >
                                         <PrinterIcon className="w-4 h-4 mr-2" />
                                         Imprimer
@@ -325,7 +359,7 @@ const handleExportPDF = () => {
                                     {/* Bouton d'export PDF */}
                                     <button
                                         onClick={handleExportPDF}
-                                        className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                                        className="inline-flex items-center px-5 py-3 border-2 border-gray-600 dark:border-gray-400 bg-gray-700 dark:bg-gray-600 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-500 shadow-md transition-colors"
                                     >
                                         <FileTextIcon className="w-4 h-4 mr-2" />
                                         Exporter PDF
@@ -336,11 +370,11 @@ const handleExportPDF = () => {
                                         <button
                                             onClick={handleConvertToStandard}
                                             disabled={isConverting}
-                                            className={`inline-flex items-center px-4 py-2 rounded-md text-white ${
-                                                confirmConversion
-                                                    ? 'bg-green-800 hover:bg-green-900'
-                                                    : 'bg-green-600 hover:bg-green-700'
-                                            } ${isConverting ? 'opacity-75 cursor-not-allowed' : ''}`}
+                                            className={`inline-flex items-center px-5 py-3 rounded-lg border-2 shadow-md text-white
+                                                ${confirmConversion
+                                                    ? 'bg-green-800 dark:bg-green-700 border-green-900 dark:border-green-600 hover:bg-green-900 dark:hover:bg-green-600'
+                                                    : 'bg-green-600 dark:bg-green-500 border-green-700 dark:border-green-400 hover:bg-green-700 dark:hover:bg-green-400'
+                                                } ${isConverting ? 'opacity-75 cursor-not-allowed' : ''} transition-colors`}
                                         >
                                             <CheckCircleIcon className="w-4 h-4 mr-2" />
                                             {isConverting
@@ -354,16 +388,19 @@ const handleExportPDF = () => {
 
                                     <Link
                                         href={route('collectes.edit', collecte.id)}
-                                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                        className="inline-flex items-center px-5 py-3 border-2 border-blue-600 dark:border-blue-400 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-400 shadow-md transition-colors"
                                     >
                                         <PencilIcon className="w-4 h-4 mr-2" />
                                         Modifier
                                     </Link>
+
                                     <button
                                         onClick={handleDelete}
-                                        className={`inline-flex items-center px-4 py-2 rounded-md text-white ${
-                                            confirmDelete ? 'bg-red-800 hover:bg-red-900' : 'bg-red-600 hover:bg-red-700'
-                                        }`}
+                                        className={`inline-flex items-center px-5 py-3 rounded-lg border-2 shadow-md text-white
+                                            ${confirmDelete
+                                                ? 'bg-red-800 dark:bg-red-700 border-red-900 dark:border-red-600 hover:bg-red-900 dark:hover:bg-red-600'
+                                                : 'bg-red-600 dark:bg-red-500 border-red-700 dark:border-red-400 hover:bg-red-700 dark:hover:bg-red-400'
+                                            } transition-colors`}
                                     >
                                         <TrashIcon className="w-4 h-4 mr-2" />
                                         {confirmDelete ? 'Confirmer' : 'Supprimer'}
@@ -377,7 +414,7 @@ const handleExportPDF = () => {
                             <div className="mb-6">
                                 <Link
                                     href={route('collectes.index')}
-                                    className="inline-flex items-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700"
+                                    className="inline-flex items-center px-5 py-3 bg-gray-800 dark:bg-gray-700 text-white border-2 border-gray-800 dark:border-gray-600 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 shadow-md transition-colors"
                                 >
                                     <ArrowLeftIcon className="w-4 h-4 mr-2" />
                                     Retour à la liste
@@ -386,18 +423,18 @@ const handleExportPDF = () => {
 
                             {/* Message de statut brouillon */}
                             {collecte.type_collecte === 'brouillon' && (
-                                <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mb-6">
+                                <div className="bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-200 dark:border-amber-700 rounded-lg p-4 mb-6">
                                     <div className="flex">
                                         <div className="flex-shrink-0">
-                                            <svg className="h-5 w-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <svg className="h-5 w-5 text-amber-400 dark:text-amber-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                             </svg>
                                         </div>
                                         <div className="ml-3">
-                                            <h3 className="text-sm font-medium text-amber-800">
+                                            <h3 className="text-sm font-medium text-amber-800 dark:text-amber-300">
                                                 Cette collecte est en mode brouillon
                                             </h3>
-                                            <div className="mt-2 text-sm text-amber-700">
+                                            <div className="mt-2 text-sm text-amber-700 dark:text-amber-400">
                                                 <p>
                                                     Les collectes en mode brouillon ne sont pas comptabilisées dans les analyses.
                                                     Vous pouvez la convertir en collecte standard en utilisant le bouton "Convertir en standard".
@@ -411,49 +448,49 @@ const handleExportPDF = () => {
                             {/* Informations générales */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                                 {/* Informations de la collecte */}
-                                <div className="bg-gray-50 rounded-lg p-6">
-                                    <h3 className="text-lg font-semibold mb-4">Informations de la Collecte</h3>
+                                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border-2 border-gray-200 dark:border-gray-600 shadow-md">
+                                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Informations de la Collecte</h3>
                                     <dl className="grid grid-cols-1 gap-3">
                                         <div className="flex justify-between">
-                                            <dt className="font-medium text-gray-500">Date de collecte</dt>
-                                            <dd className="text-gray-900">{formatDate(collecte.date_collecte)}</dd>
+                                            <dt className="font-medium text-gray-500 dark:text-gray-300">Date de collecte</dt>
+                                            <dd className="text-gray-900 dark:text-gray-100">{formatDate(collecte.date_collecte)}</dd>
                                         </div>
                                         <div className="flex justify-between">
-                                            <dt className="font-medium text-gray-500">Statut</dt>
-                                            <dd className="text-gray-900">
+                                            <dt className="font-medium text-gray-500 dark:text-gray-300">Statut</dt>
+                                            <dd className="text-gray-900 dark:text-gray-100">
                                                 {collecte.type_collecte === 'brouillon'
-                                                    ? <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded-full text-xs">Brouillon</span>
-                                                    : <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Standard</span>
+                                                    ? <span className="px-2.5 py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full text-xs">Brouillon</span>
+                                                    : <span className="px-2.5 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-xs">Standard</span>
                                                 }
                                             </dd>
                                         </div>
                                         <div className="flex justify-between">
-                                            <dt className="font-medium text-gray-500">Créée par</dt>
-                                            <dd className="text-gray-900">{collecte.user?.name || 'Non spécifié'}</dd>
+                                            <dt className="font-medium text-gray-500 dark:text-gray-300">Créée par</dt>
+                                            <dd className="text-gray-900 dark:text-gray-100">{collecte.user?.name || 'Non spécifié'}</dd>
                                         </div>
                                         <div className="flex justify-between">
-                                            <dt className="font-medium text-gray-500">Créée le</dt>
-                                            <dd className="text-gray-900">{formatDate(collecte.created_at)}</dd>
+                                            <dt className="font-medium text-gray-500 dark:text-gray-300">Créée le</dt>
+                                            <dd className="text-gray-900 dark:text-gray-100">{formatDate(collecte.created_at)}</dd>
                                         </div>
                                         <div className="flex justify-between">
-                                            <dt className="font-medium text-gray-500">Dernière modification</dt>
-                                            <dd className="text-gray-900">{formatDate(collecte.updated_at)}</dd>
+                                            <dt className="font-medium text-gray-500 dark:text-gray-300">Dernière modification</dt>
+                                            <dd className="text-gray-900 dark:text-gray-100">{formatDate(collecte.updated_at)}</dd>
                                         </div>
                                     </dl>
                                 </div>
 
                                 {/* Informations de l'entreprise */}
-                                <div className="bg-gray-50 rounded-lg p-6">
-                                    <h3 className="text-lg font-semibold mb-4">Informations de l'Entreprise</h3>
+                                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 border-2 border-gray-200 dark:border-gray-600 shadow-md">
+                                    <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Informations de l'Entreprise</h3>
                                     <dl className="grid grid-cols-1 gap-3">
                                         <div className="flex justify-between">
-                                            <dt className="font-medium text-gray-500">Nom</dt>
-                                            <dd>{collecte.entreprise.nom_entreprise}</dd>
+                                            <dt className="font-medium text-gray-500 dark:text-gray-300">Nom</dt>
+                                            <dd className="text-gray-900 dark:text-gray-100">{collecte.entreprise.nom_entreprise}</dd>
                                         </div>
                                         {collecte.entreprise.secteur_activite && (
                                             <div className="flex justify-between">
-                                                <dt className="font-medium text-gray-500">Secteur d'activité</dt>
-                                                <dd>{collecte.entreprise.secteur_activite}</dd>
+                                                <dt className="font-medium text-gray-500 dark:text-gray-300">Secteur d'activité</dt>
+                                                <dd className="text-gray-900 dark:text-gray-100">{collecte.entreprise.secteur_activite}</dd>
                                             </div>
                                         )}
                                     </dl>
@@ -462,20 +499,20 @@ const handleExportPDF = () => {
 
                             {/* Données collectées */}
                             <div className="mt-8">
-                                <h3 className="text-xl font-semibold mb-6">Données Collectées</h3>
+                                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Données Collectées</h3>
 
                                 {/* Onglets des catégories */}
-                                <div className="border-b border-gray-200">
-                                    <nav className="-mb-px flex space-x-8">
+                                <div className="border-b border-gray-200 dark:border-gray-700">
+                                    <nav className="-mb-px flex flex-wrap space-x-4">
                                         {categoriesDisponibles.map(category => (
                                             <button
                                                 key={category}
                                                 onClick={() => setActiveTab(category)}
                                                 className={`
-                                                    py-4 px-1 border-b-2 font-medium text-sm
+                                                    py-3 px-4 border-b-2 font-medium text-sm rounded-t-lg
                                                     ${activeTab === category
-                                                        ? 'border-blue-500 text-blue-600'
-                                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}
+                                                        ? 'border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30'
+                                                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'}
                                                 `}
                                             >
                                                 {getCategoryLabel(category)}
@@ -487,25 +524,25 @@ const handleExportPDF = () => {
                                 {/* Contenu de l'onglet actif */}
                                 <div className="mt-6">
                                     {collecte.donnees[activeTab] ? (
-                                        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                                            <table className="min-w-full divide-y divide-gray-200">
-                                                <thead className="bg-gray-50">
+                                        <div className="bg-white dark:bg-gray-800 shadow-lg overflow-hidden sm:rounded-lg border-2 border-gray-200 dark:border-gray-700">
+                                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                                <thead className="bg-gray-50 dark:bg-gray-700">
                                                     <tr>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                                             Indicateur
                                                         </th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                                             Valeur
                                                         </th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                                     {Object.entries(collecte.donnees[activeTab]).map(([key, value]) => (
-                                                        <tr key={key}>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        <tr key={key} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                                                 {key}
                                                             </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                                                                 {formatValue(value)}
                                                             </td>
                                                         </tr>
@@ -514,9 +551,11 @@ const handleExportPDF = () => {
                                             </table>
                                         </div>
                                     ) : (
-                                        <p className="text-center text-gray-500 py-4">
-                                            Aucune donnée disponible pour cette catégorie.
-                                        </p>
+                                        <div className="text-center bg-gray-50 dark:bg-gray-700 rounded-lg p-8 border-2 border-gray-200 dark:border-gray-600">
+                                            <p className="text-gray-500 dark:text-gray-400">
+                                                Aucune donnée disponible pour cette catégorie.
+                                            </p>
+                                        </div>
                                     )}
                                 </div>
                             </div>

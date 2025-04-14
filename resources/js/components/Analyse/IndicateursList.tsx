@@ -1,7 +1,5 @@
 
-
-// // export default IndicateursList;
-// import React, { useState, useEffect, useCallback, useMemo } from 'react';
+// import React, { useState, useEffect, useCallback } from 'react';
 // import {
 //   ChevronDown,
 //   Search,
@@ -11,27 +9,25 @@
 //   FileText,
 //   X
 // } from 'lucide-react';
-// import { Tooltip } from '@/components/ui/tooltip';
 
-// // Type pour les indicateurs - compatible avec celui d'AnalyseIndicateurs
+// // Type adapté à votre backend
 // interface Indicateur {
-//   id: string;
+//   id: number;
+//   indicateur_id: number;
 //   nom: string;
 //   valeur: number;
-//   unite?: string;
 //   categorie: string;
-//   entite: string;
 //   region?: string;
 //   province?: string;
 //   commune?: string;
+//   secteur_activite?: string;
 //   typeBeneficiaire?: string;
 //   genre?: string;
-//   handicap?: boolean;
-//   niveauInstruction?: string;
-//   typeActivite?: string;
-//   niveauDeveloppement?: string;
 //   tendance?: 'hausse' | 'baisse' | 'stable';
-//   description?: string;
+//   entreprise_id: number;
+//   entreprise_nom: string;
+//   exercice_id: number;
+//   periode_id: number;
 // }
 
 // interface IndicateursListProps {
@@ -51,7 +47,7 @@
 //   onIndicateurClick,
 //   filtrerParTendance = false
 // }) => {
-//   // État local
+//   // États
 //   const [estOuvert, setEstOuvert] = useState(() => {
 //     // Récupérer l'état sauvegardé si disponible
 //     const saved = localStorage.getItem(`categorie-${titre}-ouvert`);
@@ -60,8 +56,8 @@
 //   const [recherche, setRecherche] = useState('');
 //   const [page, setPage] = useState(1);
 //   const [tendanceFiltre, setTendanceFiltre] = useState<'toutes' | 'hausse' | 'baisse' | 'stable'>('toutes');
-//   const [itemsParPage, setItemsParPage] = useState(5);
-//   const [isHovering, setIsHovering] = useState<string | null>(null);
+//   const itemsParPage = 5;
+//   const [isHovering, setIsHovering] = useState<number | null>(null);
 
 //   // Sauvegarder l'état ouvert/fermé
 //   const toggleOuvert = useCallback(() => {
@@ -71,28 +67,25 @@
 //   }, [estOuvert, titre]);
 
 //   // Filtrer les indicateurs en fonction de la recherche et de la tendance
-//   const indicateursFiltres = useMemo(() => {
-//     return indicateurs.filter(ind => {
-//       const matchRecherche =
-//         ind.nom.toLowerCase().includes(recherche.toLowerCase()) ||
-//         ind.entite.toLowerCase().includes(recherche.toLowerCase());
+//   const indicateursFiltres = indicateurs.filter(ind => {
+//     const matchRecherche =
+//       ind.nom.toLowerCase().includes(recherche.toLowerCase()) ||
+//       ind.entreprise_nom.toLowerCase().includes(recherche.toLowerCase());
 
-//       const matchTendance =
-//         tendanceFiltre === 'toutes' ||
-//         ind.tendance === tendanceFiltre;
+//     const matchTendance =
+//       !filtrerParTendance ||
+//       tendanceFiltre === 'toutes' ||
+//       ind.tendance === tendanceFiltre;
 
-//       return matchRecherche && matchTendance;
-//     });
-//   }, [indicateurs, recherche, tendanceFiltre]);
+//     return matchRecherche && matchTendance;
+//   });
 
 //   // Calculer les pages
 //   const totalPages = Math.ceil(indicateursFiltres.length / itemsParPage);
-//   const indicateursAffiches = useMemo(() => {
-//     return indicateursFiltres.slice(
-//       (page - 1) * itemsParPage,
-//       page * itemsParPage
-//     );
-//   }, [indicateursFiltres, page, itemsParPage]);
+//   const indicateursAffiches = indicateursFiltres.slice(
+//     (page - 1) * itemsParPage,
+//     page * itemsParPage
+//   );
 
 //   // Reset la page quand la recherche ou le filtre tendance change
 //   useEffect(() => {
@@ -120,16 +113,16 @@
 //   // Exporter cette catégorie en CSV
 //   const exporterCSV = useCallback(() => {
 //     // Préparer les en-têtes
-//     const headers = ['ID', 'Indicateur', 'Entité', 'Valeur', 'Unité', 'Tendance'];
+//     const headers = ['ID', 'Indicateur', 'Entreprise', 'Valeur', 'Tendance', 'Région'];
 
 //     // Préparer les données
 //     const data = indicateursFiltres.map(ind => [
 //       ind.id,
 //       ind.nom,
-//       ind.entite,
+//       ind.entreprise_nom,
 //       ind.valeur,
-//       ind.unite || '',
-//       ind.tendance || 'stable'
+//       ind.tendance || 'stable',
+//       ind.region || ''
 //     ]);
 
 //     // Générer le CSV
@@ -150,7 +143,7 @@
 //   }, [indicateursFiltres, titre]);
 
 //   // Détermine la classe de couleur pour les différents éléments de l'UI
-//   const couleurClasses = useMemo(() => {
+//   const couleurClasses = (() => {
 //     switch (couleur) {
 //       case 'blue':
 //         return {
@@ -193,7 +186,7 @@
 //           button: 'bg-gray-500 hover:bg-gray-600'
 //         };
 //     }
-//   }, [couleur]);
+//   })();
 
 //   return (
 //     <div
@@ -280,11 +273,11 @@
 //               >
 //                 <div className="flex flex-col">
 //                   <span className="text-gray-700 font-medium">{indicateur.nom}</span>
-//                   <span className="text-xs text-gray-500">{indicateur.entite}</span>
+//                   <span className="text-xs text-gray-500">{indicateur.entreprise_nom} {indicateur.region && `- ${indicateur.region}`}</span>
 //                 </div>
 //                 <div className="flex items-center gap-2">
 //                   <span className={`font-medium ${obtenirCouleurTendance(indicateur.tendance)}`}>
-//                     {indicateur.valeur}{indicateur.unite || ''}
+//                     {indicateur.valeur}
 //                   </span>
 //                   <span className={`${obtenirCouleurTendance(indicateur.tendance)}`}>
 //                     {obtenirIconeTendance(indicateur.tendance)}
@@ -340,32 +333,28 @@
 //               </div>
 
 //               <div className="flex gap-2">
-//                 <Tooltip content="Voir les détails">
-//                   <button
-//                     onClick={() => {
-//                       if (indicateursAffiches.length > 0 && onIndicateurClick) {
-//                         onIndicateurClick(indicateursAffiches[0]);
-//                       }
-//                     }}
-//                     disabled={indicateursAffiches.length === 0}
-//                     className={`px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md flex items-center gap-1 ${
-//                       indicateursAffiches.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
-//                     }`}
-//                   >
-//                     <FileText className="h-4 w-4" />
-//                     <span>Détails</span>
-//                   </button>
-//                 </Tooltip>
+//                 <button
+//                   onClick={() => {
+//                     if (indicateursAffiches.length > 0 && onIndicateurClick) {
+//                       onIndicateurClick(indicateursAffiches[0]);
+//                     }
+//                   }}
+//                   disabled={indicateursAffiches.length === 0}
+//                   className={`px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md flex items-center gap-1 ${
+//                     indicateursAffiches.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'
+//                   }`}
+//                 >
+//                   <FileText className="h-4 w-4" />
+//                   <span>Détails</span>
+//                 </button>
 
-//                 <Tooltip content="Exporter en CSV">
-//                   <button
-//                     onClick={exporterCSV}
-//                     className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md flex items-center gap-1 hover:bg-gray-50"
-//                   >
-//                     <Download className="h-4 w-4" />
-//                     <span>Exporter</span>
-//                   </button>
-//                 </Tooltip>
+//                 <button
+//                   onClick={exporterCSV}
+//                   className="px-3 py-1.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-md flex items-center gap-1 hover:bg-gray-50"
+//                 >
+//                   <Download className="h-4 w-4" />
+//                   <span>Exporter</span>
+//                 </button>
 //               </div>
 //             </div>
 //           </div>
@@ -416,6 +405,18 @@ interface IndicateursListProps {
   filtrerParTendance?: boolean;
 }
 
+// Mapping des catégories pour l'affichage
+const categoriesMap = {
+  'commercial': 'Indicateurs commerciaux',
+  'financier': 'Indicateurs financiers',
+  'production': 'Indicateurs de production',
+  'rh': 'Indicateurs RH',
+  'tresorerie': 'Indicateurs de trésorerie',
+  'rentabilite': 'Indicateurs de rentabilité',
+  'activite': 'Indicateurs d\'activité',
+  'performance': 'Indicateurs de performance'
+};
+
 const IndicateursList: React.FC<IndicateursListProps> = ({
   titre,
   icone,
@@ -436,6 +437,11 @@ const IndicateursList: React.FC<IndicateursListProps> = ({
   const itemsParPage = 5;
   const [isHovering, setIsHovering] = useState<number | null>(null);
 
+  // Obtenir le nom d'affichage d'une catégorie
+  const getCategoryDisplayName = (categoryId: string): string => {
+    return categoriesMap[categoryId as keyof typeof categoriesMap] || categoryId;
+  };
+
   // Sauvegarder l'état ouvert/fermé
   const toggleOuvert = useCallback(() => {
     const nouvelEtat = !estOuvert;
@@ -447,7 +453,8 @@ const IndicateursList: React.FC<IndicateursListProps> = ({
   const indicateursFiltres = indicateurs.filter(ind => {
     const matchRecherche =
       ind.nom.toLowerCase().includes(recherche.toLowerCase()) ||
-      ind.entreprise_nom.toLowerCase().includes(recherche.toLowerCase());
+      ind.entreprise_nom.toLowerCase().includes(recherche.toLowerCase()) ||
+      getCategoryDisplayName(ind.categorie).toLowerCase().includes(recherche.toLowerCase());
 
     const matchTendance =
       !filtrerParTendance ||
@@ -490,12 +497,13 @@ const IndicateursList: React.FC<IndicateursListProps> = ({
   // Exporter cette catégorie en CSV
   const exporterCSV = useCallback(() => {
     // Préparer les en-têtes
-    const headers = ['ID', 'Indicateur', 'Entreprise', 'Valeur', 'Tendance', 'Région'];
+    const headers = ['ID', 'Indicateur', 'Catégorie', 'Entreprise', 'Valeur', 'Tendance', 'Région'];
 
     // Préparer les données
     const data = indicateursFiltres.map(ind => [
       ind.id,
       ind.nom,
+      getCategoryDisplayName(ind.categorie),
       ind.entreprise_nom,
       ind.valeur,
       ind.tendance || 'stable',
@@ -650,7 +658,17 @@ const IndicateursList: React.FC<IndicateursListProps> = ({
               >
                 <div className="flex flex-col">
                   <span className="text-gray-700 font-medium">{indicateur.nom}</span>
-                  <span className="text-xs text-gray-500">{indicateur.entreprise_nom} {indicateur.region && `- ${indicateur.region}`}</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-gray-500">{indicateur.entreprise_nom}</span>
+                    {indicateur.region && (
+                      <span className="text-xs text-gray-500">
+                        - {indicateur.region}
+                      </span>
+                    )}
+                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 rounded-full">
+                      {getCategoryDisplayName(indicateur.categorie)}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`font-medium ${obtenirCouleurTendance(indicateur.tendance)}`}>

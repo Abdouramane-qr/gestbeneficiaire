@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+
 class CollecteController extends Controller
 {
     public function index(Request $request)
@@ -60,16 +61,70 @@ class CollecteController extends Controller
             'entreprises' => Entreprise::select('id', 'nom_entreprise')->get()
         ]);
     }
-
-    public function create()
+    public function show(Collecte $collecte)
     {
-        return Inertia::render('collectes/create', [
-            'entreprises' => Entreprise::select('id', 'nom_entreprise')->get(),
-            'exercices' => Exercice::orderBy('annee', 'desc')->get(),
-            'periodes' => Periode::with('exercice')->get()
+        $collecte->load(['entreprise', 'exercice', 'periode', 'user']);
+
+        $categoriesDisponibles = [];
+        if ($collecte->donnees && is_array($collecte->donnees)) {
+            $categoriesDisponibles = array_keys($collecte->donnees);
+        }
+
+        return Inertia::render('collectes/Show', [
+            'collecte' => $collecte,
+            'categoriesDisponibles' => array_values($categoriesDisponibles)
         ]);
     }
 
+
+    /**
+     * Affiche le formulaire de création d'une collecte
+     */
+    public function create()
+    {
+        // Récupérer les données de base
+        $entreprises = Entreprise::select('id', 'nom_entreprise')->get();
+        $exercices = Exercice::orderBy('annee', 'desc')->get();
+        $periodes = Periode::with('exercice')->get();
+
+        // Récupérer l'entreprise présélectionnée si disponible
+        $entrepriseId = request('entreprise_id');
+        $dependenciesData = [];
+
+        // Si une entreprise est présélectionnée, récupérer les données des collectes existantes
+        if ($entrepriseId) {
+            $dependenciesData = $this->getExistingCollectesData((int)$entrepriseId);
+        }
+
+        return Inertia::render('collectes/create', [
+            'entreprises' => $entreprises,
+            'exercices' => $exercices,
+            'periodes' => $periodes,
+            'dependenciesData' => $dependenciesData,
+            'preselectedPeriode' => request('periode_id')
+        ]);
+    }
+
+    /**
+     * Affiche le formulaire d'édition d'une collecte
+     */
+    public function edit(Collecte $collecte)
+    {
+        // Récupérer les données des collectes existantes pour cette entreprise
+        $dependenciesData = $this->getExistingCollectesData($collecte->entreprise_id, $collecte->id);
+
+        return Inertia::render('collectes/edit', [
+            'collecte' => $collecte->load(['entreprise', 'exercice', 'periode']),
+            'entreprises' => Entreprise::select('id', 'nom_entreprise')->get(),
+            'exercices' => Exercice::orderBy('annee', 'desc')->get(),
+            'periodes' => Periode::all(),
+            'dependenciesData' => $dependenciesData
+        ]);
+    }
+
+    /**
+     * Stocke une nouvelle collecte
+     */
     public function store(Request $request)
     {
         try {
@@ -112,6 +167,13 @@ class CollecteController extends Controller
                 ]);
             }
 
+            // Avant de sauvegarder, recalculer les indicateurs calculés automatiquement
+            $validatedDonnees = $this->recalculateIndicateurs(
+                $validated['donnees'],
+                $validated['entreprise_id'],
+                $periode->type_periode
+            );
+
             $collecte = Collecte::create([
                 'entreprise_id' => $validated['entreprise_id'],
                 'exercice_id' => $validated['exercice_id'],
@@ -119,8 +181,8 @@ class CollecteController extends Controller
                 'user_id' => Auth::id(),
                 'date_collecte' => $validated['date_collecte'],
                 'type_collecte' => $validated['type_collecte'],
-                'donnees' => $validated['donnees'],
-                'periode' => $periode->type_periode ?? 'Non spécifié', // Ajout du champ periode
+                'donnees' => $validatedDonnees,
+                'periode' => $periode->type_periode ?? 'Non spécifié',
             ]);
 
             if ($request->wantsJson()) {
@@ -148,31 +210,6 @@ class CollecteController extends Controller
                 'general' => 'Une erreur est survenue: '.$e->getMessage()
             ]);
         }
-    }
-
-    public function show(Collecte $collecte)
-    {
-        $collecte->load(['entreprise', 'exercice', 'periode', 'user']);
-
-        $categoriesDisponibles = [];
-        if ($collecte->donnees && is_array($collecte->donnees)) {
-            $categoriesDisponibles = array_keys($collecte->donnees);
-        }
-
-        return Inertia::render('collectes/Show', [
-            'collecte' => $collecte,
-            'categoriesDisponibles' => array_values($categoriesDisponibles)
-        ]);
-    }
-
-    public function edit(Collecte $collecte)
-    {
-        return Inertia::render('collectes/edit', [
-            'collecte' => $collecte->load(['entreprise', 'exercice', 'periode']),
-            'entreprises' => Entreprise::select('id', 'nom_entreprise')->get(),
-            'exercices' => Exercice::orderBy('annee', 'desc')->get(),
-            'periodes' => Periode::all()
-        ]);
     }
 
     /**
@@ -237,15 +274,23 @@ class CollecteController extends Controller
                 Log::info('La conversion est possible, aucune collecte standard existante.');
             }
 
+            // Avant de sauvegarder, recalculer les indicateurs calculés automatiquement
+            $validatedDonnees = $this->recalculateIndicateurs(
+                $validated['donnees'],
+                $validated['entreprise_id'],
+                $periode->type_periode,
+                $collecte->id
+            );
+
             // Mise à jour des données
             $collecte->update([
                 'entreprise_id' => $validated['entreprise_id'],
                 'exercice_id' => $validated['exercice_id'],
                 'periode_id' => $validated['periode_id'],
                 'date_collecte' => $validated['date_collecte'],
-                'donnees' => $validated['donnees'],
+                'donnees' => $validatedDonnees,
                 'type_collecte' => $validated['type_collecte'],
-                'periode' => $periode->type_periode ?? 'Non spécifié' // Assurer que periode est mis à jour
+                'periode' => $periode->type_periode ?? 'Non spécifié'
             ]);
 
             // Message de succès spécifique pour la conversion
@@ -273,12 +318,438 @@ class CollecteController extends Controller
         }
     }
 
+   /**
+ * Récupère les données existantes des collectes pour une entreprise
+ * Utilisé pour les calculs automatiques basés sur des dépendances
+ *
+ * @param int $entrepriseId ID de l'entreprise
+ * @param int|null $excludeCollecteId ID de la collecte à exclure (pour l'édition)
+ * @return array Données des collectes par catégorie
+ */
+private function getExistingCollectesData(int $entrepriseId, ?int $excludeCollecteId = null): array
+{
+    // Structure pour stocker les données
+    $collectesData = [];
+
+    // Récupérer toutes les collectes standard de cette entreprise
+    $query = Collecte::where('entreprise_id', $entrepriseId)
+        ->where('type_collecte', 'standard');
+
+    // Exclure la collecte en cours d'édition si nécessaire
+    if ($excludeCollecteId) {
+        $query->where('id', '!=', $excludeCollecteId);
+    }
+
+    $collectes = $query->with('periode')->get();
+
+    // Organiser les données par période et catégorie
+    foreach ($collectes as $collecte) {
+        // Déterminer le type de période
+        $periodeType = '';
+        if ($collecte->periode) {
+            // Si periode est un objet Periode, prendre son type_periode
+            if (is_object($collecte->periode) && property_exists($collecte->periode, 'type_periode')) {
+                $periodeType = $collecte->periode->type_periode;
+            }
+            // Si periode est une chaîne, l'utiliser directement
+            elseif (is_string($collecte->periode)) {
+                $periodeType = $collecte->periode;
+            }
+        }
+
+        // Valeur par défaut si aucune période n'est trouvée
+        if (empty($periodeType)) {
+            $periodeType = 'Non spécifié';
+        }
+
+        // Mapper le type de période à un format standard
+        $periodeType = $this->mapTypePeriode($periodeType);
+
+        // Si on a des données structurées dans cette collecte et que ce sont des tableaux
+        $donnees = $collecte->donnees;
+
+        // Si donnees est une chaîne JSON, la décoder
+        if (is_string($donnees)) {
+            $donnees = json_decode($donnees, true) ?: [];
+        }
+
+        // S'assurer que donnees est un tableau
+        if (is_array($donnees)) {
+            foreach ($donnees as $categorie => $categorieData) {
+                // Vérifier que la catégorie et les données sont valides
+                if (!is_string($categorie) || !is_array($categorieData)) {
+                    continue;
+                }
+
+                // Créer la structure si elle n'existe pas
+                if (!isset($collectesData[$periodeType])) {
+                    $collectesData[$periodeType] = [];
+                }
+                if (!isset($collectesData[$periodeType][$categorie])) {
+                    $collectesData[$periodeType][$categorie] = [];
+                }
+
+                // Fusionner les données existantes avec les nouvelles
+                $collectesData[$periodeType][$categorie] = array_merge(
+                    $collectesData[$periodeType][$categorie],
+                    $categorieData
+                );
+            }
+        }
+    }
+
+    return $collectesData;
+}
+
     /**
-     * Helper pour envoyer une réponse d'erreur cohérente
+     * Standardise le type de période pour la correspondance avec le frontend
      */
+    private function mapTypePeriode(string $typePeriode): string
+    {
+        $typeMap = [
+            'Mensuel' => 'Mensuelle',
+            'mensuel' => 'Mensuelle',
+            'Trimestriel' => 'Trimestrielle',
+            'trimestriel' => 'Trimestrielle',
+            'Semestriel' => 'Semestrielle',
+            'semestriel' => 'Semestrielle',
+            'Annuel' => 'Annuelle',
+            'annuel' => 'Annuelle',
+            'Occasionnel' => 'Occasionnelle',
+            'occasionnel' => 'Occasionnelle',
+            // Mappings directs
+            'Mensuelle' => 'Mensuelle',
+            'Trimestrielle' => 'Trimestrielle',
+            'Semestrielle' => 'Semestrielle',
+            'Annuelle' => 'Annuelle',
+            'Occasionnelle' => 'Occasionnelle'
+        ];
 
+        return $typeMap[$typePeriode] ?? 'Autre';
+    }
 
     /**
+     * Recalcule les indicateurs automatiques en utilisant les dépendances disponibles
+     *
+     * @param array $donnees Données saisies par l'utilisateur
+     * @param int $entrepriseId ID de l'entreprise
+     * @param string $periodeType Type de période
+     * @param int|null $excludeCollecteId ID de la collecte à exclure (pour l'édition)
+     * @return array Données avec les valeurs calculées automatiquement
+     */
+    private function recalculateIndicateurs(array $donnees, int $entrepriseId, string $periodeType, ?int $excludeCollecteId = null): array
+    {
+        // Récupérer les données existantes pour les calculs
+        $existingData = $this->getExistingCollectesData($entrepriseId, $excludeCollecteId);
+
+        // Mapper le type de période
+        $periodeType = $this->mapTypePeriode($periodeType);
+
+        // Définir les indicateurs qui doivent être calculés automatiquement
+        // Normalement ces configurations seraient dans un fichier de config ou en BDD
+        $calculatedIndicators = $this->getCalculatedIndicatorsDependencies();
+
+        // Parcourir les données par catégorie
+        foreach ($donnees as $categorie => $categorieData) {
+            // Vérifier si cette catégorie a des indicateurs calculés
+            if (isset($calculatedIndicators[$periodeType][$categorie])) {
+                foreach ($calculatedIndicators[$periodeType][$categorie] as $indicatorId => $indicator) {
+                    // Vérifier si toutes les dépendances sont disponibles
+                    $allDepsAvailable = true;
+                    $valuesForCalculation = [];
+
+                    foreach ($indicator['dependencies'] as $dep) {
+                        $depCat = $dep['categorie'] ?? $categorie;
+                        $depPeriode = $dep['periode'] ?? $periodeType;
+                        $depField = $dep['field'];
+
+                        // Chercher la valeur d'abord dans les données actuelles
+                        if (isset($donnees[$depCat][$depField])) {
+                            $valuesForCalculation[$depField] = $donnees[$depCat][$depField];
+                        }
+                        // Sinon, chercher dans les données existantes
+                        elseif (isset($existingData[$depPeriode][$depCat][$depField])) {
+                            $valuesForCalculation[$depField] = $existingData[$depPeriode][$depCat][$depField];
+                        }
+                        // Sinon, la dépendance n'est pas disponible
+                        else {
+                            $allDepsAvailable = false;
+                            break;
+                        }
+                    }
+
+                    // Si toutes les dépendances sont disponibles, calculer la valeur
+                    if ($allDepsAvailable && isset($indicator['formula'])) {
+                        try {
+                            // Calculer en utilisant la formule
+                            $result = $this->evaluateFormula($indicator['formula'], $valuesForCalculation);
+
+                            // Arrondir pour les pourcentages ou valeurs monétaires
+                            if (isset($indicator['unite']) && ($indicator['unite'] === '%' || $indicator['unite'] === 'FCFA')) {
+                                $result = round($result, 2);
+                            }
+
+                            // Mettre à jour la valeur dans les données
+                            $donnees[$categorie][$indicatorId] = (string)$result;
+                        } catch (\Exception $e) {
+                            Log::error("Erreur de calcul pour {$indicatorId}: " . $e->getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        return $donnees;
+    }
+
+  /**
+ * Évalue une formule mathématique de manière sécurisée
+ * @param string $formula Formule à évaluer
+ * @param array $values Valeurs des variables
+ * @return float Résultat du calcul
+ * @throws \Exception En cas d'erreur d'évaluation
+ */
+private function evaluateFormula(string $formula, array $values): float
+{
+    // Remplacer les variables par leurs valeurs
+    foreach ($values as $key => $value) {
+        // S'assurer que la valeur est un nombre
+        $numericValue = is_numeric($value) ? (float)$value : 0;
+        // Remplacer uniquement les occurrences de mots entiers
+        $formula = preg_replace('/\b' . preg_quote($key, '/') . '\b/', (string)$numericValue, $formula);
+    }
+
+    // Nettoyer la formule : n'accepter que les chiffres, espaces, parenthèses et opérateurs mathématiques de base
+    $formula = str_replace(['×', '÷'], ['*', '/'], $formula);
+
+    // Vérifier que la formule ne contient que des caractères autorisés
+    if (preg_match('/[^0-9\s\(\)\+\-\*\/\.\,]/', $formula)) {
+        throw new \Exception("Formule non sécurisée: {$formula}");
+    }
+
+    try {
+        // Utiliser une bibliothèque d'évaluation sécurisée
+        return $this->mathEval($formula);
+    } catch (\Exception $e) {
+        Log::error("Erreur d'évaluation de formule: {$formula} - " . $e->getMessage());
+        throw $e;
+    }
+}
+
+
+/**
+ * Évalue une expression mathématique simple de manière sécurisée
+ * Cette implémentation ne supporte que les opérations de base (+, -, *, /, ())
+ * Pour des cas plus complexes, utiliser une bibliothèque spécialisée comme:
+ * - mossadal/math-parser
+ * - symfony/expression-language
+ *
+ * @param string $expr Expression à évaluer
+ * @return float Résultat de l'évaluation
+ */
+private function mathEval(string $expr): float
+{
+    // Supprimer les espaces
+    $expr = trim(preg_replace('/\s+/', '', $expr));
+
+    // Traiter d'abord les parenthèses (récursivement)
+    while (preg_match('/\(([^()]+)\)/', $expr, $matches)) {
+        $subResult = $this->mathEval($matches[1]);
+        $expr = str_replace($matches[0], $subResult, $expr);
+    }
+
+    // Évaluer les multiplications et divisions
+    while (preg_match('/(-?\d+\.?\d*)\s*([*\/])\s*(-?\d+\.?\d*)/', $expr, $matches)) {
+        $left = (float)$matches[1];
+        $operator = $matches[2];
+        $right = (float)$matches[3];
+
+        if ($operator === '*') {
+            $result = $left * $right;
+        } else {
+            // Division
+            if ($right == 0) {
+                throw new \Exception("Division par zéro");
+            }
+            $result = $left / $right;
+        }
+
+        $expr = str_replace($matches[0], $result, $expr);
+    }
+
+    // Évaluer les additions et soustractions
+    while (preg_match('/(-?\d+\.?\d*)\s*([+\-])\s*(-?\d+\.?\d*)/', $expr, $matches)) {
+        $left = (float)$matches[1];
+        $operator = $matches[2];
+        $right = (float)$matches[3];
+
+        if ($operator === '+') {
+            $result = $left + $right;
+        } else {
+            $result = $left - $right;
+        }
+
+        $expr = str_replace($matches[0], $result, $expr);
+    }
+
+    // À ce stade, il ne devrait rester qu'un seul nombre dans l'expression
+    if (!is_numeric($expr)) {
+        throw new \Exception("Expression non valide après évaluation: {$expr}");
+    }
+
+    return (float)$expr;
+}
+
+    /**
+     * Évalue une formule mathématique de manière sécurisée
+     */
+    private function secureEval(string $formula): float
+    {
+        // Utiliser une bibliothèque de calcul d'expressions mathématiques
+        // Par exemple: symfony/expression-language ou mossadal/math-parser
+
+        // Pour cet exemple, on utilise une implémentation simplifiée
+        // ATTENTION: Dans un environnement de production, utilisez une bibliothèque adaptée
+
+        try {
+            // Évaluer la formule
+            return eval('return ' . $formula . ';');
+        } catch (\ParseError $e) {
+            throw new \Exception("Erreur de syntaxe dans la formule: " . $e->getMessage());
+        } catch (\Error $e) {
+            throw new \Exception("Erreur lors de l'évaluation: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Définit les indicateurs calculés et leurs dépendances
+     * Idéalement, cette configuration serait dans un fichier de config ou en BDD
+     */
+    private function getCalculatedIndicatorsDependencies(): array
+    {
+        return [
+            'Semestrielle' => [
+                'Indicateurs d\'activités de l\'entreprise du promoteur' => [
+                    'taux_croissance' => [
+                        'label' => 'Taux de croissance des clients',
+                        'unite' => '%',
+                        'formula' => '((nbr_clients - nbr_clients_n1) / nbr_clients_n1) * 100',
+                        'dependencies' => [
+                            ['field' => 'nbr_clients'],
+                            ['field' => 'nbr_clients', 'periode' => 'Semestrielle', 'categorie' => 'Indicateurs d\'activités de l\'entreprise du promoteur']
+                        ]
+                    ],
+                    'taux_croissance_ca' => [
+                        'label' => 'Taux de croissance du Chiffre d\'affaires',
+                        'unite' => '%',
+                        'formula' => '((chiffre_affaire - chiffre_affaire_n1) / chiffre_affaire_n1) * 100',
+                        'dependencies' => [
+                            ['field' => 'chiffre_affaire'],
+                            ['field' => 'chiffre_affaire', 'periode' => 'Semestrielle', 'categorie' => 'Indicateurs d\'activités de l\'entreprise du promoteur']
+                        ]
+                    ]
+                ],
+                'Indicateurs de Rentabilité et de solvabilité de l\'entreprise du promoteur' => [
+                    'marge_commerciale' => [
+                        'label' => 'Marge commerciale ou de production',
+                        'unite' => 'FCFA',
+                        'formula' => 'chiffre_affaire - cout_production',
+                        'dependencies' => [
+                            ['field' => 'cout_production'],
+                            ['field' => 'chiffre_affaire', 'categorie' => 'Indicateurs d\'activités de l\'entreprise du promoteur']
+                        ]
+                    ]
+                ],
+                'Indicateurs de trésorerie de l\'entreprise du promoteur' => [
+                    'fond_roulement' => [
+                        'label' => 'Fonds de roulement',
+                        'unite' => 'FCFA',
+                        'formula' => '(capitaux_propres + capitaux_empruntes) - actif_immobilise',
+                        'dependencies' => [
+                            ['field' => 'capitaux_propres'],
+                            ['field' => 'capitaux_empruntes'],
+                            ['field' => 'actif_immobilise']
+                        ]
+                    ],
+                    'bfr' => [
+                        'label' => 'Besoin en fonds de roulement',
+                        'unite' => 'FCFA',
+                        'formula' => '(stocks + creances_clients + creances_fiscales) - (dettes_fournisseurs + dettes_sociales + dettes_fiscales)',
+                        'dependencies' => [
+                            ['field' => 'stocks'],
+                            ['field' => 'creances_clients'],
+                            ['field' => 'creances_fiscales'],
+                            ['field' => 'dettes_fournisseurs'],
+                            ['field' => 'dettes_sociales'],
+                            ['field' => 'dettes_fiscales']
+                        ]
+                    ]
+                ]
+            ],
+            'Annuelle' => [
+                'Ratios de Rentabilité et de solvabilité de l\'entreprise' => [
+                    'r_n_exploitation_aimp' => [
+                        'label' => 'Rendement des fonds propres (ROE)',
+                        'unite' => '%',
+                        'formula' => '(resultat_net * 100) / capitaux_propres',
+                        'dependencies' => [
+                            ['field' => 'resultat_net'],
+                            ['field' => 'capitaux_propres']
+                        ]
+                    ],
+                    'autosuffisance' => [
+                        'label' => 'Autosuffisance opérationnelle',
+                        'formula' => 'produits_exploitation / (charges_financieres + charges_exploitation)',
+                        'dependencies' => [
+                            ['field' => 'produits_exploitation'],
+                            ['field' => 'charges_financieres'],
+                            ['field' => 'charges_exploitation']
+                        ]
+                    ],
+                    'marge_beneficiaire' => [
+                        'label' => 'Marge bénéficiaire',
+                        'unite' => '%',
+                        'formula' => '(resultat_net * 100) / produits_exploitation',
+                        'dependencies' => [
+                            ['field' => 'resultat_net'],
+                            ['field' => 'produits_exploitation']
+                        ]
+                    ],
+                    'ratio_charges_financieres' => [
+                        'label' => 'Ratio de charges financières',
+                        'unite' => '%',
+                        'formula' => '(frais_financiers * 100) / dettes_financement',
+                        'dependencies' => [
+                            ['field' => 'frais_financiers'],
+                            ['field' => 'dettes_financement']
+                        ]
+                    ]
+                ],
+                'Indicateurs de performance Projet' => [
+                    'prop_revenu_accru_h' => [
+                        'label' => 'Proportion d\'hommes avec revenus accrus',
+                        'unite' => '%',
+                        'formula' => '(hommes_revenus_accrus * 100) / total_hommes_beneficiaires',
+                        'dependencies' => [
+                            ['field' => 'hommes_revenus_accrus'],
+                            ['field' => 'total_hommes_beneficiaires', 'periode' => 'Occasionnelle', 'categorie' => 'Indicateurs de performance Projet']
+                        ]
+                    ],
+                    'prop_revenu_accru_f' => [
+                        'label' => 'Proportion de femmes avec revenus accrus',
+                        'unite' => '%',
+                        'formula' => '(femmes_revenus_accrus * 100) / total_femmes_beneficiaires',
+                        'dependencies' => [
+                            ['field' => 'femmes_revenus_accrus'],
+                            ['field' => 'total_femmes_beneficiaires', 'periode' => 'Occasionnelle', 'categorie' => 'Indicateurs de performance Projet']
+                        ]
+                    ]
+                ]
+            ]
+        ];
+    }
+
+/**
      * Méthode spécifique pour convertir un brouillon en collecte standard
      */
     public function convertToStandard(Request $request, Collecte $collecte)
@@ -336,7 +807,6 @@ class CollecteController extends Controller
             return $this->sendErrorResponse($request, 'general', 'Une erreur est survenue: '.$e->getMessage());
         }
     }
-
     public function draft(Request $request)
     {
         try {
@@ -392,7 +862,6 @@ class CollecteController extends Controller
             ]);
         }
     }
-
     public function destroy(Collecte $collecte)
     {
         try {
@@ -557,9 +1026,7 @@ class CollecteController extends Controller
         }
     }
 
-    /**
-     * Exporter les collectes en PDF ou Excel
-     */
+
     public function export(Request $request)
     {
         try {
@@ -709,7 +1176,7 @@ class CollecteController extends Controller
         return Excel::download(new \App\Exports\CollecteDetailExport($collecte, $categoriesDisponibles), "{$filename}.xlsx");
     }
 
-    /**
+ /**
      * Exporter une collecte détaillée vers PDF
      */
     private function exportDetailToPdf($collecte, $categoriesDisponibles, $filename)
@@ -728,10 +1195,6 @@ class CollecteController extends Controller
 
         return $pdf->download("{$filename}.pdf");
     }
-
-
-
-
 /**
  * Exporter une seule collecte vers Excel
  */
@@ -739,7 +1202,6 @@ private function exportSingleToExcel($collecte, $categoriesDisponibles, $filenam
 {
     return Excel::download(new \App\Exports\CollecteSingleExport($collecte, $categoriesDisponibles), "{$filename}.xlsx");
 }
-
 /**
  * Exporter une seule collecte vers PDF
  */
@@ -759,8 +1221,6 @@ private function exportSingleToPdf($collecte, $categoriesDisponibles, $filename)
 
     return $pdf->download("{$filename}.pdf");
 }
-
-
     /**
      * Exporter vers Excel
      */
@@ -769,9 +1229,6 @@ private function exportSingleToPdf($collecte, $categoriesDisponibles, $filename)
         return Excel::download(new \App\Exports\CollectesExport($collectes), "{$filename}.xlsx");
     }
 
-    /**
-     * Exporter vers PDF
-     */
     private function exportToPdf($collectes, $filename)
     {
         $data = [
@@ -791,6 +1248,7 @@ private function exportSingleToPdf($collecte, $categoriesDisponibles, $filename)
     /**
      * Helper pour envoyer une réponse d'erreur cohérente
      */
+
     private function sendErrorResponse(Request $request, string $field, string $message, int $status = 422, array $extraData = [])
     {
         if ($request->wantsJson()) {
@@ -806,6 +1264,3 @@ private function exportSingleToPdf($collecte, $categoriesDisponibles, $filename)
         ]);
     }
 }
-
-
-

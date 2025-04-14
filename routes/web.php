@@ -13,7 +13,7 @@ use App\Http\Controllers\{
     ONGController,
     PeriodeController,
     DashboardController,
-    
+
 };
 
 // Accueil
@@ -51,14 +51,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{collecte}/convert-to-standard', [CollecteController::class, 'convertToStandard'])->name('convert-to-standard');
     });
 
-    // Analyse
-    Route::prefix('analyse')->name('analyse.')->group(function () {
-        Route::get('/', [AnalyseController::class, 'index'])->name('index');
-        Route::post('/donnees', [AnalyseController::class, 'getDonneesIndicateurs'])->name('donnees');
-        Route::post('/rapport', [AnalyseController::class, 'genererRapport'])->name('rapport');
-        Route::post('/export', [AnalyseController::class, 'exporterDonnees'])->name('export');
-    });
+  // Routes pour l'analyse des indicateurs
+Route::prefix('analyse')->name('analyse.')->group(function () {
+    // Routes principales
+    Route::get('/', [AnalyseController::class, 'index'])->name('index');
+    Route::get('/donnees', [AnalyseController::class, 'getDonneesIndicateurs'])->name('donnees');
+    Route::get('/rapport', [AnalyseController::class, 'genererRapport'])->name('rapport');
+    Route::get('/export', [AnalyseController::class, 'exporterDonnees'])->name('export');
+    Route::get('/debug', [AnalyseController::class, 'debug'])->name('debug');
 
+    // Routes pour la synthèse
+    Route::get('/synthese', [AnalyseController::class, 'synthese'])->name('synthese');
+    Route::get('/synthese/donnees', [AnalyseController::class, 'getSyntheseDonnees'])->name('synthese.donnees');
+});
     // Dashboard temporaire (commenté)
     // Route::get('/dashboard-temp', [DashboardTempController::class, 'index'])->name('dashboard.temp');
 });

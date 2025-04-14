@@ -25,9 +25,7 @@ export default defineConfig({
     server: {
         host: 'jem2.hopto.org',
         port: 5175,
-        hmr: {
-            host: 'jem2.hopto.org',
-        },
+	hmr: false,
         cors: {
             origin: '*',
             credentials: true,

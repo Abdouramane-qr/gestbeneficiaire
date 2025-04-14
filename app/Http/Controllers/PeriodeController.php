@@ -6,10 +6,9 @@ use App\Models\Periode;
 use App\Models\Exercice;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Models\Collecte;
-use App\Models\Entreprise;
-
-
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 
 class PeriodeController extends Controller
 {
@@ -33,6 +32,9 @@ class PeriodeController extends Controller
      */
     public function create()
     {
+        // Récupérer toutes les périodes existantes pour vérifier les disponibilités
+        $periodesExistantes = Periode::select('id', 'exercice_id', 'type_periode', 'numero', 'nom')->get();
+
         return Inertia::render('Periodes/Form', [
             'exercices' => Exercice::where('actif', true)->get(),
             'typesPeriodes' => [
@@ -40,7 +42,8 @@ class PeriodeController extends Controller
                 'trimestriel' => 'Trimestriel',
                 'semestriel' => 'Semestriel',
                 'annuel' => 'Annuel'
-            ]
+            ],
+            'periodesExistantes' => $periodesExistantes
         ]);
     }
 
@@ -49,46 +52,82 @@ class PeriodeController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'exercice_id' => 'required|exists:exercices,id',
-            'code' => 'required|string|max:10',
+            'code' => 'required|string|max:10|unique:periodes,code',
             'nom' => 'required|string|max:255',
-            'type_periode' => 'required|string|in:mensuel,trimestriel,semestriel,annuel',
-            'numero' => 'required|integer|min:1',
-            'date_debut' => 'required|date',
-            'date_fin' => 'required|date|after:date_debut',
+            'type_periode' => 'required|in:mensuel,trimestriel,semestriel,annuel',
+            'numero' => [
+                'required',
+                'integer',
+                'min:1',
+                function ($attribute, $value, $fail) use ($request) {
+                    // Vérifier que le numéro n'est pas déjà utilisé pour ce type de période dans cet exercice
+                    $exists = Periode::where('exercice_id', $request->exercice_id)
+                        ->where('type_periode', $request->type_periode)
+                        ->where('numero', $value)
+                        ->exists();
+
+                    if ($exists) {
+                        $fail("Ce numéro est déjà utilisé pour ce type de période dans cet exercice.");
+                    }
+
+                    // Vérifier que le numéro est valide pour le type de période
+                    $maxNumero = match($request->type_periode) {
+                        'mensuel' => 12,
+                        'trimestriel' => 4,
+                        'semestriel' => 2,
+                        'annuel' => 1,
+                        default => 0
+                    };
+
+                    if ($value > $maxNumero) {
+                        $fail("Le numéro maximum pour ce type de période est $maxNumero.");
+                    }
+                }
+            ],
+            'date_debut' => [
+                'required',
+                'date',
+                function ($attribute, $value, $fail) use ($request) {
+                    $exercice = Exercice::findOrFail($request->exercice_id);
+                    $dateDebut = Carbon::parse($value);
+                    $exerciceDebut = Carbon::parse($exercice->date_debut);
+
+                    if ($dateDebut->lt($exerciceDebut)) {
+                        $fail("La date de début doit être postérieure ou égale à la date de début de l'exercice ({$exercice->date_debut}).");
+                    }
+                }
+            ],
+            'date_fin' => [
+                'required',
+                'date',
+                'after:date_debut',
+                function ($attribute, $value, $fail) use ($request) {
+                    $exercice = Exercice::findOrFail($request->exercice_id);
+                    $dateFin = Carbon::parse($value);
+                    $exerciceFin = Carbon::parse($exercice->date_fin);
+
+                    if ($dateFin->gt($exerciceFin)) {
+                        $fail("La date de fin doit être antérieure ou égale à la date de fin de l'exercice ({$exercice->date_fin}).");
+                    }
+                }
+            ],
         ]);
 
-        // Vérifier que la période est dans les limites de l'exercice
-        $exercice = Exercice::findOrFail($validated['exercice_id']);
-
-        if ($validated['date_debut'] < $exercice->date_debut || $validated['date_fin'] > $exercice->date_fin) {
-            return back()->withErrors([
-                'date_debut' => 'Les dates de la période doivent être incluses dans l\'exercice.'
-            ]);
+        // Si la validation échoue, renvoie automatiquement avec les erreurs
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
-        // Vérifier que la période n'est pas en conflit avec une autre pour le même exercice
-        $conflictingPeriode = Periode::where('exercice_id', $validated['exercice_id'])
-            ->where(function($query) use ($validated) {
-                $query->whereBetween('date_debut', [$validated['date_debut'], $validated['date_fin']])
-                    ->orWhereBetween('date_fin', [$validated['date_debut'], $validated['date_fin']])
-                    ->orWhere(function($q) use ($validated) {
-                        $q->where('date_debut', '<=', $validated['date_debut'])
-                          ->where('date_fin', '>=', $validated['date_fin']);
-                    });
-            })
-            ->first();
+        // Créer la nouvelle période
+        $periode = Periode::create($validator->validated());
 
-        if ($conflictingPeriode) {
-            return back()->withErrors([
-                'date_debut' => 'Cette période est en conflit avec une période existante.'
-            ]);
-        }
-
-        Periode::create($validated);
-
-        return redirect()->route('periodes.index')->with('success', 'Période créée avec succès');
+        // Rediriger avec un message de succès
+        return redirect()->route('periodes.index')
+            ->with('success', 'Période créée avec succès.');
     }
 
     /**
@@ -96,6 +135,9 @@ class PeriodeController extends Controller
      */
     public function edit(Periode $periode)
     {
+        // Récupérer toutes les périodes existantes pour vérifier les disponibilités
+        $periodesExistantes = Periode::select('id', 'exercice_id', 'type_periode', 'numero', 'nom')->get();
+
         return Inertia::render('Periodes/Form', [
             'periode' => $periode,
             'exercices' => Exercice::all(),
@@ -104,161 +146,97 @@ class PeriodeController extends Controller
                 'trimestriel' => 'Trimestriel',
                 'semestriel' => 'Semestriel',
                 'annuel' => 'Annuel'
-            ]
+            ],
+            'periodesExistantes' => $periodesExistantes
         ]);
     }
-
-
-
-    public function show(Periode $periode)
-    {
-        $periode->load('exercice');
-
-        return Inertia::render('collectes/Show', [
-            'periode' => [
-                'id' => $periode->id,
-                'exercice' => $periode->exercice,
-                'code' => $periode->code,
-                'nom' => $periode->nom,
-                'type_periode' => $periode->type_periode,
-                'type_periode_standard' => $periode->type_periode_standard,
-                'numero' => $periode->numero,
-                'date_debut' => $periode->date_debut->toDateString(),
-                'date_fin' => $periode->date_fin->toDateString(),
-                'cloturee' => $periode->cloturee,
-                'est_active' => $periode->est_active,
-                'duree_en_jours' => $periode->duree_en_jours,
-                'can_be_closed' => $periode->canBeClosed(),
-                'can_be_reopened' => $periode->canBeReopened(),
-                'is_active' => $periode->isActive(),
-            ]
-        ]);
-    }
-
 
     /**
      * Met à jour une période existante.
      */
     public function update(Request $request, Periode $periode)
     {
-        $validated = $request->validate([
-            'code' => 'required|string|max:10',
+        $validator = Validator::make($request->all(), [
+            'code' => [
+                'required',
+                'string',
+                'max:10',
+                Rule::unique('periodes')->ignore($periode->id)
+            ],
             'nom' => 'required|string|max:255',
-            'date_debut' => 'required|date',
-            'date_fin' => 'required|date|after:date_debut',
+            'date_debut' => [
+                'required',
+                'date',
+                function ($attribute, $value, $fail) use ($periode) {
+                    $exercice = $periode->exercice;
+                    $dateDebut = Carbon::parse($value);
+                    $exerciceDebut = Carbon::parse($exercice->date_debut);
+
+                    if ($dateDebut->lt($exerciceDebut)) {
+                        $fail("La date de début doit être postérieure ou égale à la date de début de l'exercice ({$exercice->date_debut}).");
+                    }
+                }
+            ],
+            'date_fin' => [
+                'required',
+                'date',
+                'after:date_debut',
+                function ($attribute, $value, $fail) use ($periode) {
+                    $exercice = $periode->exercice;
+                    $dateFin = Carbon::parse($value);
+                    $exerciceFin = Carbon::parse($exercice->date_fin);
+
+                    if ($dateFin->gt($exerciceFin)) {
+                        $fail("La date de fin doit être antérieure ou égale à la date de fin de l'exercice ({$exercice->date_fin}).");
+                    }
+                }
+            ],
         ]);
 
-        // Vérifier que la période est dans les limites de l'exercice
-        $exercice = $periode->exercice;
-
-        if ($validated['date_debut'] < $exercice->date_debut || $validated['date_fin'] > $exercice->date_fin) {
-            return back()->withErrors([
-                'date_debut' => 'Les dates de la période doivent être incluses dans l\'exercice.'
-            ]);
+        // Si la validation échoue, renvoie automatiquement avec les erreurs
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
-        // Vérifier que la période n'est pas en conflit avec une autre pour le même exercice
-        $conflictingPeriode = Periode::where('exercice_id', $periode->exercice_id)
-            ->where('id', '!=', $periode->id)
-            ->where(function($query) use ($validated) {
-                $query->whereBetween('date_debut', [$validated['date_debut'], $validated['date_fin']])
-                    ->orWhereBetween('date_fin', [$validated['date_debut'], $validated['date_fin']])
-                    ->orWhere(function($q) use ($validated) {
-                        $q->where('date_debut', '<=', $validated['date_debut'])
-                          ->where('date_fin', '>=', $validated['date_fin']);
-                    });
-            })
-            ->first();
+        // Mettre à jour la période
+        $periode->update($validator->validated());
 
-        if ($conflictingPeriode) {
-            return back()->withErrors([
-                'date_debut' => 'Cette période est en conflit avec une période existante.'
-            ]);
-        }
-
-        $periode->update($validated);
-
-        return redirect()->route('periodes.index')->with('success', 'Période mise à jour avec succès');
+        // Rediriger avec un message de succès
+        return redirect()->route('periodes.index')
+            ->with('success', 'Période mise à jour avec succès.');
     }
-
-    // /**
-    //  * Clôture une période.
-    //  */
-    // public function cloture(Periode $periode)
-    // {
-    //     $periode->cloturee = true;
-    //     $periode->save();
-
-    //     return redirect()->route('periodes.index')->with('success', 'Période clôturée avec succès');
-    // }
 
     /**
- * Clôture une période.
- */
-public function cloture(Periode $periode)
-{
-    if (!$periode->canBeClosed()) {
-        return back()->withErrors([
-            'error' => 'Cette période ne peut pas être clôturée.'
+     * Affiche les détails d'une période.
+     */
+    public function show(Periode $periode)
+    {
+        $periode->load('exercice');
+
+        return Inertia::render('Periodes/Show', [
+            'periode' => [
+                'id' => $periode->id,
+                'exercice' => $periode->exercice,
+                'code' => $periode->code,
+                'nom' => $periode->nom,
+                'type_periode' => $periode->type_periode,
+                'numero' => $periode->numero,
+                'date_debut' => $periode->date_debut->toDateString(),
+                'date_fin' => $periode->date_fin->toDateString(),
+            ]
         ]);
     }
 
-    $periode->cloturee = true;
-    $periode->save();
-
-    return redirect()->route('periodes.index')->with('success', 'Période clôturée avec succès');
-}
-
-  /**
- * Réouvre une période clôturée.
- */
-public function reouverture(Periode $periode)
-{
-    if (!$periode->canBeReopened()) {
-        return back()->withErrors([
-            'error' => 'Cette période ne peut pas être rouverte.'
-        ]);
-    }
-
-    $periode->cloturee = false;
-    $periode->save();
-
-    return redirect()->route('periodes.index')->with('success', 'Période réouverte avec succès');
-}
     /**
      * Supprime une période.
      */
     public function destroy(Periode $periode)
     {
-        // Vérifier s'il y a des collectes liées à cette période
-        if ($periode->collectes()->count() > 0) {
-            return back()->withErrors([
-                'general' => 'Impossible de supprimer cette période car elle contient des collectes.'
-            ]);
-        }
-
         $periode->delete();
 
-        return redirect()->route('periodes.index')->with('success', 'Période supprimée avec succès');
+        return redirect()->route('periodes.index')
+            ->with('success', 'Période supprimée avec succès.');
     }
-
-    /**
- * Affiche les collectes pour une période spécifique.
- */
-public function collectes(Periode $periode)
-{
-    $collectes = Collecte::with(['entreprise', 'exercice', 'user'])
-        ->where('periode_id', $periode->id)
-        ->orderBy('date_collecte', 'desc')
-        ->paginate(10);
-
-    return Inertia::render('collectes/index', [
-        'collectes' => $collectes,
-        'filters' => ['periode_id' => $periode->id],
-        'periodeFiltre' => $periode,
-        'periodes' => Periode::all(),
-        'exercices' => Exercice::orderBy('annee', 'desc')->get(),
-        'entreprises' => Entreprise::select('id', 'nom_entreprise')->get()
-    ]);
-}
 }

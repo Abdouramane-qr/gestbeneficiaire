@@ -19,15 +19,75 @@ class AnalyseController extends Controller
     /**
      * Affiche la page d'analyse des indicateurs
      */
-    // Dans AnalyseController.php, mettre à jour la méthode index
+    public function index()
+    {
+        // Récupérer l'exercice actif
+        $exerciceActif = Exercice::where('actif', true)->first();
 
-public function index()
+        if (!$exerciceActif) {
+            return Inertia::render('Analyses/Index', [
+                'error' => 'Aucun exercice actif trouvé. Veuillez activer un exercice pour continuer.'
+            ]);
+        }
+
+        // Récupérer les périodes de l'exercice actif
+        $periodes = Periode::where('exercice_id', $exerciceActif->id)->get();
+
+        // Récupérer tous les exercices pour les filtres
+        $exercices = Exercice::all();
+
+        // Récupérer les indicateurs
+        $indicateurs = Indicateur::all();
+
+        // Récupérer les filtres géographiques et démographiques
+        $regions = DB::table('beneficiaires')->select('regions')->distinct()->pluck('regions');
+        $provinces = DB::table('beneficiaires')->select('provinces')->distinct()->pluck('provinces');
+        $communes = DB::table('beneficiaires')->select('communes')->distinct()->pluck('communes');
+
+        $typesBeneficiaires = DB::table('beneficiaires')->select('type_beneficiaire')->distinct()->pluck('type_beneficiaire');
+        $genres = DB::table('beneficiaires')->select('genre')->distinct()->pluck('genre');
+
+        // Nouveaux filtres
+        $handicaps = ['Oui', 'Non'];
+        $niveauxInstruction = ['Analphabète', 'Alphabétisé', 'Primaire', 'CEPE', 'BEPC', 'BAC', 'Universitaire'];
+        $descriptionsActivite = DB::table('beneficiaires')->select('domaine_activite')->distinct()->pluck('domaine_activite');
+        $niveauxDeveloppement = DB::table('beneficiaires')->select('niveau_mise_en_oeuvre')->distinct()->pluck('niveau_mise_en_oeuvre');
+
+        // Récupérer les secteurs d'activité des entreprises
+        $secteursActivite = DB::table('entreprises')->select('secteur_activite')->distinct()->pluck('secteur_activite');
+
+        return Inertia::render('Analyses/Index', [
+            'exerciceActif' => $exerciceActif,
+            'exercices' => $exercices,
+            'periodes' => $periodes,
+            'indicateurs' => $indicateurs,
+            'filtres' => [
+                'regions' => $regions,
+                'provinces' => $provinces,
+                'communes' => $communes,
+                'typesBeneficiaires' => $typesBeneficiaires,
+                'genres' => $genres,
+                'secteursActivite' => $secteursActivite,
+                'handicaps' => $handicaps,
+                'niveauxInstruction' => $niveauxInstruction,
+                'descriptionsActivite' => $descriptionsActivite,
+                'niveauxDeveloppement' => $niveauxDeveloppement
+            ]
+        ]);
+    }
+
+    /**
+     * Affiche la page de synthèse des indicateurs
+     *//**
+ * Affiche la page de synthèse des indicateurs
+ */
+public function synthese()
 {
     // Récupérer l'exercice actif
     $exerciceActif = Exercice::where('actif', true)->first();
 
     if (!$exerciceActif) {
-        return Inertia::render('Analyses/Index', [
+        return Inertia::render('Analyses/Synthese', [
             'error' => 'Aucun exercice actif trouvé. Veuillez activer un exercice pour continuer.'
         ]);
     }
@@ -35,69 +95,117 @@ public function index()
     // Récupérer les périodes de l'exercice actif
     $periodes = Periode::where('exercice_id', $exerciceActif->id)->get();
 
-    // Récupérer tous les exercices pour les filtres
-    $exercices = Exercice::all();
+    // Charger les données des collectes pour l'exercice actif
+    $collectes = Collecte::where('exercice_id', $exerciceActif->id)
+        ->with(['entreprise', 'entreprise.beneficiaire'])
+        ->get();
 
-    // Récupérer les indicateurs
-    $indicateurs = Indicateur::all();
+    // Transformer les données des collectes en indicateurs
+    $indicateurs = [];
+    foreach ($collectes as $collecte) {
+        $entreprise = $collecte->entreprise;
+        $beneficiaire = $entreprise->beneficiaire;
+        $donnees = $collecte->donnees;
 
-    // Récupérer les filtres géographiques et démographiques
-    $regions = DB::table('beneficiaires')->select('regions')->distinct()->pluck('regions');
-    $provinces = DB::table('beneficiaires')->select('provinces')->distinct()->pluck('provinces');
-    $communes = DB::table('beneficiaires')->select('communes')->distinct()->pluck('communes');
+        foreach ($donnees as $categorie => $indicateursData) {
+            // Normaliser le nom de la catégorie
+            $categorieNormalisee = $categorie;
+            if ($categorie === 'tresorerie') $categorieNormalisee = 'tresorerie';
 
-    $typesBeneficiaires = DB::table('beneficiaires')->select('type_beneficiaire')->distinct()->pluck('type_beneficiaire');
-    $genres = DB::table('beneficiaires')->select('genre')->distinct()->pluck('genre');
+            foreach ($indicateursData as $nomIndicateur => $valeur) {
+                // Convertir explicitement la valeur en nombre
+                $valeurNumerique = is_numeric($valeur) ? floatval($valeur) : 0;
 
-    // Nouveaux filtres
-    $handicaps = ['Oui', 'Non'];
-    $niveauxInstruction = ['Analphabète', 'Alphabétisé', 'Primaire', 'CEPE', 'BEPC', 'BAC', 'Universitaire'];
-    $descriptionsActivite = DB::table('beneficiaires')->select('domaine_activite')->distinct()->pluck('domaine_activite');
-    $niveauxDeveloppement = DB::table('beneficiaires')->select('niveau_mise_en_oeuvre')->distinct()->pluck('niveau_mise_en_oeuvre');
+                // Calculer la tendance (stable par défaut)
+                $tendance = 'stable';
+                if (is_numeric($valeur)) {
+                    $periodes = Periode::where('exercice_id', $collecte->exercice_id)
+                        ->orderBy('id', 'asc')
+                        ->pluck('id')
+                        ->toArray();
 
-    // Récupérer les secteurs d'activité des entreprises
-    $secteursActivite = DB::table('entreprises')->select('secteur_activite')->distinct()->pluck('secteur_activite');
+                    $indexPeriode = array_search($collecte->periode_id, $periodes);
 
-    return Inertia::render('Analyses/Index', [
+                    if ($indexPeriode > 0) {
+                        $periodePrecedente = $periodes[$indexPeriode - 1];
+
+                        $collectePrecedente = Collecte::where('entreprise_id', $collecte->entreprise_id)
+                            ->where('exercice_id', $collecte->exercice_id)
+                            ->where('periode_id', $periodePrecedente)
+                            ->first();
+
+                        if ($collectePrecedente) {
+                            $donneesPrecedentes = $collectePrecedente->donnees;
+
+                            if (isset($donneesPrecedentes[$categorie][$nomIndicateur])) {
+                                $valeurPrecedente = $donneesPrecedentes[$categorie][$nomIndicateur];
+                                $valeurPrecedente = is_numeric($valeurPrecedente) ? floatval($valeurPrecedente) : 0;
+
+                                if ($valeurNumerique > $valeurPrecedente) {
+                                    $tendance = 'hausse';
+                                } elseif ($valeurNumerique < $valeurPrecedente) {
+                                    $tendance = 'baisse';
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Créer un ID d'indicateur fictif s'il n'existe pas dans la base
+                $indicateurId = Indicateur::where('nom', $nomIndicateur)
+                                        ->where('categorie', $categorieNormalisee)
+                                        ->value('id') ?? 0;
+
+                $indicateurs[] = [
+                    'id' => count($indicateurs) + 1,
+                    'indicateur_id' => $indicateurId,
+                    'nom' => $nomIndicateur,
+                    'valeur' => $valeurNumerique,
+                    'categorie' => $categorieNormalisee,
+                    'region' => $beneficiaire->regions,
+                    'province' => $beneficiaire->provinces,
+                    'commune' => $beneficiaire->communes,
+                    'secteur_activite' => $entreprise->secteur_activite,
+                    'typeBeneficiaire' => $beneficiaire->type_beneficiaire,
+                    'genre' => $beneficiaire->genre,
+                    'tendance' => $tendance,
+                    'entreprise_id' => $entreprise->id,
+                    'entreprise_nom' => $entreprise->nom_entreprise,
+                    'exercice_id' => $collecte->exercice_id,
+                    'periode_id' => $collecte->periode_id
+                ];
+            }
+        }
+    }
+
+    return Inertia::render('Analyses/Synthese', [
         'exerciceActif' => $exerciceActif,
-        'exercices' => $exercices,
         'periodes' => $periodes,
-        'indicateurs' => $indicateurs,
-        'filtres' => [
-            'regions' => $regions,
-            'provinces' => $provinces,
-            'communes' => $communes,
-            'typesBeneficiaires' => $typesBeneficiaires,
-            'genres' => $genres,
-            'secteursActivite' => $secteursActivite,
-            'handicaps' => $handicaps,
-            'niveauxInstruction' => $niveauxInstruction,
-            'descriptionsActivite' => $descriptionsActivite,
-            'niveauxDeveloppement' => $niveauxDeveloppement
-        ]
+        'indicateurs' => $indicateurs
     ]);
 }
+    /**
+     * Résumé simplifié des données
+     */
+    public function resume()
+    {
+        $exerciceActif = Exercice::where('actif', true)->first();
+        $exercices = Exercice::all();
+        $periodes = $exerciceActif ? Periode::where('exercice_id', $exerciceActif->id)->get() : [];
 
+        $filtres = [
+            'regions' => DB::table('beneficiaires')->select('regions')->distinct()->pluck('regions'),
+            'provinces' => DB::table('beneficiaires')->select('provinces')->distinct()->pluck('provinces'),
+            'communes' => DB::table('beneficiaires')->select('communes')->distinct()->pluck('communes')
+        ];
 
-public function resume()
-{
-    $exerciceActif = Exercice::where('actif', true)->first();
-    $exercices = Exercice::all();
-    $periodes = $exerciceActif ? Periode::where('exercice_id', $exerciceActif->id)->get() : [];
-
-    $filtres = [
-        'regions' => DB::table('beneficiaires')->select('regions')->distinct()->pluck('regions'),
-        'provinces' => DB::table('beneficiaires')->select('provinces')->distinct()->pluck('provinces'),
-        'communes' => DB::table('beneficiaires')->select('communes')->distinct()->pluck('communes')
-    ];
-
-    return Inertia::render('Analyses/Index', [
-        'exerciceActif' => $exerciceActif,
-        'exercices' => $exercices,
-        'periodes' => $periodes,
-        'filtres' => $filtres
-    ]);
-}
+        return Inertia::render('Analyses/Index', [
+            'exerciceActif' => $exerciceActif,
+            'exercices' => $exercices,
+            'periodes' => $periodes,
+            'filtres' => $filtres
+        ]);
+    }
 
     /**
      * Récupérer les données d'indicateurs filtrées
@@ -197,9 +305,6 @@ public function resume()
             // Transformer les données pour l'affichage
             foreach ($donneesFiltrees as $categorie => $indicateursData) {
                 foreach ($indicateursData as $nomIndicateur => $valeurs) {
-                    // Ajouter l'entrée aux données d'indicateurs même sans correspondance exacte dans la base
-                    // Pour permettre d'afficher les données existantes
-
                     // Calculer la tendance (stable par défaut)
                     $tendance = 'stable';
                     if (is_numeric($valeurs)) {
@@ -269,6 +374,155 @@ public function resume()
         ]);
     }
 
+  /**
+ * Récupérer des données agrégées pour la synthèse
+ */
+public function getSyntheseDonnees(Request $request)
+{
+    // Valider les filtres
+    $validated = $request->validate([
+        'exercice_id' => 'nullable|exists:exercices,id',
+        'periode_id' => 'nullable|exists:periodes,id',
+        'categorie' => 'nullable|string',
+        'critere_regroupement' => 'nullable|string',
+    ]);
+
+    // Si l'exercice n'est pas spécifié, utiliser l'exercice actif
+    if (!isset($validated['exercice_id'])) {
+        $exercice = Exercice::where('actif', true)->first();
+        $validated['exercice_id'] = $exercice ? $exercice->id : null;
+    }
+
+    // Récupérer les indicateurs filtrés
+    $response = $this->getDonneesIndicateurs($request);
+    $indicateurs = json_decode($response->getContent(), true)['donneesIndicateurs'];
+
+    // Critère de regroupement
+    $critereRegroupement = $validated['critere_regroupement'] ?? 'region';
+
+    // Variables pour les statistiques
+    $statistiquesGlobales = [
+        'count' => count($indicateurs),
+        'valeurTotale' => 0,
+        'parCategorie' => [],
+        'tendances' => [
+            'hausse' => 0,
+            'baisse' => 0,
+            'stable' => 0
+        ]
+    ];
+
+    // Grouper les données selon le critère de regroupement
+    $groupes = [];
+
+    foreach ($indicateurs as $indicateur) {
+        // Convertir explicitement la valeur en nombre
+        $valeur = is_numeric($indicateur['valeur']) ? floatval($indicateur['valeur']) : 0;
+
+        $cleGroupe = $indicateur[$critereRegroupement] ?? 'Non spécifié';
+
+        // Statistiques globales
+        $statistiquesGlobales['valeurTotale'] += $valeur;
+        $statistiquesGlobales['tendances'][$indicateur['tendance']]++;
+
+        // Statistiques par catégorie
+        if (!isset($statistiquesGlobales['parCategorie'][$indicateur['categorie']])) {
+            $statistiquesGlobales['parCategorie'][$indicateur['categorie']] = [
+                'count' => 0,
+                'valeurTotale' => 0
+            ];
+        }
+        $statistiquesGlobales['parCategorie'][$indicateur['categorie']]['count']++;
+        $statistiquesGlobales['parCategorie'][$indicateur['categorie']]['valeurTotale'] += $valeur;
+
+        // Groupement par critère
+        if (!isset($groupes[$cleGroupe])) {
+            $groupes[$cleGroupe] = [
+                'nom' => $cleGroupe,
+                'count' => 0,
+                'valeurTotale' => 0,
+                'parCategorie' => [],
+                'tendances' => [
+                    'hausse' => 0,
+                    'baisse' => 0,
+                    'stable' => 0
+                ],
+                'parIndicateur' => []
+            ];
+        }
+
+        $groupe = &$groupes[$cleGroupe];
+        $groupe['count']++;
+        $groupe['valeurTotale'] += $valeur;
+        $groupe['tendances'][$indicateur['tendance']]++;
+
+        // Statistiques par catégorie dans ce groupe
+        if (!isset($groupe['parCategorie'][$indicateur['categorie']])) {
+            $groupe['parCategorie'][$indicateur['categorie']] = [
+                'count' => 0,
+                'valeurTotale' => 0
+            ];
+        }
+        $groupe['parCategorie'][$indicateur['categorie']]['count']++;
+        $groupe['parCategorie'][$indicateur['categorie']]['valeurTotale'] += $valeur;
+
+        // Statistiques par nom d'indicateur
+        if (!isset($groupe['parIndicateur'][$indicateur['nom']])) {
+            $groupe['parIndicateur'][$indicateur['nom']] = [
+                'count' => 0,
+                'valeurTotale' => 0,
+                'min' => PHP_FLOAT_MAX,
+                'max' => PHP_FLOAT_MIN
+            ];
+        }
+        $groupe['parIndicateur'][$indicateur['nom']]['count']++;
+        $groupe['parIndicateur'][$indicateur['nom']]['valeurTotale'] += $valeur;
+        $groupe['parIndicateur'][$indicateur['nom']]['min'] = min($groupe['parIndicateur'][$indicateur['nom']]['min'], $valeur);
+        $groupe['parIndicateur'][$indicateur['nom']]['max'] = max($groupe['parIndicateur'][$indicateur['nom']]['max'], $valeur);
+    }
+
+    // Calculer les moyennes et transformer en tableau
+    $statistiquesGlobales['valeurMoyenne'] = $statistiquesGlobales['count'] > 0
+        ? $statistiquesGlobales['valeurTotale'] / $statistiquesGlobales['count']
+        : 0;
+
+    foreach ($statistiquesGlobales['parCategorie'] as &$stats) {
+        $stats['valeurMoyenne'] = $stats['count'] > 0
+            ? $stats['valeurTotale'] / $stats['count']
+            : 0;
+    }
+
+    $donneesGroupees = [];
+    foreach ($groupes as $nom => $groupe) {
+        $groupe['valeurMoyenne'] = $groupe['count'] > 0
+            ? $groupe['valeurTotale'] / $groupe['count']
+            : 0;
+
+        foreach ($groupe['parCategorie'] as &$cats) {
+            $cats['valeurMoyenne'] = $cats['count'] > 0
+                ? $cats['valeurTotale'] / $cats['count']
+                : 0;
+        }
+
+        foreach ($groupe['parIndicateur'] as &$indStats) {
+            $indStats['valeurMoyenne'] = $indStats['count'] > 0
+                ? $indStats['valeurTotale'] / $indStats['count']
+                : 0;
+        }
+
+        $donneesGroupees[] = $groupe;
+    }
+
+    // Trier par valeur totale décroissante
+    usort($donneesGroupees, function($a, $b) {
+        return $b['valeurTotale'] <=> $a['valeurTotale'];
+    });
+
+    return response()->json([
+        'statistiquesGlobales' => $statistiquesGlobales,
+        'donneesGroupees' => $donneesGroupees
+    ]);
+}
     /**
      * Générer un rapport d'analyse
      */
@@ -350,7 +604,7 @@ public function resume()
             }
         }
 
-        return Inertia::render('Analyses/Rapport', [
+        return Inertia::render('Analyses/Synthese', [
             'donnees' => $donneesParCategorie,
             'exercice' => $exercice,
             'periode' => $periode,
@@ -358,110 +612,5 @@ public function resume()
             'statistiquesRegions' => $statistiquesRegions,
             'filtres' => $validated
         ]);
-    }
-
-    /**
-     * Exporter les données d'analyse au format Excel ou CSV
-     */
-    public function exporterDonnees(Request $request)
-    {
-        // Valider les filtres
-        $validated = $request->validate([
-            'exercice_id' => 'required|exists:exercices,id',
-            'periode_id' => 'nullable|exists:periodes,id',
-            'categories' => 'required|array',
-            'format' => 'required|in:excel,csv', // Format d'export
-            'region' => 'nullable|string',
-            'province' => 'nullable|string',
-            'commune' => 'nullable|string',
-            'secteur_activite' => 'nullable|string',
-            'type_beneficiaire' => 'nullable|string',
-            'genre' => 'nullable|string',
-        ]);
-
-        // Récupérer les données filtrées
-        $donneesResponse = $this->getDonneesIndicateurs($request);
-        $donnees = json_decode($donneesResponse->getContent(), true)['donneesIndicateurs'];
-
-        // Préparation des données pour l'export
-        $dataForExport = [];
-
-        // En-têtes du fichier
-        $headers = [
-            'Catégorie',
-            'Indicateur',
-            'Valeur',
-            'Tendance',
-            'Entreprise',
-            'Région',
-            'Province',
-            'Commune',
-            'Secteur d\'activité',
-            'Type de bénéficiaire',
-            'Genre'
-        ];
-
-        $dataForExport[] = $headers;
-
-        // Données
-        foreach ($donnees as $indicateur) {
-            $dataForExport[] = [
-                $indicateur['categorie'],
-                $indicateur['nom'],
-                $indicateur['valeur'],
-                $indicateur['tendance'],
-                $indicateur['entreprise_nom'],
-                $indicateur['region'],
-                $indicateur['province'],
-                $indicateur['commune'],
-                $indicateur['secteur_activite'],
-                $indicateur['typeBeneficiaire'],
-                $indicateur['genre']
-            ];
-        }
-
-        // Générer le nom du fichier
-        $exercice = Exercice::find($validated['exercice_id']);
-        $periode = isset($validated['periode_id']) ? Periode::find($validated['periode_id']) : null;
-
-        $fileName = 'analyse_indicateurs_' . $exercice->annee;
-        if ($periode) {
-            $fileName .= '_' . $periode->nom;
-        }
-        $fileName .= '_' . date('Y-m-d');
-
-        // Export au format demandé
-        if ($validated['format'] === 'excel') {
-            return Excel::download(
-                new \App\Exports\IndicateursExport($dataForExport),
-                $fileName . '.xlsx'
-            );
-        } else {
-            return Excel::download(
-                new \App\Exports\IndicateursExport($dataForExport),
-                $fileName . '.csv',
-                \Maatwebsite\Excel\Excel::CSV
-            );
-        }
-    }
-
-    /**
-     * Méthode de débogage pour vérifier les données des collectes
-     */
-    public function debug()
-    {
-        $collectes = Collecte::with(['entreprise', 'entreprise.beneficiaire'])->limit(5)->get();
-
-        $debug = [];
-        foreach ($collectes as $collecte) {
-            $debug[] = [
-                'id' => $collecte->id,
-                'entreprise' => $collecte->entreprise->nom_entreprise,
-                'categories' => array_keys($collecte->donnees),
-                'donnees' => $collecte->donnees
-            ];
-        }
-
-        return response()->json($debug);
     }
 }

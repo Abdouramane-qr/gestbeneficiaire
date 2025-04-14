@@ -102,7 +102,7 @@ export default function Index({ indicateurs }: IndicateursIndexProps) {
     // };
 
     return (
-        <AppLayout>
+        <AppLayout title='Analyse'>
             <Head title="Gestion des indicateurs" />
 
             <div className="py-12">

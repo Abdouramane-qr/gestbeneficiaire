@@ -39,14 +39,15 @@ export interface CollecteCommerciale {
     total: number;
     entreprises: number;
   }
-
   export interface DashboardProps {
     totalEntreprises: number;
     totalBeneficiaires: number;
     totalCollectes: number;
-    entreprisesParMois: EntrepriseMensuelle[];
-    entreprisesParSecteur: EntrepriseParSecteur[];
-    beneficiairesParRegion: RegionStats[];
-    collectesStats: CollecteStats[];
-    collectesParCategorie: CollecteParCategorie[];
+    entreprisesParMois: Array<{ name: string; entreprises: number; beneficiaires: number }>;
+    entreprisesParSecteur: Array<{ name: string; value: number }>;
+    beneficiairesParRegion: Array<{ region: string; total: number; entreprises: number }>;
+    collectesStats: Array<any>; // Mettez à jour selon la structure finale
+    collectesParCategorie: Array<any>; // Mettez à jour selon la structure finale
+    indicatorCategories: Record<string, string[]>; // Nouveau champ
+    indicatorSummary: Array<{ period: string; category: string; count: number }>; // Nouveau champ
   }
