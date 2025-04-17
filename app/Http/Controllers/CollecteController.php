@@ -49,7 +49,7 @@ class CollecteController extends Controller
             });
         }
 
-        $collectes = $query->orderBy('date_collecte', 'desc')
+        $collectes = $query->orderBy('date_collecte', 'asc')
             ->paginate(10)
             ->appends($request->query());
 
@@ -57,7 +57,7 @@ class CollecteController extends Controller
             'collectes' => $collectes,
             'filters' => $request->only(['search', 'periode_id', 'exercice_id', 'entreprise_id']),
             'periodes' => Periode::all(),
-            'exercices' => Exercice::orderBy('annee', 'desc')->get(),
+            'exercices' => Exercice::orderBy('annee', 'asc')->get(),
             'entreprises' => Entreprise::select('id', 'nom_entreprise')->get()
         ]);
     }
@@ -116,7 +116,7 @@ class CollecteController extends Controller
         return Inertia::render('collectes/edit', [
             'collecte' => $collecte->load(['entreprise', 'exercice', 'periode']),
             'entreprises' => Entreprise::select('id', 'nom_entreprise')->get(),
-            'exercices' => Exercice::orderBy('annee', 'desc')->get(),
+            'exercices' => Exercice::orderBy('annee', 'asc')->get(),
             'periodes' => Periode::all(),
             'dependenciesData' => $dependenciesData
         ]);

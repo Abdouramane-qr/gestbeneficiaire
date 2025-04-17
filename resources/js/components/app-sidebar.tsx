@@ -63,7 +63,7 @@ const mainNavItems: NavItemWithSubmenu[] = [
         children: [
             {
                 title: 'Nouvelle collecte',
-                href: 'collectes', // Utiliser la fonction route() d'Inertia
+                href: '/collectes/create', // Utiliser la fonction route() d'Inertia
                 icon: FilePlus,
             },
             {

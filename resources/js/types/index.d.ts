@@ -1,5 +1,5 @@
 import { LucideIcon } from 'lucide-react';
-import type { Config } from 'ziggy-js';
+import { Config } from 'prettier';
 
 export interface Auth {
     user: User;
@@ -36,19 +36,12 @@ export interface User {
     email: string;
     avatar?: string;
     email_verified_at: string | null;
+    role?: string;
     created_at: string;
     updated_at: string;
     [key: string]: unknown; // This allows for additional properties...
 }
 
-// Types pour l'utilisateur
-export interface User {
-    id: number;
-    name: string;
-    email: string;
-    email_verified_at?: string;
-    role?: string;
-  }
 
   // Types pour les entreprises
   export interface Entreprise {

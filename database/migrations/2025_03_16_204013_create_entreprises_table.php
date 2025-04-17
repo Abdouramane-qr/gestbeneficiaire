@@ -15,13 +15,17 @@ return new class extends Migration
             $table->id();
            $table->foreignId('beneficiaires_id')->constrained('beneficiaires')->onDelete('cascade'); // Clé étrangère optimisée
             $table->string('nom_entreprise');
-            $table->string('secteur_activite');
+            $table->enum('secteur_activite',['Agriculture', 'Artisanat', 'Commerce', 'Élevage', 'Environnement']);
             $table->date('date_creation')->nullable();
             $table->enum('statut_juridique', ['SARL', 'SA', 'SAS','SCS','SNC' ,'GIE','SCP','SCI','Auto-entrepreneur'])->nullable(); // Enum pour uniformiser les valeurs
             $table->string('adresse')->nullable();
             $table->string('ville')->nullable();
             $table->string('pays'); // ISO 3166-1 alpha-2
             $table->text('description')->nullable();
+            $table->text('domaine_activite')->nullable();
+            $table->enum('niveau_mise_en_oeuvre', ['Création', 'Renforcement'])->nullable();
+            $table->foreignId('ong_id')->nullable()->constrained('ongs')->nullOnDelete();
+            $table->foreignId('institution_financiere_id')->nullable()->constrained('institution_financieres')->nullOnDelete();
             $table->timestamps();
         });
     }

@@ -502,7 +502,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                       <option value="">Toutes les périodes</option>
                       {periodes.map((periode) => (
                         <option key={periode.id} value={periode.id}>
-                          {periode.type_periode}
+                          {periode.nom}
                         </option>
                       ))}
                     </select>
@@ -691,7 +691,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                             className="px-6 py-4 cursor-pointer text-gray-900 dark:text-gray-200"
                             onClick={() => router.visit(route('collectes.show', collecte.id))}
                           >
-                            {collecte.periode.type_periode}
+                            {collecte.periode.nom}
                           </td>
                         )}
                         {visibleColumns.date && (

@@ -1,28 +1,13 @@
-// Beneficiaires.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Head, usePage, router } from '@inertiajs/react';
-import BeneficiaireFormModal from '@/components/beneFormModal';
-import { PlusIcon, PencilIcon, TrashIcon, ArrowLeftIcon } from 'lucide-react';
+import { PlusIcon, PencilIcon, TrashIcon, ArrowLeftIcon, PrinterIcon, FileSpreadsheetIcon, FileTextIcon } from 'lucide-react';
 import { Toaster, toast } from 'sonner';
+import * as XLSX from 'xlsx';
 import Show from './Show';
+import BeneficiaireFormModal from '@/components/beneFormModal';
 import AppLayout from '@/layouts/app-layout';
 
-interface Entreprise {
-    id: number;
-    nom_entreprise: string;
-    secteur_activite: string;
-}
-
-interface ONG {
-    id: number;
-    nom: string;
-}
-
-interface InstitutionFinanciere {
-    id: number;
-    nom: string;
-}
-
+// Types pour les Promoteurs (Bénéficiaires)
 interface Beneficiaire {
     id: number;
     regions: string;
@@ -38,27 +23,11 @@ interface Beneficiaire {
     contact: string;
     email: string;
     niveau_instruction: string;
-    activite: string;
-    domaine_activite: string;
-    niveau_mise_en_oeuvre: string;
-    ong_id: number | null;
-    institution_financiere_id: number | null;
-    date_inscription: string;
-    statut_actuel: string;
-    ong?: ONG | null;
-    institutionFinanciere?: InstitutionFinanciere | null;
-    entreprises?: Entreprise[];
 }
 
-const Beneficiaires = () => {
-    const { beneficiaires, ongs, institutions } = usePage().props as unknown as {
+const Promoteurs = () => {
+    const { beneficiaires } = usePage().props as unknown as {
         beneficiaires: Beneficiaire[];
-        ongs: { id: number; nom: string }[];
-        institutions: { id: number; nom: string }[];
-        regions: { id: number; nom: string }[];
-        provinces: { id: number; nom: string; region_id: number }[];
-        communes: { id: number; nom: string; province_id: number }[];
-        entreprises: { id: number; nom_entreprise: string; secteur_activite: string }[];
     };
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -67,6 +36,9 @@ const Beneficiaires = () => {
     const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
     const [showDetailView, setShowDetailView] = useState(false);
     const [selectedBeneficiaire, setSelectedBeneficiaire] = useState<Beneficiaire | null>(null);
+
+    const tableRef = useRef<HTMLDivElement>(null);
+    const detailsRef = useRef<HTMLDivElement>(null);
 
     const openModal = (beneficiaire: Beneficiaire | null = null) => {
         setCurrentBeneficiaire(beneficiaire);
@@ -78,16 +50,10 @@ const Beneficiaires = () => {
         setCurrentBeneficiaire(null);
     };
 
-    // Define the onSuccess function
     const onSuccess = () => {
-        // Fetch the updated list of beneficiaries
         router.get(route('beneficiaires.index'), {
-            onSuccess: () => {
-                return toast.success("Liste des bénéficiaires mise à jour.");
-            },
-            onError: () => {
-                return toast.error("Échec de la mise à jour de la liste des bénéficiaires.");
-            },
+            onSuccess: () => toast.success("Liste des promoteurs mise à jour."),
+            onError: () => toast.error("Échec de la mise à jour de la liste des promoteurs."),
         });
     };
 
@@ -97,17 +63,15 @@ const Beneficiaires = () => {
         if (confirmDelete === id) {
             router.delete(route('beneficiaires.destroy', id), {
                 onSuccess: () => {
-                    toast.success("Bénéficiaire supprimé avec succès");
+                    toast.success("Promoteur supprimé avec succès");
                     setConfirmDelete(null);
                     if (selectedBeneficiaire && selectedBeneficiaire.id === id) {
                         setShowDetailView(false);
                         setSelectedBeneficiaire(null);
                     }
-                    onSuccess(); // Call onSuccess to refresh the list of beneficiaries
+                    onSuccess();
                 },
-                onError: () => {
-                    toast.error("Échec de la suppression du bénéficiaire");
-                },
+                onError: () => toast.error("Échec de la suppression du promoteur"),
             });
         } else {
             setConfirmDelete(id);
@@ -136,40 +100,185 @@ const Beneficiaires = () => {
             (beneficiaire.village && beneficiaire.village.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
+    // Impression
+    const handlePrint = () => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            toast.error("Impossible d'ouvrir la fenêtre d'impression");
+            return;
+        }
+
+        const contentToPrint = showDetailView && selectedBeneficiaire 
+            ? detailsRef.current 
+            : tableRef.current;
+
+        if (!contentToPrint) {
+            toast.error("Contenu à imprimer non trouvé");
+            return;
+        }
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>${showDetailView ? 'Détails Promoteur' : 'Liste des Promoteurs'}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .header { text-align: center; margin-bottom: 20px; }
+                        @media print {
+                            .no-print { display: none; }
+                            body { margin: 0; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>${showDetailView ? 'Détails du Promoteur' : 'Liste des Promoteurs'}</h1>
+                        <p>Imprimé le ${new Date().toLocaleDateString('fr-FR')}</p>
+                    </div>
+                    ${contentToPrint.innerHTML}
+                    <div class="no-print" style="margin-top: 20px; text-align: center;">
+                        <button onclick="window.print()">Imprimer</button>
+                        <button onclick="window.close()">Fermer</button>
+                    </div>
+                </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+    };
+
+    // Exportation PDF
+    const exportToPDF = () => {
+        const params = new URLSearchParams({
+            format: 'pdf',
+            mode: showDetailView ? 'detail' : 'list'
+        });
+
+        if (showDetailView && selectedBeneficiaire) {
+            params.append('beneficiaire_ids[]', selectedBeneficiaire.id.toString());
+        } else {
+            filteredBeneficiaires.forEach(beneficiaire => {
+                params.append('beneficiaire_ids[]', beneficiaire.id.toString());
+            });
+        }
+
+        if (searchTerm) {
+            params.append('search', searchTerm);
+        }
+
+        window.open(`${route('beneficiaires.export')}?${params.toString()}`, '_blank');
+    };
+
+    // Exportation Excel
+    const exportToExcel = () => {
+        try {
+            const data = showDetailView && selectedBeneficiaire 
+                ? [selectedBeneficiaire].map(b => ({
+                    'Nom': b.nom,
+                    'Prénom': b.prenom,
+                    'Genre': b.genre,
+                    'Date de naissance': b.date_de_naissance,
+                    'Handicap': b.handicap ? 'Oui' : 'Non',
+                    'Contact': b.contact,
+                    'Email': b.email || 'Non spécifié',
+                    'Région': b.regions,
+                    'Province': b.provinces,
+                    'Commune': b.communes,
+                    'Village': b.village || 'Non spécifié',
+                    'Type de promoteur': b.type_beneficiaire,
+                    'Niveau d\'instruction': b.niveau_instruction,
+                }))
+                : filteredBeneficiaires.map(b => ({
+                    'Nom': b.nom,
+                    'Prénom': b.prenom,
+                    'Genre': b.genre,
+                    'Contact': b.contact,
+                    'Email': b.email || 'Non spécifié',
+                    'Région': b.regions,
+                    'Village': b.village || 'Non spécifié',
+                    'Type de promoteur': b.type_beneficiaire,
+                    'Niveau d\'instruction': b.niveau_instruction,
+                }));
+
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Promoteurs");
+
+            const fileName = showDetailView && selectedBeneficiaire
+                ? `promoteur_${selectedBeneficiaire.nom}_${selectedBeneficiaire.prenom}.xlsx`
+                : 'liste_promoteurs.xlsx';
+
+            XLSX.writeFile(workbook, fileName);
+            toast.success("Document Excel exporté avec succès");
+        } catch (error) {
+            console.error("Erreur lors de l'exportation Excel:", error);
+            toast.error("Erreur lors de l'exportation Excel");
+        }
+    };
+
+    // Vue détaillée
     if (showDetailView && selectedBeneficiaire) {
         return (
-            <AppLayout title='Liste des Promoteurs'>
+            <AppLayout title='Détails du Promoteur'>
                 <Head title={`Détails de ${selectedBeneficiaire.nom} ${selectedBeneficiaire.prenom}`} />
-                <Toaster position='top-right' richColors></Toaster>
-                <div className="py-12">
-                    <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                            <div className="p-6 bg-white border-b border-gray-200">
-                                <div className="mb-6">
+                <Toaster position='top-right' richColors />
+                <div className="py-6 sm:py-12">
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                            <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                                <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                                     <button
                                         onClick={() => setShowDetailView(false)}
-                                        className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition flex items-center"
+                                        className="px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition flex items-center w-full sm:w-auto justify-center sm:justify-start"
                                     >
                                         <ArrowLeftIcon className="w-4 h-4 mr-2" />
                                         Retour à la liste
                                     </button>
+
+                                    <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
+                                        <button
+                                            onClick={handlePrint}
+                                            className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center"
+                                        >
+                                            <PrinterIcon className="w-4 h-4 mr-2" />
+                                            Imprimer
+                                        </button>
+                                        <button
+                                            onClick={exportToExcel}
+                                            className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex items-center"
+                                        >
+                                            <FileSpreadsheetIcon className="w-4 h-4 mr-2" />
+                                            Excel
+                                        </button>
+                                        <button
+                                            onClick={exportToPDF}
+                                            className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center"
+                                        >
+                                            <FileTextIcon className="w-4 h-4 mr-2" />
+                                            PDF
+                                        </button>
+                                    </div>
                                 </div>
 
-                                <div className="flex justify-between items-center mb-6">
-                                    <h1 className="text-2xl font-semibold text-gray-800">
-                                        Détails du bénéficiaire
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6">
+                                    <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-4 sm:mb-0">
+                                        Détails du Promoteur
                                     </h1>
-                                    <div className="flex space-x-2">
+                                    <div className="flex flex-wrap gap-2">
                                         <button
                                             onClick={() => openModal(selectedBeneficiaire)}
-                                            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition flex items-center"
+                                            className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition flex items-center"
                                         >
                                             <PencilIcon className="w-4 h-4 mr-2" />
                                             Modifier
                                         </button>
                                         <button
                                             onClick={(e) => handleDelete(selectedBeneficiaire.id, e)}
-                                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center"
+                                            className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center"
                                         >
                                             <TrashIcon className="w-4 h-4 mr-2" />
                                             Supprimer
@@ -177,7 +286,9 @@ const Beneficiaires = () => {
                                     </div>
                                 </div>
 
-                                <Show beneficiaire={selectedBeneficiaire} />
+                                <div ref={detailsRef}>
+                                    <Show beneficiaire={selectedBeneficiaire} />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -188,128 +299,140 @@ const Beneficiaires = () => {
                     closeModal={closeModal}
                     beneficiaire={currentBeneficiaire || undefined}
                     onSuccess={onSuccess}
-                    ongs={ongs}
-                    institutions={institutions}
                 />
             </AppLayout>
         );
     }
 
+    // Vue liste
     return (
-        <AppLayout title="Gestion des Bénéficiaires">
-            <Head title="Gestion des Bénéficiaires" />
-            <Toaster position='top-right' richColors></Toaster>
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 bg-white border-b border-gray-200">
-                            <div className="flex justify-between items-center mb-6">
-                               
+        <AppLayout title="Gestion des Promoteurs">
+            <Head title="Gestion des Promoteurs" />
+            <Toaster position='top-right' richColors />
+            <div className="py-6 sm:py-12">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                                <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
+                                    Liste des Promoteurs
+                                </h1>
 
-                                <button
-                                    onClick={() => openModal(null)}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center hover:bg-blue-700 transition"
-                                >
-                                    <PlusIcon className="w-5 h-5 mr-2" />
-                                    Ajouter un Promoteur
-                                </button>
+                                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                                    <button
+                                        onClick={() => openModal(null)}
+                                        className="px-3 py-2 bg-blue-600 text-white rounded-md flex items-center hover:bg-blue-700 transition w-full sm:w-auto justify-center sm:justify-start"
+                                    >
+                                        <PlusIcon className="w-5 h-5 mr-2" />
+                                        Ajouter un Promoteur
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="flex justify-between items-center mb-6">
-                                <h1 className="text-2xl font-semibold text-gray-800">Liste des Promoteurs</h1>
+                            <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                                <div className="w-full sm:w-1/2">
+                                    <input
+                                        type="text"
+                                        placeholder="Rechercher un promoteur..."
+                                        className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 justify-end w-full sm:w-auto">
+                                    <button
+                                        onClick={handlePrint}
+                                        className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center"
+                                    >
+                                        <PrinterIcon className="w-4 h-4 mr-2" />
+                                        Imprimer
+                                    </button>
+                                    <button
+                                        onClick={exportToExcel}
+                                        className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex items-center"
+                                    >
+                                        <FileSpreadsheetIcon className="w-4 h-4 mr-2" />
+                                        Excel
+                                    </button>
+                                    <button
+                                        onClick={exportToPDF}
+                                        className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center"
+                                    >
+                                        <FileTextIcon className="w-4 h-4 mr-2" />
+                                        PDF
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="mb-4">
-                                <input
-                                    type="text"
-                                    placeholder="Rechercher un bénéficiaire (nom, prénom, contact, région...)..."
-                                    className="w-full p-2 border rounded-md"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full w-full divide-y divide-gray-400">
-                                    <thead className="bg-gray-50">
+                            <div className="overflow-x-auto" ref={tableRef}>
+                                <table className="min-w-full divide-y divide-gray-400 dark:divide-gray-600">
+                                    <thead className="bg-gray-50 dark:bg-gray-700">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                                 Nom & Prénom
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Région/Village
+                                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                Région
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                                 Contact
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Type/Activité
+                                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                Type
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                                 Niveau d'instruction
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Statut
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                         {filteredBeneficiaires.length > 0 ? (
                                             filteredBeneficiaires.map((beneficiaire) => (
                                                 <tr
                                                     key={beneficiaire.id}
                                                     onClick={() => handleRowClick(beneficiaire)}
-                                                    className="cursor-pointer hover:bg-gray-50 transition"
+                                                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                                                 >
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">
-                                                            {beneficiaire.nom} {beneficiaire.prenom}
+                                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900 dark:text-gray-100">
+                                                            {beneficiaire.nom && beneficiaire.prenom
+                                                                ? `${beneficiaire.nom} ${beneficiaire.prenom}`
+                                                                : 'N/A'}
                                                         </div>
-                                                        <div className="text-sm text-gray-500">{beneficiaire.email}</div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">{beneficiaire.regions}</div>
-                                                        <div className="text-sm text-gray-500">{beneficiaire.village}</div>
+
+                                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900 dark:text-gray-100">{beneficiaire.regions}</div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">{beneficiaire.contact}</div>
+                                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                        {beneficiaire.contact}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">{beneficiaire.type_beneficiaire}</div>
-                                                        <div className="text-sm text-gray-500">{beneficiaire.activite}</div>
+
+                                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                        {beneficiaire.type_beneficiaire}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+
+                                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                         {beneficiaire.niveau_instruction}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span
-                                                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${beneficiaire.statut_actuel === 'Actif'
-                                                                    ? 'bg-green-100 text-green-800'
-                                                                    : beneficiaire.statut_actuel === 'En attente'
-                                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                                        : 'bg-red-100 text-red-800'
-                                                                }`}
-                                                        >
-                                                            {beneficiaire.statut_actuel}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                                                         <div className="flex space-x-2">
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     openModal(beneficiaire);
                                                                 }}
-                                                                className="text-indigo-600 hover:text-indigo-900"
+                                                                className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                                                             >
                                                                 <PencilIcon className="w-5 h-5" />
                                                             </button>
                                                             <button
                                                                 onClick={(e) => handleDelete(beneficiaire.id, e)}
-                                                                className="text-gray-500 hover:text-red-600"
+                                                                className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                                                             >
                                                                 <TrashIcon className="w-5 h-5" />
                                                             </button>
@@ -319,8 +442,8 @@ const Beneficiaires = () => {
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
-                                                    Aucun bénéficiaire trouvé
+                                                <td colSpan={6} className="px-4 sm:px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                                    Aucun promoteur trouvé
                                                 </td>
                                             </tr>
                                         )}
@@ -337,11 +460,9 @@ const Beneficiaires = () => {
                 closeModal={closeModal}
                 beneficiaire={currentBeneficiaire || undefined}
                 onSuccess={onSuccess}
-                ongs={ongs}
-                institutions={institutions}
             />
         </AppLayout>
     );
 };
 
-export default Beneficiaires;
+export default Promoteurs;

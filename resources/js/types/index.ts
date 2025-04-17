@@ -70,9 +70,11 @@ export interface Indicateur {
     updated_at: string;
 }
 
+// Mise à jour de l'interface Beneficiaire
 export interface Beneficiaire {
     id: number;
     nom: string;
+    prenom: string;
     adresse: string;
     contact: string;
     email?: string;
@@ -81,13 +83,24 @@ export interface Beneficiaire {
     updated_at: string;
 }
 
+// Mise à jour de l'interface Entreprise
 export interface Entreprise {
     id: number;
     nom_entreprise: string;
-    secteur: string;
-    adresse: string;
-    contact: string;
+    secteur_activite: string;
+    adresse?: string;
+    contact?: string;
     email?: string;
+    date_creation: string;
+    statut_juridique: string;
+    description?: string;
+    ville: string;
+    pays: string;
+    domaine_activite?: string;
+    niveau_mise_en_oeuvre?: string;
+    beneficiaire?: Beneficiaire | null;
+    ongs?: ONG[] | null;
+    institutionFinancieres?: InstitutionFinanciere[] | null;
     created_at: string;
     updated_at: string;
 }
@@ -108,6 +121,7 @@ export interface Collecte {
     updated_at: string;
 }
 
+// Mise à jour de l'interface InstitutionFinanciere
 export interface InstitutionFinanciere {
     id: number;
     nom: string;
@@ -119,13 +133,13 @@ export interface InstitutionFinanciere {
     updated_at: string;
 }
 
+// Mise à jour de l'interface ONG
 export interface ONG {
     id: number;
     nom: string;
-    domaine: string;
+    sigle?: string;
     adresse: string;
     contact: string;
-    email?: string;
     created_at: string;
     updated_at: string;
 }
@@ -167,9 +181,47 @@ export type ErrorMap = {
     [key: string]: string | undefined;
 };
 
-
 export type BreadcrumbItem = {
     title: string;
     href?: string;
     disabled?: boolean;
-  };
+};
+
+// Nouvelles interfaces pour les composants Entreprise
+export interface ShowProps {
+    entreprise: Entreprise;
+}
+
+export interface EntreprisesPageProps extends PageProps {
+    entreprises: Entreprise[];
+    beneficiaires: Beneficiaire[];
+    ongs: ONG[];
+    institutionsFinancieres: InstitutionFinanciere[];
+}
+
+export interface EntrepriseFormModalProps {
+    isOpen: boolean;
+    closeModal: () => void;
+    entreprise?: Entreprise;
+    beneficiaires: Beneficiaire[];
+    ongs: ONG[];
+    institutionsFinancieres: InstitutionFinanciere[];
+}
+
+export interface EntrepriseFormData {
+    nom_entreprise: string;
+    secteur_activite: string;
+    adresse?: string;
+    contact?: string;
+    email?: string;
+    date_creation: string;
+    statut_juridique: string;
+    description?: string;
+    ville: string;
+    pays: string;
+    domaine_activite?: string;
+    niveau_mise_en_oeuvre?: string;
+    beneficiaire_id?: number | null;
+    ong_ids?: number[];
+    institution_financiere_ids?: number[];
+}

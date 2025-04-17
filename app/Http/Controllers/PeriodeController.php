@@ -215,7 +215,7 @@ class PeriodeController extends Controller
     {
         $periode->load('exercice');
 
-        return Inertia::render('Periodes/Show', [
+        return Inertia::render('Periodes/Index', [
             'periode' => [
                 'id' => $periode->id,
                 'exercice' => $periode->exercice,
@@ -228,6 +228,38 @@ class PeriodeController extends Controller
             ]
         ]);
     }
+
+    public function cloture(Periode $periode)
+    {
+        if (!$periode->canBeClosed()) {
+            return back()->withErrors([
+                'error' => 'Cette période ne peut pas être clôturée.'
+            ]);
+        }
+
+        $periode->cloturee = true;
+        $periode->save();
+
+        return redirect()->route('periodes.index')->with('success', 'Période clôturée avec succès');
+    }
+
+      /**
+     * Réouvre une période clôturée.
+     */
+    public function reouverture(Periode $periode)
+    {
+        if (!$periode->canBeReopened()) {
+            return back()->withErrors([
+                'error' => 'Cette période ne peut pas être rouverte.'
+            ]);
+        }
+
+        $periode->cloturee = false;
+        $periode->save();
+
+        return redirect()->route('periodes.index')->with('success', 'Période réouverte avec succès');
+    }
+
 
     /**
      * Supprime une période.

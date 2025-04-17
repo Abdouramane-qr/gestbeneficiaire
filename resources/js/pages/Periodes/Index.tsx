@@ -108,9 +108,9 @@ export default function Index({ periodes }: PeriodeIndexProps) {
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Nom
                                         </th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {/* <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Type
-                                        </th>
+                                        </th> */}
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Dates
                                         </th>
@@ -134,9 +134,9 @@ export default function Index({ periodes }: PeriodeIndexProps) {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {periode.nom}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {getTypePeriodeLabel(periode.type_periode)} {periode.numero}
-                                            </td>
+                                            </td> */}
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 Du {formatDate(periode.date_debut)} au {formatDate(periode.date_fin)}
                                             </td>

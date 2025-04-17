@@ -2,13 +2,15 @@
 
 namespace App\Models;
 use App\Models\Collecte;
+use App\Models\Beneficiaire;
+use App\Models\ONG;
+use App\Models\InstitutionFinanciere;
 
 use Illuminate\Database\Eloquent\Model;
 
 class Entreprise extends Model
 {
     protected $fillable = [
-
         'nom_entreprise',
         'secteur_activite',
         'date_creation',
@@ -17,22 +19,46 @@ class Entreprise extends Model
         'ville',
         'pays',
         'description',
-        'beneficiaires_id' // 🔹 Ajoute ce champ pour la relation
-
+        'beneficiaires_id',
+        'domaine_activite',
+        'niveau_mise_en_oeuvre',
+        'ong_id',
+        'institution_financiere_id'
     ];
+
     protected $casts = [
         'date_creation' => 'date', // Cast automatique en objet Date
     ];
-     // 🔹 Une entreprise appartient à un seul bénéficiaire
-     public function beneficiaire()
-     {
-         return $this->belongsTo(Beneficiaire::class,'beneficiaires_id');
-     }
 
-    
+    // Une entreprise appartient à un seul bénéficiaire (promoteur)
+    public function beneficiaire()
+    {
+        return $this->belongsTo(Beneficiaire::class, 'beneficiaires_id');
+    }
+
+
+
+    // Relation avec l'ONG
+    public function ong()
+    {
+        return $this->belongsTo(ONG::class, 'ong_id');
+    }
+
+    // Relation avec l'institution financière
+    public function institutionFinanciere()
+    {
+        return $this->belongsTo(InstitutionFinanciere::class, 'institution_financiere_id');
+    }
+
+    // Relation avec les collectes de données
     public function dataCollections()
-{
-    return $this->hasMany(Collecte::class);
-}
+    {
+        return $this->hasMany(Collecte::class);
+    }
 
+    // Accesseur pour obtenir le nom du promoteur (bénéficiaire)
+    public function getNomPromoteurAttribute()
+    {
+        return $this->promoteur ? $this->promoteur->nom . ' ' . $this->promoteur->prenom : 'Non spécifié';
+    }
 }

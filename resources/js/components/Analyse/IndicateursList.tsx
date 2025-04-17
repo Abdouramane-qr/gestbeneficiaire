@@ -10,6 +10,7 @@
 //   X
 // } from 'lucide-react';
 
+
 // // Type adapté à votre backend
 // interface Indicateur {
 //   id: number;
@@ -397,6 +398,8 @@ interface Indicateur {
 }
 
 interface IndicateursListProps {
+    isOpen: boolean;
+    onClose: () => void;
   titre: string;
   icone: React.ReactNode;
   couleur: string;
@@ -418,7 +421,7 @@ const categoriesMap = {
 };
 
 const IndicateursList: React.FC<IndicateursListProps> = ({
-  titre,
+    titre,
   icone,
   couleur,
   indicateurs,
@@ -760,3 +763,5 @@ const IndicateursList: React.FC<IndicateursListProps> = ({
 };
 
 export default IndicateursList;
+
+

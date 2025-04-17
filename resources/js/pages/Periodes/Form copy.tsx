@@ -86,7 +86,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                 .filter(p => p.type_periode === data.type_periode && (!isEdit || p.id !== periode?.id))
                 .map(p => p.numero);
 
-            /* let maxNumero = 0;
+            let maxNumero = 0;
 
             // Définir le nombre maximum d'options selon le type de période
             switch(data.type_periode) {
@@ -104,58 +104,13 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                     break;
                 default:
                     maxNumero = 0;
-            } */
+            }
 
-            /* const options = Array.from({length: maxNumero}, (_, i) => i + 1).map(num => ({
+            const options = Array.from({length: maxNumero}, (_, i) => i + 1).map(num => ({
                 value: num,
                 label: num.toString(),
                 disabled: numeroUtilises.includes(num)
-            })); */
-
-            /* Added by Servais */
-            let options: React.SetStateAction<{ value: number; label: string; disabled: boolean; }[]> = [];
-            switch(data.type_periode) {
-                case 'mensuel':
-                    options = [
-                        {value: 1, label: 'Janvier', disabled: numeroUtilises.includes(1)},
-                        {value: 2, label: 'Février', disabled: numeroUtilises.includes(2)},
-                        {value: 3, label: 'Mars', disabled: numeroUtilises.includes(3)},
-                        {value: 4, label: 'Avril', disabled: numeroUtilises.includes(4)},
-                        {value: 5, label: 'Mai', disabled: numeroUtilises.includes(5)},
-                        {value: 6, label: 'Juin', disabled: numeroUtilises.includes(6)},
-                        {value: 7, label: 'Juillet', disabled: numeroUtilises.includes(7)},
-                        {value: 8, label: 'Août', disabled: numeroUtilises.includes(8)},
-                        {value: 9, label: 'Septembre', disabled: numeroUtilises.includes(9)},
-                        {value: 10, label: 'Octobre', disabled: numeroUtilises.includes(10)},
-                        {value: 11, label: 'Novembre', disabled: numeroUtilises.includes(11)},
-                        {value: 12, label: 'Décembre', disabled: numeroUtilises.includes(12)}
-                    ];
-                    break;
-                case 'trimestriel':
-                    options = [
-                        {value: 1, label: '1er Trimestre', disabled: numeroUtilises.includes(1)},
-                        {value: 2, label: '2e Trimestre', disabled: numeroUtilises.includes(2)},
-                        {value: 3, label: '3e Trimestre', disabled: numeroUtilises.includes(3)},
-                        {value: 4, label: '4e Trimestre', disabled: numeroUtilises.includes(4)}
-                    ];
-                    break;
-                case 'semestriel':
-                    options = [
-                        {value: 1, label: '1er Semestre', disabled: numeroUtilises.includes(1)},
-                        {value: 2, label: '2e Semestre', disabled: numeroUtilises.includes(2)}
-                    ];
-                    break;
-                case 'annuel':
-                    options = [
-                        {value: 1, label: 'Année', disabled: numeroUtilises.includes(1)}
-                    ];
-                    break;
-                default:
-                    options = [];
-            }
-
-
-            /* End added by Servais */
+            }));
 
             setNumeroOptions(options);
         }
@@ -333,7 +288,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                     <>
                                         <div className="col-span-1">
                                             <label htmlFor="type_periode" className="block text-sm font-medium text-gray-700">
-                                                Frequence
+                                                Type de période
                                             </label>
                                             <select
                                                 id="type_periode"
@@ -360,17 +315,13 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
 
                                         <div className="col-span-1">
                                             <label htmlFor="numero" className="block text-sm font-medium text-gray-700">
-                                                Periode
+                                                Numéro
                                             </label>
                                             <select
                                                 id="numero"
                                                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                                 value={data.numero}
-                                                onChange={(e) => {
-                                                    setData('numero', Number(e.target.value));
-                                                    const option = numeroOptions?.find((p) => p?.value === Number(e.target.value));
-                                                    setData('nom', option?.label || '');
-                                                }}
+                                                onChange={(e) => setData('numero', Number(e.target.value))}
                                                 disabled={!data.type_periode || numeroOptions.length === 0}
                                             >
                                                 <option value="">Sélectionner un numéro</option>
@@ -389,7 +340,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                             )}
                                         </div>
 
-                                        <div className="col-span-1 hidden">
+                                        <div className="col-span-1">
                                             <label htmlFor="nom" className="block text-sm font-medium text-gray-700">
                                                 Nom de la période
                                             </label>

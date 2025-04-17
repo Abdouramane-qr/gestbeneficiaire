@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DashboardProps } from '@/types/dasb';
 import CollectionData from './collection-data';
 import EvolutionChart from './evolution-chart';
-import IndicatorSummary from './indicator-summary';
 import RegionalStats from './regional-stats';
 import SectorDistribution from './sector-distribution';
 import StatsCards from './stats-cards';
@@ -85,7 +84,6 @@ export default function Dashboard({
   beneficiairesParRegion = [],
   collectesStats = [],
   collectesParCategorie = [],
-  indicatorSummary = [],// indicatorCategories = {}
 }: DashboardProps) {
   const [timeRange, setTimeRange] = useState('month');
 
@@ -119,7 +117,6 @@ export default function Dashboard({
           totalCollectes={totalCollectes}
         />
 
-        <IndicatorSummary indicatorSummary={indicatorSummary} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <EvolutionChart data={entreprisesParMois} />
