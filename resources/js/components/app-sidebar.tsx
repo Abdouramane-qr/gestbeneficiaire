@@ -12,6 +12,9 @@ type NavItemWithSubmenu = NavItem & {
     children?: NavItem[];
 };
 
+// Créer un état pour le coach
+
+
 // Définir le menu principal avec le sous-menu Analyses
 const mainNavItems: NavItemWithSubmenu[] = [
 
@@ -31,21 +34,40 @@ const mainNavItems: NavItemWithSubmenu[] = [
             icon: TrendingUp,  // Ou BarChart selon votre préférence
           }
         ]
-
 },
     {
+        title: 'Ongs',
+        icon: UserRoundSearch,
+        href: route('ong.index'),
+        children: [
+            {
+                title: 'Liste des Coachs',
+                href: route('coaches.index'),
+                icon: UserRoundSearch,
+            },
+
+        ]
+    },
+
+    {
+        title: 'Coachs',
+        icon: UserRoundSearch,
+        href: route('coaches.index'),
+    },
+
+    {
         title: 'Entreprises',
-        href: '/entreprises',
+        href: route('entreprises.index'),
         icon: Building2,
     },
     {
         title: 'Promoteurs',
-        href: '/beneficiaires',
+        href: route('beneficiaires.index'),
         icon: UserRoundSearch,
     },
     {
         title: 'Ong',
-        href: '/ong',
+        href: route('ong.index'),
         icon: Landmark,
     },
     {
@@ -54,8 +76,6 @@ const mainNavItems: NavItemWithSubmenu[] = [
         icon: Wallet,
     },
 
-
-
     {
         title: 'Collecte de Données',
         icon: ClipboardCheck,
@@ -63,7 +83,7 @@ const mainNavItems: NavItemWithSubmenu[] = [
         children: [
             {
                 title: 'Nouvelle collecte',
-                href: '/collectes/create', // Utiliser la fonction route() d'Inertia
+                href: route('collectes.create'),
                 icon: FilePlus,
             },
             {

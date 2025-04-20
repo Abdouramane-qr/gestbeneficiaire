@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import AppLayout from '@/layouts/app-layout';
+import { Toaster } from 'sonner';
 
 interface Exercice {
     id: number;
@@ -51,8 +52,9 @@ export default function Index({ exercices }: ExercicesIndexProps) {
     };
 
     return (
-        <AppLayout>
+        <AppLayout  title='Gestion des Exercices'>
             <Head title="Gestion des exercices" />
+            <Toaster position="top-right" richColors />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">

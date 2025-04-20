@@ -3463,6 +3463,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { Method } from 'node_modules/@inertiajs/core/types/types';
 import OccasionnelModal from '@/components/OccasionnelModal';
+import { Toaster } from '@/components/ui/sonner';
 
 // Types
 interface Collecte {
@@ -3841,7 +3842,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
   return (
     <AppLayout title="Liste des collectes">
       <Head title="Liste des collectes" />
-
+      <Toaster position="top-right" richColors />
       <div className={`py-12 transition-colors duration-200 ${darkMode ? 'dark' : ''}`}>
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-lg sm:rounded-xl p-6 transition-colors">
@@ -4254,7 +4255,7 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                             {collecte.user ? collecte.user.name : 'N/A'}
                           </td>
                         )}
-                       
+
                         {visibleColumns.actions && (
                           <td className="px-6 py-4 text-right space-x-2">
                             <div className="flex space-x-2 justify-end" onClick={e => e.stopPropagation()}>

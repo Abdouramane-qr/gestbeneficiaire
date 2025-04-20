@@ -6,6 +6,7 @@ use App\Http\Controllers\{
     AnalyseController,
     BeneficiaireController,
     CollecteController,
+    CoachController,
     EntrepriseController,
     ExerciceController,
     IndicateurController,
@@ -13,7 +14,6 @@ use App\Http\Controllers\{
     ONGController,
     PeriodeController,
     DashboardController,
-
 };
 
 // Accueil
@@ -100,6 +100,15 @@ Route::resource('indicateurs', IndicateurController::class);
 
 // !!! La route export doit être définie avant cette ressource si elle n’est pas protégée
 Route::resource('collectes', CollecteController::class);
+
+// Routes pour les coachs
+Route::resource('coaches', CoachController::class);
+Route::post('/coaches/{coach}/affecter-promoteurs', [CoachController::class, 'affecterPromoteurs'])
+    ->name('coaches.affecter-promoteurs');
+Route::delete('/coaches/{coach}/desaffecter-promoteur/{promoteurId}', [CoachController::class, 'desaffecterPromoteur'])
+    ->name('coaches.desaffecter-promoteur');
+Route::get('/coaches/{coach}/promoteurs-disponibles', [CoachController::class, 'getPromoteursDisponibles'])
+    ->name('coaches.promoteurs-disponibles');
 
 // Fichiers de configuration et d’auth
 require __DIR__ . '/settings.php';

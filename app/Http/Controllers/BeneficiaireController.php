@@ -33,7 +33,7 @@ class BeneficiaireController extends Controller
     {
         $beneficiaire->load(['ong', 'institutionFinanciere', 'entreprise']);
 
-        dd($beneficiaire); // 🔎 Vérifie le contenu de l'objet
+       // dd($beneficiaire); // 🔎 Vérifie le contenu de l'objet
 
         return Inertia::render('Beneficiaires/Show', [
 
@@ -183,7 +183,7 @@ public function export(Request $request)
         return $this->exportToPdf($beneficiaires, $filename);
 
     } catch (\Exception $e) {
-        
+
         return back()->with('error', 'Une erreur est survenue lors de l\'export: ' . $e->getMessage());
     }
 }
