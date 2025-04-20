@@ -1601,6 +1601,10 @@ export class IndicateurCalculator {
 
         return errors;
     }
+
+
+
+
 }
 
 export default IndicateurCalculator;

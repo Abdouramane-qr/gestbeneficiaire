@@ -3,7 +3,13 @@ import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import CollecteForm from './CollecteForm';
 
-const Create = ({ entreprises, exercices, periodes }) => {
+interface CreateProps {
+  entreprises: any[];
+  exercices: any[];
+  periodes: any[];
+}
+
+const Create = ({ entreprises, exercices, periodes }: CreateProps) => {
   return (
     <AppLayout title="Nouvelle collecte">
       <Head title="Nouvelle collecte" />

@@ -42,6 +42,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('{periode}/collectes/create', [PeriodeController::class, 'createCollecte'])->name('collectes.create');
     });
 
+
+// Route pour les collectes occasionnelles
+Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
+ ->name('collectes.storeOccasionnel');
+    Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
+   // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
+// Route pour récupérer les périodes disponibles (AJAX)
+Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
+    ->name('collectes.periodes-disponibles');
+
+Route::pattern('collecte', '[0-9]+'); // Cela force le paramètre à être un nombre
+
     // Collectes
     Route::prefix('collectes')->name('collectes.')->group(function () {
         Route::post('/draft', [CollecteController::class, 'draft'])->name('draft');

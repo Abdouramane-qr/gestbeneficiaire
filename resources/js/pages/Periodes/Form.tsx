@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Head, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import { Head, useForm } from '@inertiajs/react';
+import React, { useEffect, useState } from 'react';
 
 interface PeriodeFormProps {
     exercices: Array<{
@@ -49,42 +49,42 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
     // Liste des mois en français
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const moisFrancais = [
-        { value: "janvier", label: "Janvier" },
-        { value: "fevrier", label: "Février" },
-        { value: "mars", label: "Mars" },
-        { value: "avril", label: "Avril" },
-        { value: "mai", label: "Mai" },
-        { value: "juin", label: "Juin" },
-        { value: "juillet", label: "Juillet" },
-        { value: "aout", label: "Août" },
-        { value: "septembre", label: "Septembre" },
-        { value: "octobre", label: "Octobre" },
-        { value: "novembre", label: "Novembre" },
-        { value: "decembre", label: "Décembre" }
+        { value: 'janvier', label: 'Janvier' },
+        { value: 'fevrier', label: 'Février' },
+        { value: 'mars', label: 'Mars' },
+        { value: 'avril', label: 'Avril' },
+        { value: 'mai', label: 'Mai' },
+        { value: 'juin', label: 'Juin' },
+        { value: 'juillet', label: 'Juillet' },
+        { value: 'aout', label: 'Août' },
+        { value: 'septembre', label: 'Septembre' },
+        { value: 'octobre', label: 'Octobre' },
+        { value: 'novembre', label: 'Novembre' },
+        { value: 'decembre', label: 'Décembre' },
     ];
 
     // Mettre à jour les options de mois disponibles quand le type de période ou l'exercice change
     useEffect(() => {
         if (data.type_periode === 'mensuel' && data.exercice_id) {
             const moisUtilises = periodesExistantes
-                .filter(p => p.type_periode === 'mensuel' && (!isEdit || p.id !== periode?.id))
-                .map(p => p.nom.toLowerCase());
+                .filter((p) => p.type_periode === 'mensuel' && (!isEdit || p.id !== periode?.id))
+                .map((p) => p.nom.toLowerCase());
 
-            const options = moisFrancais.map(mois => ({
+            const options = moisFrancais.map((mois) => ({
                 ...mois,
-                disabled: moisUtilises.includes(mois.value.toLowerCase())
+                disabled: moisUtilises.includes(mois.value.toLowerCase()),
             }));
 
             setMoisOptions(options);
         }
-    }, [data.type_periode, data.exercice_id, periodesExistantes]);
+    }, [data.type_periode, data.exercice_id, periodesExistantes, moisFrancais, isEdit, periode?.id]);
 
     // Mettre à jour les options de numéro quand le type de période change
     useEffect(() => {
         if (data.type_periode && data.exercice_id) {
             const numeroUtilises = periodesExistantes
-                .filter(p => p.type_periode === data.type_periode && (!isEdit || p.id !== periode?.id))
-                .map(p => p.numero);
+                .filter((p) => p.type_periode === data.type_periode && (!isEdit || p.id !== periode?.id))
+                .map((p) => p.numero);
 
             /* let maxNumero = 0;
 
@@ -113,47 +113,44 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
             })); */
 
             /* Added by Servais */
-            let options: React.SetStateAction<{ value: number; label: string; disabled: boolean; }[]> = [];
-            switch(data.type_periode) {
+            let options: React.SetStateAction<{ value: number; label: string; disabled: boolean }[]> = [];
+            switch (data.type_periode) {
                 case 'mensuel':
                     options = [
-                        {value: 1, label: 'Janvier', disabled: numeroUtilises.includes(1)},
-                        {value: 2, label: 'Février', disabled: numeroUtilises.includes(2)},
-                        {value: 3, label: 'Mars', disabled: numeroUtilises.includes(3)},
-                        {value: 4, label: 'Avril', disabled: numeroUtilises.includes(4)},
-                        {value: 5, label: 'Mai', disabled: numeroUtilises.includes(5)},
-                        {value: 6, label: 'Juin', disabled: numeroUtilises.includes(6)},
-                        {value: 7, label: 'Juillet', disabled: numeroUtilises.includes(7)},
-                        {value: 8, label: 'Août', disabled: numeroUtilises.includes(8)},
-                        {value: 9, label: 'Septembre', disabled: numeroUtilises.includes(9)},
-                        {value: 10, label: 'Octobre', disabled: numeroUtilises.includes(10)},
-                        {value: 11, label: 'Novembre', disabled: numeroUtilises.includes(11)},
-                        {value: 12, label: 'Décembre', disabled: numeroUtilises.includes(12)}
+                        { value: 1, label: 'Janvier', disabled: numeroUtilises.includes(1) },
+                        { value: 2, label: 'Février', disabled: numeroUtilises.includes(2) },
+                        { value: 3, label: 'Mars', disabled: numeroUtilises.includes(3) },
+                        { value: 4, label: 'Avril', disabled: numeroUtilises.includes(4) },
+                        { value: 5, label: 'Mai', disabled: numeroUtilises.includes(5) },
+                        { value: 6, label: 'Juin', disabled: numeroUtilises.includes(6) },
+                        { value: 7, label: 'Juillet', disabled: numeroUtilises.includes(7) },
+                        { value: 8, label: 'Août', disabled: numeroUtilises.includes(8) },
+                        { value: 9, label: 'Septembre', disabled: numeroUtilises.includes(9) },
+                        { value: 10, label: 'Octobre', disabled: numeroUtilises.includes(10) },
+                        { value: 11, label: 'Novembre', disabled: numeroUtilises.includes(11) },
+                        { value: 12, label: 'Décembre', disabled: numeroUtilises.includes(12) },
                     ];
                     break;
                 case 'trimestriel':
                     options = [
-                        {value: 1, label: '1er Trimestre', disabled: numeroUtilises.includes(1)},
-                        {value: 2, label: '2e Trimestre', disabled: numeroUtilises.includes(2)},
-                        {value: 3, label: '3e Trimestre', disabled: numeroUtilises.includes(3)},
-                        {value: 4, label: '4e Trimestre', disabled: numeroUtilises.includes(4)}
+                        { value: 1, label: '1er Trimestre', disabled: numeroUtilises.includes(1) },
+                        { value: 2, label: '2e Trimestre', disabled: numeroUtilises.includes(2) },
+                        { value: 3, label: '3e Trimestre', disabled: numeroUtilises.includes(3) },
+                        { value: 4, label: '4e Trimestre', disabled: numeroUtilises.includes(4) },
                     ];
                     break;
                 case 'semestriel':
                     options = [
-                        {value: 1, label: '1er Semestre', disabled: numeroUtilises.includes(1)},
-                        {value: 2, label: '2e Semestre', disabled: numeroUtilises.includes(2)}
+                        { value: 1, label: '1er Semestre', disabled: numeroUtilises.includes(1) },
+                        { value: 2, label: '2e Semestre', disabled: numeroUtilises.includes(2) },
                     ];
                     break;
                 case 'annuel':
-                    options = [
-                        {value: 1, label: 'Année', disabled: numeroUtilises.includes(1)}
-                    ];
+                    options = [{ value: 1, label: 'Année', disabled: numeroUtilises.includes(1) }];
                     break;
                 default:
-                    options = [];
+                    options = [];
             }
-
 
             /* End added by Servais */
 
@@ -163,11 +160,29 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
 
     // Définir automatiquement le nom de la période pour les périodes mensuelles
     useEffect(() => {
-        if (data.type_periode === 'mensuel' && data.numero) {
-            const moisIndex = (data.numero as number) - 1;
-            if (moisIndex >= 0 && moisIndex < 12) {
-                setData('nom', moisFrancais[moisIndex].label);
+        if (data.type_periode && data.numero) {
+            let nom = '';
+            switch (data.type_periode) {
+                case 'mensuel': {
+                    const moisIndex = (data.numero as number) - 1;
+                    if (moisIndex >= 0 && moisIndex < 12) {
+                        nom = moisFrancais[moisIndex].label;
+                    }
+                    break;
+                }
+                case 'trimestriel':
+                    nom = `Trimestre ${data.numero}`;
+                    break;
+                case 'semestriel':
+                    nom = `Semestre ${data.numero}`;
+                    break;
+                case 'annuel':
+                    nom = 'Année complète';
+                    break;
+                default:
+                    nom = '';
             }
+            setData('nom', nom);
         }
     }, [data.type_periode, data.numero, setData, moisFrancais]);
 
@@ -175,7 +190,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
     useEffect(() => {
         if (data.type_periode && data.numero && !isEdit) {
             let prefix = '';
-            switch(data.type_periode) {
+            switch (data.type_periode) {
                 case 'mensuel':
                     prefix = 'M';
                     break;
@@ -190,7 +205,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                     break;
             }
 
-            const exercice = exercices.find(e => e.id.toString() === data.exercice_id.toString());
+            const exercice = exercices.find((e) => e.id.toString() === data.exercice_id.toString());
             const annee = exercice ? exercice.annee.toString().slice(-2) : '';
 
             setData('code', `${prefix}${data.numero}/${annee}`);
@@ -200,7 +215,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
     // Définir automatiquement les dates de début et fin
     useEffect(() => {
         if (data.exercice_id && data.type_periode && data.numero && !isEdit) {
-            const exercice = exercices.find(e => e.id.toString() === data.exercice_id.toString());
+            const exercice = exercices.find((e) => e.id.toString() === data.exercice_id.toString());
             if (!exercice) return;
 
             // Créer une date à partir de l'année de l'exercice
@@ -208,20 +223,20 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
             let dateDebut = new Date(annee, 0, 1); // 1er janvier de l'année
             let dateFin = new Date(annee, 11, 31); // 31 décembre de l'année
 
-            switch(data.type_periode) {
+            switch (data.type_periode) {
                 case 'mensuel':
                     // Mois: de 1 à 12
                     dateDebut = new Date(annee, (data.numero as number) - 1, 1);
-                    dateFin = new Date(annee, (data.numero as number), 0); // Dernier jour du mois
+                    dateFin = new Date(annee, data.numero as number, 0); // Dernier jour du mois
                     break;
                 case 'trimestriel':
                     // Trimestre: de 1 à 4
-                    dateDebut = new Date(annee, (data.numero as number - 1) * 3, 1);
+                    dateDebut = new Date(annee, ((data.numero as number) - 1) * 3, 1);
                     dateFin = new Date(annee, (data.numero as number) * 3, 0);
                     break;
                 case 'semestriel':
                     // Semestre: de 1 à 2
-                    dateDebut = new Date(annee, (data.numero as number - 1) * 6, 1);
+                    dateDebut = new Date(annee, ((data.numero as number) - 1) * 6, 1);
                     dateFin = new Date(annee, (data.numero as number) * 6, 0);
                     break;
                 case 'annuel':
@@ -243,40 +258,40 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
+        console.log('Données envoyées : ', data);
         if (isEdit) {
             put(route('periodes.update', periode.id), {
-                preserveScroll: true
+                preserveScroll: true,
+                onError: (errors) => console.log('Erreurs lors de la mise à jour : ', errors),
             });
         } else {
             post(route('periodes.store'), {
-                preserveScroll: true
+                preserveScroll: true,
+                onError: (errors) => console.log('Erreurs lors de la création : ', errors),
             });
         }
     };
 
     return (
-        <AppLayout title='Forme Periode'>
+        <AppLayout title="Forme Periode">
             <Head title={isEdit ? 'Modifier une période' : 'Créer une période'} />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-semibold text-gray-900">
-                            {isEdit ? 'Modifier une période' : 'Créer une période'}
-                        </h1>
+                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    <div className="mb-6 flex items-center justify-between">
+                        <h1 className="text-2xl font-semibold text-gray-900">{isEdit ? 'Modifier une période' : 'Créer une période'}</h1>
 
                         <a
                             href={route('periodes.index')}
-                            className="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition"
+                            className="inline-flex items-center rounded-md border border-transparent bg-gray-800 px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase ring-gray-300 transition hover:bg-gray-700 focus:border-gray-900 focus:ring focus:outline-none active:bg-gray-900 disabled:opacity-25"
                         >
                             Retour
                         </a>
                     </div>
 
-                    <div className="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
+                    <div className="overflow-hidden bg-white p-6 shadow-xl sm:rounded-lg">
                         <form onSubmit={handleSubmit}>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 {!isEdit && (
                                     <div className="col-span-1">
                                         <label htmlFor="exercice_id" className="block text-sm font-medium text-gray-700">
@@ -284,7 +299,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                         </label>
                                         <select
                                             id="exercice_id"
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
                                             value={data.exercice_id}
                                             onChange={(e) => setData('exercice_id', e.target.value)}
                                             disabled={isEdit}
@@ -296,19 +311,15 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                                 </option>
                                             ))}
                                         </select>
-                                        {errors.exercice_id && (
-                                            <p className="mt-1 text-sm text-red-600">{errors.exercice_id}</p>
-                                        )}
+                                        {errors.exercice_id && <p className="mt-1 text-sm text-red-600">{errors.exercice_id}</p>}
                                     </div>
                                 )}
 
                                 {isEdit && (
                                     <div className="col-span-1">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            Exercice
-                                        </label>
-                                        <div className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md">
-                                            {exercices.find(e => e.id === periode.exercice_id)?.annee}
+                                        <label className="block text-sm font-medium text-gray-700">Exercice</label>
+                                        <div className="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2">
+                                            {exercices.find((e) => e.id === periode.exercice_id)?.annee}
                                         </div>
                                     </div>
                                 )}
@@ -320,13 +331,11 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                     <input
                                         type="text"
                                         id="code"
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
                                         value={data.code}
                                         onChange={(e) => setData('code', e.target.value)}
                                     />
-                                    {errors.code && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.code}</p>
-                                    )}
+                                    {errors.code && <p className="mt-1 text-sm text-red-600">{errors.code}</p>}
                                 </div>
 
                                 {!isEdit && (
@@ -337,7 +346,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                             </label>
                                             <select
                                                 id="type_periode"
-                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
                                                 value={data.type_periode}
                                                 onChange={(e) => {
                                                     setData('type_periode', e.target.value);
@@ -353,9 +362,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                                     </option>
                                                 ))}
                                             </select>
-                                            {errors.type_periode && (
-                                                <p className="mt-1 text-sm text-red-600">{errors.type_periode}</p>
-                                            )}
+                                            {errors.type_periode && <p className="mt-1 text-sm text-red-600">{errors.type_periode}</p>}
                                         </div>
 
                                         <div className="col-span-1">
@@ -364,7 +371,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                             </label>
                                             <select
                                                 id="numero"
-                                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
                                                 value={data.numero}
                                                 onChange={(e) => {
                                                     setData('numero', Number(e.target.value));
@@ -375,21 +382,31 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                             >
                                                 <option value="">Sélectionner un numéro</option>
                                                 {numeroOptions.map((option) => (
-                                                    <option
-                                                        key={option.value}
-                                                        value={option.value}
-                                                        disabled={option.disabled}
-                                                    >
+                                                    <option key={option.value} value={option.value} disabled={option.disabled}>
                                                         {option.label} {option.disabled ? '(déjà utilisé)' : ''}
                                                     </option>
                                                 ))}
                                             </select>
-                                            {errors.numero && (
-                                                <p className="mt-1 text-sm text-red-600">{errors.numero}</p>
-                                            )}
+                                            {errors.numero && <p className="mt-1 text-sm text-red-600">{errors.numero}</p>}
                                         </div>
 
-                                        <div className="col-span-1 hidden">
+                                        <div className="col-span-1">
+                                            <label htmlFor="nom" className="block text-sm font-medium text-gray-700">
+                                                Nom de la période
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="nom"
+                                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
+                                                value={data.nom}
+                                                onChange={(e) => setData('nom', e.target.value)}
+                                                placeholder={getDefaultNomPeriode(data.type_periode, data.numero)}
+                                                disabled={data.type_periode === 'mensuel'} // Désactiver pour mensuel si nécessaire
+                                            />
+                                            {errors.nom && <p className="mt-1 text-sm text-red-600">{errors.nom}</p>}
+                                        </div>
+
+                                        {/* <div className="col-span-1 hidden">
                                             <label htmlFor="nom" className="block text-sm font-medium text-gray-700">
                                                 Nom de la période
                                             </label>
@@ -410,7 +427,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                             {errors.nom && (
                                                 <p className="mt-1 text-sm text-red-600">{errors.nom}</p>
                                             )}
-                                        </div>
+                                        </div> */}
                                     </>
                                 )}
 
@@ -422,13 +439,11 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                         <input
                                             type="text"
                                             id="nom"
-                                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
                                             value={data.nom}
                                             onChange={(e) => setData('nom', e.target.value)}
                                         />
-                                        {errors.nom && (
-                                            <p className="mt-1 text-sm text-red-600">{errors.nom}</p>
-                                        )}
+                                        {errors.nom && <p className="mt-1 text-sm text-red-600">{errors.nom}</p>}
                                     </div>
                                 )}
 
@@ -439,13 +454,11 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                     <input
                                         type="date"
                                         id="date_debut"
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
                                         value={data.date_debut}
                                         onChange={(e) => setData('date_debut', e.target.value)}
                                     />
-                                    {errors.date_debut && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.date_debut}</p>
-                                    )}
+                                    {errors.date_debut && <p className="mt-1 text-sm text-red-600">{errors.date_debut}</p>}
                                 </div>
 
                                 <div className="col-span-1">
@@ -455,26 +468,24 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                     <input
                                         type="date"
                                         id="date_fin"
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
                                         value={data.date_fin}
                                         onChange={(e) => setData('date_fin', e.target.value)}
                                     />
-                                    {errors.date_fin && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.date_fin}</p>
-                                    )}
+                                    {errors.date_fin && <p className="mt-1 text-sm text-red-600">{errors.date_fin}</p>}
                                 </div>
                             </div>
 
                             <div className="mt-6 flex justify-end">
                                 <a
                                     href={route('periodes.index')}
-                                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-3"
+                                    className="mr-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
                                 >
                                     Annuler
                                 </a>
                                 <button
                                     type="submit"
-                                    className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-xs font-semibold tracking-widest text-white uppercase hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none active:bg-blue-900"
                                     disabled={processing}
                                 >
                                     {isEdit ? 'Mettre à jour' : 'Créer'}
@@ -488,11 +499,29 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
     );
 }
 
+// Liste des mois en français (définie en dehors de la fonction)
+const moisFrancaisDefault = [
+    { value: 'janvier', label: 'Janvier' },
+    { value: 'fevrier', label: 'Février' },
+    { value: 'mars', label: 'Mars' },
+    { value: 'avril', label: 'Avril' },
+    { value: 'mai', label: 'Mai' },
+    { value: 'juin', label: 'Juin' },
+    { value: 'juillet', label: 'Juillet' },
+    { value: 'aout', label: 'Août' },
+    { value: 'septembre', label: 'Septembre' },
+    { value: 'octobre', label: 'Octobre' },
+    { value: 'novembre', label: 'Novembre' },
+    { value: 'decembre', label: 'Décembre' },
+];
+
 // Fonction pour générer un nom par défaut selon le type et le numéro de période
 function getDefaultNomPeriode(typePeriode: string | number, numero: string | number): string {
     if (!typePeriode || !numero) return '';
-
-    switch(typePeriode) {
+    switch (typePeriode) {
+        case 'mensuel':
+            { const moisIndex = Number(numero) - 1;
+            return moisFrancaisDefault[moisIndex]?.label || ''; }
         case 'trimestriel':
             return `Trimestre ${numero}`;
         case 'semestriel':

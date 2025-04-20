@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('exercice_id')->constrained()->onDelete('cascade');
             $table->string('code');
-            $table->string('nom');
+            $table->string('nom')->nullable();
             $table->string('type_periode'); // Mensuel, Trimestriel, Semestriel...
             $table->integer('numero'); // 1, 2, 3, 4 pour les trimestres...
             $table->date('date_debut');

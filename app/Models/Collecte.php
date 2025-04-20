@@ -22,7 +22,7 @@ class Collecte extends Model
     ];
 
     protected $casts = [
-        'date_collecte' => 'date',
+        'date_collecte' => 'datetime',
         'donnees' => 'array',
     ];
 
@@ -78,4 +78,8 @@ class Collecte extends Model
     {
         return is_array($this->donnees) ? array_keys($this->donnees) : [];
     }
+
+
+
+
 }

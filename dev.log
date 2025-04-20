@@ -5238,3 +5238,322 @@
 [server]   2025-04-17 15:44:15 .............................................. ~ 0.22ms
 [server]   185.191.127.222:41336 Invalid request (Malformed HTTP request)
 [server]   2025-04-17 16:49:46 .............................................. ~ 0.21ms
+[server]   2025-04-18 01:09:29 / .......................................... ~ 500.38ms
+[server]   2025-04-18 01:09:49 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-18 01:09:51 / .......................................... ~ 503.84ms
+[server]   65.49.1.32:47613 [404]: CONNECT www.shadowserver.org:443
+[server]   2025-04-18 01:09:54 ............................................ ~ 500.41ms
+[server]   216.218.206.68:50610 Invalid request (Unsupported SSL request)
+[server]   2025-04-18 08:51:21 .............................................. ~ 0.24ms
+[server]   216.218.206.68:50618 Invalid request (Unsupported SSL request)
+[server]   2025-04-18 08:51:24 .............................................. ~ 0.13ms
+[server]   2025-04-18 09:55:08 .................................................. ~ 6s
+[server]   2025-04-18 09:55:16 / .......................................... ~ 504.07ms
+[server]   165.154.172.223:21054 Invalid request (Unsupported SSL request)
+[server]   2025-04-18 09:55:17 .............................................. ~ 0.14ms
+[server]   165.154.172.223:21292 Invalid request (Unsupported SSL request)
+[server]   2025-04-18 09:55:18 .............................................. ~ 0.20ms
+[server]   165.154.172.223:21538 Invalid request (Unsupported SSL request)
+[server]   2025-04-18 09:55:19 .............................................. ~ 0.19ms
+[server]   165.154.172.223:21568 Invalid request (Malformed HTTP request)
+[server]   2025-04-18 09:55:19 .............................................. ~ 0.13ms
+[server]   2025-04-18 09:56:12 / .......................................... ~ 500.34ms
+[server]   2025-04-18 09:56:13 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-18 09:56:14 /build/assets/welcome-RJLG7bQV.js ............ ~ 0.15ms
+[server]   2025-04-18 09:56:14 /build/assets/app-XQeDG7tH.js .................... ~ 1s
+[server]   2025-04-18 09:56:16 /sitemap.xml ................................. ~ 0.13ms
+[server]   2025-04-18 09:56:17 /robots.txt .................................. ~ 0.09ms
+[server]   2025-04-18 15:43:13 / ................................................ ~ 1s
+[server]   2025-04-18 15:43:15 /favicon.ico ..................................... ~ 1s
+[server]   206.168.34.193:41542 Invalid request (Malformed HTTP request)
+[server]   2025-04-18 15:43:19 ............................................ ~ 504.15ms
+[server]   206.168.34.193:39128 Invalid request (Unsupported SSL request)
+[server]   2025-04-18 15:43:26 .............................................. ~ 0.21ms
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   syntax error, unexpected identifier "Route"
+[queue] 
+[queue]   at routes/web.php:49
+[queue]      45▕ 
+[queue]      46▕ // Route pour les collectes occasionnelles
+[queue]      47▕ Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
+[queue]      48▕ //     ->name('collectes.storeOccasionnel');
+[queue]   ➜  49▕     Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
+[queue]      50▕    // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
+[queue]      51▕ // Route pour récupérer les périodes disponibles (AJAX)
+[queue]      52▕ Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
+[queue]      53▕     ->name('collectes.periodes-disponibles');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   syntax error, unexpected identifier "Route"
+[queue] 
+[queue]   at routes/web.php:49
+[queue]      45▕ 
+[queue]      46▕ // Route pour les collectes occasionnelles
+[queue]      47▕ Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
+[queue]      48▕ //     ->name('collectes.storeOccasionnel');
+[queue]   ➜  49▕     Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
+[queue]      50▕    // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
+[queue]      51▕ // Route pour récupérer les périodes disponibles (AJAX)
+[queue]      52▕ Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
+[queue]      53▕     ->name('collectes.periodes-disponibles');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   syntax error, unexpected identifier "Route"
+[queue] 
+[queue]   at routes/web.php:49
+[queue]      45▕ 
+[queue]      46▕ // Route pour les collectes occasionnelles
+[queue]      47▕ Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
+[queue]      48▕ //     ->name('collectes.storeOccasionnel');
+[queue]   ➜  49▕     Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
+[queue]      50▕    // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
+[queue]      51▕ // Route pour récupérer les périodes disponibles (AJAX)
+[queue]      52▕ Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
+[queue]      53▕     ->name('collectes.periodes-disponibles');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   syntax error, unexpected identifier "Route"
+[queue] 
+[queue]   at routes/web.php:49
+[queue]      45▕ 
+[queue]      46▕ // Route pour les collectes occasionnelles
+[queue]      47▕ Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
+[queue]      48▕ //     ->name('collectes.storeOccasionnel');
+[queue]   ➜  49▕     Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
+[queue]      50▕    // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
+[queue]      51▕ // Route pour récupérer les périodes disponibles (AJAX)
+[queue]      52▕ Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
+[queue]      53▕     ->name('collectes.periodes-disponibles');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   syntax error, unexpected identifier "Route"
+[queue] 
+[queue]   at routes/web.php:49
+[queue]      45▕ 
+[queue]      46▕ // Route pour les collectes occasionnelles
+[queue]      47▕ Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
+[queue]      48▕ //     ->name('collectes.storeOccasionnel');
+[queue]   ➜  49▕     Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
+[queue]      50▕    // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
+[queue]      51▕ // Route pour récupérer les périodes disponibles (AJAX)
+[queue]      52▕ Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
+[queue]      53▕     ->name('collectes.periodes-disponibles');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   syntax error, unexpected identifier "Route"
+[queue] 
+[queue]   at routes/web.php:49
+[queue]      45▕ 
+[queue]      46▕ // Route pour les collectes occasionnelles
+[queue]      47▕ Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
+[queue]      48▕ //     ->name('collectes.storeOccasionnel');
+[queue]   ➜  49▕     Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
+[queue]      50▕    // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
+[queue]      51▕ // Route pour récupérer les périodes disponibles (AJAX)
+[queue]      52▕ Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
+[queue]      53▕     ->name('collectes.periodes-disponibles');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   syntax error, unexpected identifier "Route"
+[queue] 
+[queue]   at routes/web.php:49
+[queue]      45▕ 
+[queue]      46▕ // Route pour les collectes occasionnelles
+[queue]      47▕ Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
+[queue]      48▕ //     ->name('collectes.storeOccasionnel');
+[queue]   ➜  49▕     Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
+[queue]      50▕    // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
+[queue]      51▕ // Route pour récupérer les périodes disponibles (AJAX)
+[queue]      52▕ Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
+[queue]      53▕     ->name('collectes.periodes-disponibles');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   syntax error, unexpected identifier "Route"
+[queue] 
+[queue]   at routes/web.php:49
+[queue]      45▕ 
+[queue]      46▕ // Route pour les collectes occasionnelles
+[queue]      47▕ Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
+[queue]      48▕ //     ->name('collectes.storeOccasionnel');
+[queue]   ➜  49▕     Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
+[queue]      50▕    // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
+[queue]      51▕ // Route pour récupérer les périodes disponibles (AJAX)
+[queue]      52▕ Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
+[queue]      53▕     ->name('collectes.periodes-disponibles');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   syntax error, unexpected identifier "Route"
+[queue] 
+[queue]   at routes/web.php:49
+[queue]      45▕ 
+[queue]      46▕ // Route pour les collectes occasionnelles
+[queue]      47▕ Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
+[queue]      48▕ //     ->name('collectes.storeOccasionnel');
+[queue]   ➜  49▕     Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
+[queue]      50▕    // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
+[queue]      51▕ // Route pour récupérer les périodes disponibles (AJAX)
+[queue]      52▕ Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
+[queue]      53▕     ->name('collectes.periodes-disponibles');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[server]   2025-04-18 19:05:19 / ................................................ ~ 1s
+[server]   2025-04-18 20:43:05 ................................................. ~ 10s
+[server]   2025-04-18 20:45:43 / .......................................... ~ 500.35ms
+[server]   3.22.97.70:36898 Invalid request (Unsupported SSL request)
+[server]   2025-04-18 20:50:40 .............................................. ~ 0.21ms
+[server]   2025-04-19 00:54:17 / .......................................... ~ 504.02ms
+[server]   2025-04-19 00:54:33 /favicon.ico ................................. ~ 0.13ms
+[server]   2025-04-19 00:54:35 / ............................................ ~ 0.12ms
+[server]   65.49.20.66:30966 [404]: CONNECT www.shadowserver.org:443
+[server]   2025-04-19 00:54:38 .............................................. ~ 0.23ms
+[server]   20.65.194.72:43718 Invalid request (Unsupported SSL request)
+[server]   2025-04-19 02:32:07 .............................................. ~ 0.21ms
+[server]   88.214.25.121:65392 Invalid request (Malformed HTTP request)
+[server]   2025-04-19 02:54:38 .............................................. ~ 0.22ms
+[server]   2025-04-19 04:27:30 /aaa9 ........................................ ~ 0.13ms
+[server]   2025-04-19 04:27:31 /aab8 ...................................... ~ 504.06ms
+[server]   2025-04-19 04:27:32 / .......................................... ~ 501.43ms
+[server]   2025-04-19 08:00:36 / ............................................ ~ 0.13ms
+[server]   2025-04-19 12:19:27 / .......................................... ~ 500.38ms
+[server]   167.94.138.32:47936 Invalid request (Connection reset by peer)
+[server]   2025-04-19 12:27:50 .................................................. ~ 3s
+[server]   167.94.138.32:47960 Invalid request (Unsupported SSL request)
+[server]   2025-04-19 12:27:54 .............................................. ~ 0.10ms
+[server]   2025-04-19 12:27:54 .................................................. ~ 3s
+[server]   167.94.138.32:57874 Invalid request (Malformed HTTP request)
+[server]   2025-04-19 12:28:01 .................................................. ~ 1s
+[server]   167.94.138.32:57952 Invalid request (Malformed HTTP request)
+[server]   2025-04-19 12:28:06 .............................................. ~ 0.13ms
+[server]   216.218.206.69:55932 Invalid request (Unsupported SSL request)
+[server]   2025-04-19 13:12:33 .............................................. ~ 0.23ms
+[server]   216.218.206.69:41790 Invalid request (Unsupported SSL request)
+[server]   2025-04-19 13:12:43 .............................................. ~ 0.23ms
+[server]   2025-04-19 13:42:07 / .......................................... ~ 504.07ms
+[server]   147.185.133.123:59976 Invalid request (Unsupported SSL request)
+[server]   2025-04-19 14:03:49 .............................................. ~ 0.25ms
+[server]   147.185.133.123:59982 Invalid request (Unsupported SSL request)
+[server]   2025-04-19 14:03:49 .............................................. ~ 0.23ms
+[server]   2025-04-19 20:27:28 .............................................. ~ 0.13ms
+[server]   2025-04-19 20:27:28 /_ignition/execute-solution ................ ~ 503.37ms
+[server]   167.94.138.40:50666 Invalid request (Connection reset by peer)
+[server]   2025-04-19 20:50:31 .................................................. ~ 7s
+[server]   167.94.138.40:43988 Invalid request (Unsupported SSL request)
+[server]   2025-04-19 20:50:38 ............................................ ~ 500.42ms
+[server]   2025-04-19 20:50:40 / ................................................ ~ 4s
+[server]   2025-04-19 20:50:53 / ................................................ ~ 2s
+[server]   2025-04-19 20:50:58 /favicon.ico ..................................... ~ 1s
+[server]   167.94.138.40:33620 Invalid request (Malformed HTTP request)
+[server]   2025-04-19 20:51:02 .................................................. ~ 1s
+[server]   167.94.138.40:42896 Invalid request (Unsupported SSL request)
+[server]   2025-04-19 20:51:09 .............................................. ~ 0.21ms
+[server]   80.66.75.119:64877 Invalid request (Malformed HTTP request)
+[server]   2025-04-19 22:03:52 .................................................. ~ 2s
+[server]   2025-04-19 22:42:32 ................................................. ~ 10s
+[server]   2025-04-19 22:45:21 / .......................................... ~ 500.27ms
+[server]   2025-04-19 22:47:14 / ................................................ ~ 1s
+[server]   3.128.182.54:37588 Invalid request (Unsupported SSL request)
+[server]   2025-04-19 22:49:03 .............................................. ~ 0.22ms
+[server]   3.128.182.54:35380 Invalid request (Unexpected EOF)
+[server]   2025-04-19 22:51:40 ................................................. ~ 10s
+[server]   3.128.182.54:58276 Invalid request (Unsupported SSL request)
+[server]   2025-04-19 22:53:28 .............................................. ~ 0.16ms
+[server]   91.238.181.91:65304 Invalid request (Malformed HTTP request)
+[server]   2025-04-19 23:57:59 .............................................. ~ 0.21ms

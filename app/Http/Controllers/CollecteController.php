@@ -15,52 +15,112 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class CollecteController extends Controller
 {
-    public function index(Request $request)
-    {
-        $query = Collecte::with(['entreprise', 'exercice', 'periode', 'user']);
+  // Modifier la méthode index pour prendre en compte les collectes occasionnelles
+  public function index(Request $request)
+  {
+      $query = Collecte::with(['entreprise', 'exercice', 'periode', 'user']);
 
-        if ($request->has('periode_id')) {
-            $query->where('periode_id', $request->input('periode_id'));
-        }
+      // Vos filtres existants...
+      if ($request->has('periode_id')) {
+          $query->where('periode_id', $request->input('periode_id'));
+      }
 
-        if ($request->has('exercice_id')) {
-            $query->where('exercice_id', $request->input('exercice_id'));
-        }
+      if ($request->has('exercice_id')) {
+          $query->where('exercice_id', $request->input('exercice_id'));
+      }
 
-        if ($request->has('entreprise_id')) {
-            $query->where('entreprise_id', $request->input('entreprise_id'));
-        }
+      if ($request->has('entreprise_id')) {
+          $query->where('entreprise_id', $request->input('entreprise_id'));
+      }
 
-        if ($request->has('search')) {
-            $searchTerm = $request->input('search');
-            $query->where(function($q) use ($searchTerm) {
-                $q->whereHas('entreprise', function($subQuery) use ($searchTerm) {
-                    $subQuery->where('nom_entreprise', 'like', "%{$searchTerm}%");
-                })
-                ->orWhereHas('exercice', function($subQuery) use ($searchTerm) {
-                    $subQuery->where('annee', 'like', "%{$searchTerm}%");
-                })
-                ->orWhereHas('periode', function($subQuery) use ($searchTerm) {
-                    $subQuery->where('type_periode', 'like', "%{$searchTerm}%");
-                });
-            });
-        }
+      if ($request->has('type_collecte')) {
+          $query->where('type_collecte', $request->input('type_collecte'));
+      }
 
-        $collectes = $query->orderBy('date_collecte', 'asc')
-            ->paginate(10)
-            ->appends($request->query());
+      // Nouveau filtre pour les collectes occasionnelles
+      if ($request->has('occasionnel')) {
+          if ($request->input('occasionnel') === 'true') {
+              $query->whereNull('periode_id')->where('periode', 'Occasionnelle');
+          } else {
+              $query->where(function($q) {
+                  $q->whereNotNull('periode_id')->orWhere('periode', '!=', 'Occasionnelle');
+              });
+          }
+      }
 
-        return Inertia::render('collectes/index', [
-            'collectes' => $collectes,
-            'filters' => $request->only(['search', 'periode_id', 'exercice_id', 'entreprise_id']),
-            'periodes' => Periode::all(),
-            'exercices' => Exercice::orderBy('annee', 'asc')->get(),
-            'entreprises' => Entreprise::select('id', 'nom_entreprise')->get()
-        ]);
+      if ($request->has('search')) {
+          $searchTerm = $request->input('search');
+          $query->where(function($q) use ($searchTerm) {
+              $q->whereHas('entreprise', function($subQuery) use ($searchTerm) {
+                  $subQuery->where('nom_entreprise', 'like', "%{$searchTerm}%");
+              })
+              ->orWhereHas('exercice', function($subQuery) use ($searchTerm) {
+                  $subQuery->where('annee', 'like', "%{$searchTerm}%");
+              })
+              ->orWhereHas('periode', function($subQuery) use ($searchTerm) {
+                  $subQuery->where('type_periode', 'like', "%{$searchTerm}%");
+              });
+          });
+      }
+
+      // Ordonner les collectes par date de collecte (la plus récente en premier)
+      // et par date de création pour avoir précisément l'heure
+      $collectes = $query->orderBy('date_collecte', 'desc')
+          ->orderBy('created_at', 'desc')
+          ->paginate(10)
+          ->appends($request->query());
+
+      // Retour de la vue avec les données et filtres nécessaires
+      return Inertia::render('collectes/index', [
+          'collectes' => $collectes,
+          'filters' => $request->only(['search', 'periode_id', 'exercice_id', 'entreprise_id', 'type_collecte', 'occasionnel']),
+          'periodes' => Periode::all(),
+          'exercices' => Exercice::orderBy('annee', 'desc')->get(),
+          'entreprises' => Entreprise::select('id', 'nom_entreprise')->get(),
+          'visibleColumns' => [
+            'date' => true, // Activer la colonne date_collecte
+        ],
+      ]);
+  }
+// Ajouter cette méthode pour récupérer les périodes disponibles pour une entreprise et un exercice
+public function getAvailablePeriodes(Request $request)
+{
+    $entrepriseId = $request->input('entreprise_id');
+    $exerciceId = $request->input('exercice_id');
+
+    if (!$entrepriseId || !$exerciceId) {
+        return response()->json(['error' => 'Entreprise et exercice requis'], 400);
     }
+
+    // Récupérer toutes les périodes pour cet exercice
+    $periodes = Periode::where('exercice_id', $exerciceId)->get();
+
+    // Récupérer les collectes existantes pour cette entreprise et cet exercice
+    $collectesExistantes = Collecte::where('entreprise_id', $entrepriseId)
+        ->where('exercice_id', $exerciceId)
+        ->whereNotNull('periode_id')
+        ->pluck('periode_id')
+        ->toArray();
+
+    // Filtrer les périodes disponibles (non utilisées)
+    $periodesDisponibles = $periodes->filter(function($periode) use ($collectesExistantes) {
+        return !in_array($periode->id, $collectesExistantes);
+    });
+
+    return response()->json([
+        'periodes' => $periodesDisponibles,
+        'periodes_utilisees' => $collectesExistantes
+    ]);}
+
+
+
+
+
+
     public function show(Collecte $collecte)
     {
         $collecte->load(['entreprise', 'exercice', 'periode', 'user']);
@@ -125,7 +185,7 @@ class CollecteController extends Controller
     /**
      * Stocke une nouvelle collecte
      */
-    public function store(Request $request)
+    /* public function store(Request $request)
     {
         try {
             $validated = $request->validate([
@@ -210,12 +270,102 @@ class CollecteController extends Controller
                 'general' => 'Une erreur est survenue: '.$e->getMessage()
             ]);
         }
-    }
+    } */
+    public function store(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'entreprise_id' => 'required|exists:entreprises,id',
+                'exercice_id' => 'required|exists:exercices,id',
+                'periode_id' => 'required|exists:periodes,id',
+                'date_collecte' => 'required|date',
+                'donnees' => 'required|array',
+                'type_collecte' => 'required|in:standard,brouillon'
+            ]);
 
+            $periode = Periode::findOrFail($validated['periode_id']);
+            if ($periode->exercice_id != $validated['exercice_id']) {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La période ne correspond pas à l\'exercice sélectionné'
+                    ], 422);
+                }
+                return back()->withErrors([
+                    'periode_id' => 'La période ne correspond pas à l\'exercice sélectionné.'
+                ]);
+            }
+
+            $existing = Collecte::where('entreprise_id', $validated['entreprise_id'])
+                ->where('periode_id', $validated['periode_id'])
+                ->where('type_collecte', 'standard')
+                ->exists();
+
+            if ($existing && $validated['type_collecte'] === 'standard') {
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Une collecte standard existe déjà pour cette entreprise et période.'
+                    ], 422);
+                }
+                return back()->withErrors([
+                    'general' => 'Une collecte existe déjà pour cette entreprise et période.'
+                ]);
+            }
+
+            // Combiner la date choisie avec l'heure actuelle
+            $dateCollecte = Carbon::parse($validated['date_collecte']);
+            $now = Carbon::now();
+            $dateCollecte->setTime($now->hour, $now->minute, $now->second);
+
+            // Avant de sauvegarder, recalculer les indicateurs calculés automatiquement
+            $validatedDonnees = $this->recalculateIndicateurs(
+                $validated['donnees'],
+                $validated['entreprise_id'],
+                $periode->type_periode
+            );
+
+            $collecte = Collecte::create([
+                'entreprise_id' => $validated['entreprise_id'],
+                'exercice_id' => $validated['exercice_id'],
+                'periode_id' => $validated['periode_id'],
+                'user_id' => Auth::id(),
+                'date_collecte' => $dateCollecte, // Utiliser la date avec l'heure actuelle
+                'type_collecte' => $validated['type_collecte'],
+                'donnees' => $validatedDonnees,
+                'periode' => $periode->type_periode ?? 'Non spécifié',
+            ]);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Collecte enregistrée avec succès',
+                    'collecte_id' => $collecte->id
+                ]);
+            }
+
+            return redirect()->route('collectes.index')
+                ->with('success', 'Collecte enregistrée avec succès');
+
+        } catch (\Exception $e) {
+            Log::error('Erreur création collecte: ' . $e->getMessage());
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Une erreur est survenue: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return back()->withErrors([
+                'general' => 'Une erreur est survenue: ' . $e->getMessage()
+            ]);
+        }
+    }
     /**
      * Met à jour une collecte existante
      */
-    public function update(Request $request, Collecte $collecte)
+   /*  public function update(Request $request, Collecte $collecte)
     {
         Log::info('Données reçues pour mise à jour:', $request->all());
 
@@ -316,8 +466,114 @@ class CollecteController extends Controller
 
             return $this->sendErrorResponse($request, 'general', 'Une erreur est survenue: '.$e->getMessage());
         }
-    }
+    } */
+    public function update(Request $request, Collecte $collecte)
+    {
+        Log::info('Données reçues pour mise à jour:', $request->all());
 
+        try {
+            // S'assurer que type_collecte a une valeur par défaut si non fourni
+            $data = $request->all();
+            if (!isset($data['type_collecte'])) {
+                // Si on convertit de brouillon à standard
+                if ($collecte->type_collecte === 'brouillon' && isset($data['convertToStandard']) && $data['convertToStandard']) {
+                    $data['type_collecte'] = 'standard';
+                } else {
+                    // Sinon garder le type existant
+                    $data['type_collecte'] = $collecte->type_collecte;
+                }
+            }
+
+            $validated = Validator::make($data, [
+                'entreprise_id' => 'required|exists:entreprises,id',
+                'exercice_id' => 'required|exists:exercices,id',
+                'periode_id' => 'required|exists:periodes,id',
+                'date_collecte' => 'required|date',
+                'donnees' => 'required|array',
+                'type_collecte' => 'required|in:standard,brouillon'
+            ])->validate();
+
+            Log::info('Données validées:', $validated);
+            Log::info('État actuel de la collecte: ' . $collecte->type_collecte . ' -> demandé: ' . $validated['type_collecte']);
+
+            // Vérification de la période par rapport à l'exercice
+            $periode = Periode::findOrFail($validated['periode_id']);
+            if ($periode->exercice_id != $validated['exercice_id']) {
+                return $this->sendErrorResponse($request, 'periode_id', 'La période ne correspond pas à l\'exercice sélectionné.');
+            }
+
+            // Cas spécial: conversion de brouillon à standard
+            $isConverting = $collecte->type_collecte === 'brouillon' && $validated['type_collecte'] === 'standard';
+
+            if ($isConverting) {
+                Log::info('Tentative de conversion brouillon -> standard');
+
+                // Vérifier s'il existe déjà une collecte standard pour cette entreprise/période
+                $existing = Collecte::where('entreprise_id', $validated['entreprise_id'])
+                    ->where('periode_id', $validated['periode_id'])
+                    ->where('type_collecte', 'standard')
+                    ->where('id', '!=', $collecte->id)
+                    ->exists();
+
+                if ($existing) {
+                    return $this->sendErrorResponse(
+                        $request,
+                        'general',
+                        'Une collecte standard existe déjà pour cette entreprise et période. Impossible de convertir ce brouillon.'
+                    );
+                }
+
+                Log::info('La conversion est possible, aucune collecte standard existante.');
+            }
+
+            // Combiner la date choisie avec l'heure actuelle
+            $dateCollecte = Carbon::parse($validated['date_collecte']);
+            $now = Carbon::now();
+            $dateCollecte->setTime($now->hour, $now->minute, $now->second);
+
+            // Avant de sauvegarder, recalculer les indicateurs calculés automatiquement
+            $validatedDonnees = $this->recalculateIndicateurs(
+                $validated['donnees'],
+                $validated['entreprise_id'],
+                $periode->type_periode,
+                $collecte->id
+            );
+
+            // Mise à jour des données
+            $collecte->update([
+                'entreprise_id' => $validated['entreprise_id'],
+                'exercice_id' => $validated['exercice_id'],
+                'periode_id' => $validated['periode_id'],
+                'date_collecte' => $dateCollecte, // Utiliser la date avec l'heure actuelle
+                'donnees' => $validatedDonnees,
+                'type_collecte' => $validated['type_collecte'],
+                'periode' => $periode->type_periode ?? 'Non spécifié'
+            ]);
+
+            // Message de succès spécifique pour la conversion
+            $message = $isConverting
+                ? 'Brouillon converti avec succès en collecte standard'
+                : 'Collecte mise à jour avec succès';
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'isConverted' => $isConverting,
+                    'collecte' => $collecte
+                ]);
+            }
+
+            return redirect()->route('collectes.index')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur mise à jour collecte: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+
+            return $this->sendErrorResponse($request, 'general', 'Une erreur est survenue: ' . $e->getMessage());
+        }
+    }
    /**
  * Récupère les données existantes des collectes pour une entreprise
  * Utilisé pour les calculs automatiques basés sur des dépendances
@@ -1263,4 +1519,90 @@ private function exportSingleToPdf($collecte, $categoriesDisponibles, $filename)
             $field => $message
         ]);
     }
+
+
+
+
+
+
+
+
+
+
+
+
+//---------------------------Collecte Occasionnelle---------------------------//
+
+    /**
+ * Affiche le modal pour créer une collecte occasionnelle
+ */
+public function createOccasionnel()
+{
+    // Cette méthode n'est pas directement utilisée puisque
+    // l'ouverture du modal est gérée côté client
+    return response()->json(['success' => true]);
+}
+
+
+
+/**
+ * Stocke une nouvelle collecte occasionnelle
+ */
+public function storeOccasionnel(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'entreprise_id' => 'required|exists:entreprises,id',
+            'exercice_id' => 'required|exists:exercices,id',
+            'date_collecte' => 'required|date',
+            'donnees' => 'required|array',
+            'type_collecte' => 'required|in:standard,brouillon'
+        ]);
+
+        Log::info('Tentative de création d\'une collecte occasionnelle', [
+            'entreprise_id' => $request->input('entreprise_id'),
+            'exercice_id' => $request->input('exercice_id'),
+            'date_collecte' => $request->input('date_collecte'),
+            'type_collecte' => $request->input('type_collecte')
+        ]);
+
+        // Pour les collectes occasionnelles, nous n'avons pas de période
+        // mais nous utilisons le type 'Occasionnelle' directement
+        $validated['periode_id'] = null; // Pas de période spécifique
+        $validated['periode'] = 'Occasionnelle'; // Type de période
+        $validated['user_id'] = Auth::id();
+
+        $collecte = Collecte::create($validated);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $validated['type_collecte'] === 'standard'
+                    ? 'Collecte occasionnelle enregistrée avec succès'
+                    : 'Brouillon de collecte occasionnelle enregistré avec succès',
+                'collecte_id' => $collecte->id
+            ]);
+        }
+
+        return redirect()->route('collectes.index')
+            ->with('success', $validated['type_collecte'] === 'standard'
+                ? 'Collecte occasionnelle enregistrée avec succès'
+                : 'Brouillon de collecte occasionnelle enregistré avec succès');
+
+    } catch (\Exception $e) {
+        Log::error('Erreur création collecte occasionnelle: '.$e->getMessage());
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Une erreur est survenue: ' . $e->getMessage()
+            ], 500);
+        }
+
+        return back()->withErrors([
+            'general' => 'Une erreur est survenue: '.$e->getMessage()
+        ]);
+    }
+}
+
 }

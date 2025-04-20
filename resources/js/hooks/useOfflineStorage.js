@@ -82,7 +82,7 @@ export const useOfflineStorage = () => {
    * @param {Object} donnees - Données à sauvegarder
    * @param {boolean} isDraft - Indique si c'est un brouillon
    */
-  const saveOffline = async (entreprise_id, exercice_id, periode_id, donnees, isDraft = false) => {
+  const saveOffline = async (entreprise_id, exercice_id, periode_id, donnees, isDraft = false)  => {
     if (!db) {
       toast.error('Base de données locale non initialisée');
       return false;
