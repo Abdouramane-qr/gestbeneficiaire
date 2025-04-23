@@ -13,6 +13,7 @@ interface InsFinFormModalProps {
     nom: string;
     adresse: string;
     ville: string;
+    agence: string;
     description: string;
   } | null;
 }
@@ -25,6 +26,7 @@ const InsFinFormModal = ({ isOpen, closeModal, onSuccess, institution }: InsFinF
     nom: '',
     adresse: '',
     ville: '',
+    agence: '',
     description: '',
   });
 
@@ -34,6 +36,7 @@ const InsFinFormModal = ({ isOpen, closeModal, onSuccess, institution }: InsFinF
         nom: institution.nom || '',
         adresse: institution.adresse || '',
         ville: institution.ville || '',
+        agence: institution.agence || '',
         description: institution.description || '',
       });
     } else {
@@ -159,7 +162,20 @@ console.log(errors)        },
                   />
                   {errors.ville && <span className="text-red-500 text-sm">{errors.ville}</span>}
                 </div>
-
+                {/* Agence */}
+                <div>
+                  <label htmlFor="agence" className="block text-sm font-medium text-gray-700">
+                    Agence
+                  </label>
+                  <input
+                    type="text"
+                    id="agence"
+                    value={data.agence}
+                    onChange={(e) => setData('agence', e.target.value)}
+                    className="mt-1 p-2 w-full border rounded-md"
+                  />
+                  {errors.agence && <span className="text-red-500 text-sm">{errors.agence}</span>}
+                  </div>
                 {/* Description */}
                 <div>
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700">

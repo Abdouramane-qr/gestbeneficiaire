@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp, Settings, UserRoundPen, ShieldCheck,  } from 'lucide-react';
+import { UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp, Settings, UserRoundPen, ShieldCheck, GraduationCap,  } from 'lucide-react';
 import AppLogo from './app-logo';
 
 // Créer un type pour les items avec sous-menus
@@ -25,7 +25,7 @@ const mainNavItems: NavItemWithSubmenu[] = [
         children: [
           {
             title: 'Analyse des Indicateurs',  // Nouveau sous-menu
-            href: '/analyse',
+            href: 'analyse/rapport-global',
             icon: TrendingUp,  // Ou BarChart selon votre préférence
           },
           {
@@ -36,24 +36,26 @@ const mainNavItems: NavItemWithSubmenu[] = [
         ]
 },
     {
-        title: 'Ongs',
-        icon: UserRoundSearch,
+        title: 'Ongs & Coachs',
+        icon: Landmark,
         href: route('ong.index'),
         children: [
+
+            {
+                title: 'Ongs',
+                icon: Landmark,
+                href: route('ong.index'),
+            },
             {
                 title: 'Liste des Coachs',
                 href: route('coaches.index'),
-                icon: UserRoundSearch,
+                icon: GraduationCap,
             },
 
         ]
     },
 
-    {
-        title: 'Coachs',
-        icon: UserRoundSearch,
-        href: route('coaches.index'),
-    },
+
 
     {
         title: 'Entreprises',
@@ -65,11 +67,7 @@ const mainNavItems: NavItemWithSubmenu[] = [
         href: route('beneficiaires.index'),
         icon: UserRoundSearch,
     },
-    {
-        title: 'Ong',
-        href: route('ong.index'),
-        icon: Landmark,
-    },
+
     {
         title: 'Institution Financiere',
         href: '/InstitutionFinanciere',
@@ -91,6 +89,16 @@ const mainNavItems: NavItemWithSubmenu[] = [
                 href: route('collectes.index'), // Liste toutes les collectes
                 icon: Database,
             },
+
+
+            {
+                title: 'Collectes Liste Exceptionel',
+                href: route('collectes.index',{
+                    'occasionnel': 'true',
+                    'exercice': 'false',
+                }), // Liste toutes les collectes
+                icon: Database,
+            },
             {
                 title: 'Periode Creation',
                 href: route('periodes.create'), // Liste toutes les collectes
@@ -102,6 +110,8 @@ const mainNavItems: NavItemWithSubmenu[] = [
                 href: route('periodes.index'), // Liste toutes les collectes
                 icon: Database,
             },
+
+
 
             {
                 title: 'Exercies Creation',

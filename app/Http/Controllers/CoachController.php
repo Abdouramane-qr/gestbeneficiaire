@@ -39,10 +39,10 @@ class CoachController extends Controller
             'telephone' => 'nullable|string|max:20',
             'ong_id' => 'required|exists:ongs,id',
             'specialite' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
+            //'description' => 'nullable|string',
             'est_actif' => 'boolean',
-            'date_debut' => 'nullable|date',
-            'fin_contrat' => 'nullable|date',
+            // 'date_debut' => 'nullable|date',
+            // 'fin_contrat' => 'nullable|date',
         ]);
 
         Coach::create($validated);
@@ -76,10 +76,10 @@ class CoachController extends Controller
             'telephone' => 'nullable|string|max:20',
             'ong_id' => 'required|exists:ongs,id',
             'specialite' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
+          // 'description' => 'nullable|string',
             'est_actif' => 'boolean',
-            'date_debut' => 'nullable|date',
-            'fin_contrat' => 'nullable|date',
+            // 'date_debut' => 'nullable|date',
+            // 'fin_contrat' => 'nullable|date',
         ]);
 
         $coach->update($validated);

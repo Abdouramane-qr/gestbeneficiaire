@@ -5562,3 +5562,338 @@
 [server]   2025-04-20 01:26:37 .............................................. ~ 0.20ms
 [server]   64.62.197.31:45859 Invalid request (Unsupported SSL request)
 [server]   2025-04-20 01:26:41 .............................................. ~ 0.20ms
+[server]   20.163.15.172:39296 Invalid request (Unsupported SSL request)
+[server]   2025-04-20 10:47:28 .............................................. ~ 0.23ms
+[server]   2025-04-20 13:54:42 / .......................................... ~ 500.35ms
+[server]   2025-04-20 13:54:59 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-20 13:55:02 / .......................................... ~ 500.33ms
+[server]   65.49.1.202:51881 [404]: CONNECT www.shadowserver.org:443
+[server]   2025-04-20 13:55:04 ............................................ ~ 501.56ms
+[server]   2025-04-20 15:09:57 / .......................................... ~ 500.92ms
+[server]   194.165.16.166:65227 Invalid request (Malformed HTTP request)
+[server]   2025-04-20 18:56:26 .............................................. ~ 0.23ms
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   Unmatched '}'
+[queue] 
+[queue]   at routes/web.php:99
+[queue]      95▕ 
+[queue]      96▕  // Routes pour la synthèse
+[queue]      97▕ Route::get('/analyse/synthese', [AnalyseController::class, 'synthese'])->name('synthese');
+[queue]      98▕ Route::get('/analyse/synthese/donnees', [AnalyseController::class, 'getSyntheseDonnees'])->name('synthese.donnees');
+[queue]   ➜  99▕ });
+[queue]     100▕ Route::get('/entreprises/export', [EntrepriseController::class, 'export'])->name('entreprises.export');
+[queue]     101▕ 
+[queue]     102▕     // Routes pour l'export des bénéficiaires
+[queue]     103▕     Route::get('/beneficiaires/export', [BeneficiaireController::class, 'export'])->name('beneficiaires.export');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   Unmatched '}'
+[queue] 
+[queue]   at routes/web.php:99
+[queue]      95▕ 
+[queue]      96▕  // Routes pour la synthèse
+[queue]      97▕ Route::get('/analyse/synthese', [AnalyseController::class, 'synthese'])->name('synthese');
+[queue]      98▕ Route::get('/analyse/synthese/donnees', [AnalyseController::class, 'getSyntheseDonnees'])->name('synthese.donnees');
+[queue]   ➜  99▕ });
+[queue]     100▕ Route::get('/entreprises/export', [EntrepriseController::class, 'export'])->name('entreprises.export');
+[queue]     101▕ 
+[queue]     102▕     // Routes pour l'export des bénéficiaires
+[queue]     103▕     Route::get('/beneficiaires/export', [BeneficiaireController::class, 'export'])->name('beneficiaires.export');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   Unmatched '}'
+[queue] 
+[queue]   at routes/web.php:99
+[queue]      95▕ 
+[queue]      96▕  // Routes pour la synthèse
+[queue]      97▕ Route::get('/analyse/synthese', [AnalyseController::class, 'synthese'])->name('synthese');
+[queue]      98▕ Route::get('/analyse/synthese/donnees', [AnalyseController::class, 'getSyntheseDonnees'])->name('synthese.donnees');
+[queue]   ➜  99▕ });
+[queue]     100▕ Route::get('/entreprises/export', [EntrepriseController::class, 'export'])->name('entreprises.export');
+[queue]     101▕ 
+[queue]     102▕     // Routes pour l'export des bénéficiaires
+[queue]     103▕     Route::get('/beneficiaires/export', [BeneficiaireController::class, 'export'])->name('beneficiaires.export');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   Unmatched '}'
+[queue] 
+[queue]   at routes/web.php:99
+[queue]      95▕ 
+[queue]      96▕  // Routes pour la synthèse
+[queue]      97▕ Route::get('/analyse/synthese', [AnalyseController::class, 'synthese'])->name('synthese');
+[queue]      98▕ Route::get('/analyse/synthese/donnees', [AnalyseController::class, 'getSyntheseDonnees'])->name('synthese.donnees');
+[queue]   ➜  99▕ });
+[queue]     100▕ Route::get('/entreprises/export', [EntrepriseController::class, 'export'])->name('entreprises.export');
+[queue]     101▕ 
+[queue]     102▕     // Routes pour l'export des bénéficiaires
+[queue]     103▕     Route::get('/beneficiaires/export', [BeneficiaireController::class, 'export'])->name('beneficiaires.export');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   Unmatched '}'
+[queue] 
+[queue]   at routes/web.php:99
+[queue]      95▕ 
+[queue]      96▕  // Routes pour la synthèse
+[queue]      97▕ Route::get('/analyse/synthese', [AnalyseController::class, 'synthese'])->name('synthese');
+[queue]      98▕ Route::get('/analyse/synthese/donnees', [AnalyseController::class, 'getSyntheseDonnees'])->name('synthese.donnees');
+[queue]   ➜  99▕ });
+[queue]     100▕ Route::get('/entreprises/export', [EntrepriseController::class, 'export'])->name('entreprises.export');
+[queue]     101▕ 
+[queue]     102▕     // Routes pour l'export des bénéficiaires
+[queue]     103▕     Route::get('/beneficiaires/export', [BeneficiaireController::class, 'export'])->name('beneficiaires.export');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[queue] 
+[queue]    ParseError 
+[queue] 
+[queue]   Unmatched '}'
+[queue] 
+[queue]   at routes/web.php:99
+[queue]      95▕ 
+[queue]      96▕  // Routes pour la synthèse
+[queue]      97▕ Route::get('/analyse/synthese', [AnalyseController::class, 'synthese'])->name('synthese');
+[queue]      98▕ Route::get('/analyse/synthese/donnees', [AnalyseController::class, 'getSyntheseDonnees'])->name('synthese.donnees');
+[queue]   ➜  99▕ });
+[queue]     100▕ Route::get('/entreprises/export', [EntrepriseController::class, 'export'])->name('entreprises.export');
+[queue]     101▕ 
+[queue]     102▕     // Routes pour l'export des bénéficiaires
+[queue]     103▕     Route::get('/beneficiaires/export', [BeneficiaireController::class, 'export'])->name('beneficiaires.export');
+[queue] 
+[queue]       [2m+19 vendor frames [22m
+[queue] 
+[queue]   20  [internal]:0
+[queue]       Illuminate\Foundation\Application::{closure:Illuminate\Foundation\Application::boot():1130}(Object(Illuminate\Foundation\Support\Providers\RouteServiceProvider), "Illuminate\Foundation\Support\Providers\RouteServiceProvider")
+[queue]       [2m+6 vendor frames [22m
+[queue] 
+[queue]   27  artisan:16
+[queue]       Illuminate\Foundation\Application::handleCommand(Object(Symfony\Component\Console\Input\ArgvInput))
+[queue] 
+[server]   2025-04-20 23:38:20 .................................................. ~ 9s
+[server]   2025-04-20 23:42:37 / .......................................... ~ 502.98ms
+[server]   3.141.166.11:46092 Invalid request (Unexpected EOF)
+[server]   2025-04-20 23:47:16 ................................................. ~ 10s
+[server]   3.141.166.11:41110 Invalid request (Unsupported SSL request)
+[server]   2025-04-20 23:48:55 .............................................. ~ 0.23ms
+[server]   2025-04-21 01:59:03 / ................................................ ~ 2s
+[server]   2025-04-21 01:59:10 /favicon.ico ............................... ~ 500.75ms
+[server]   162.142.125.216:41408 Invalid request (Malformed HTTP request)
+[server]   2025-04-21 01:59:11 ............................................ ~ 501.35ms
+[server]   162.142.125.216:53274 Invalid request (Unsupported SSL request)
+[server]   2025-04-21 01:59:20 .............................................. ~ 0.23ms
+[server]   2025-04-21 06:34:30 / .......................................... ~ 500.38ms
+[server]   2025-04-21 06:35:15 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-21 06:35:36 / .......................................... ~ 500.36ms
+[server]   65.49.1.179:39709 [404]: CONNECT www.shadowserver.org:443
+[server]   2025-04-21 06:35:57 ............................................ ~ 503.84ms
+[server]   2025-04-21 08:22:24 /aaa9 ...................................... ~ 504.14ms
+[server]   2025-04-21 08:22:26 /aab8 ...................................... ~ 502.95ms
+[server]   2025-04-21 08:22:29 / ............................................ ~ 0.13ms
+[server]   74.82.47.2:60394 Invalid request (Unsupported SSL request)
+[server]   2025-04-21 08:48:50 .............................................. ~ 0.18ms
+[server]   74.82.47.2:60400 Invalid request (Unsupported SSL request)
+[server]   2025-04-21 08:48:56 .............................................. ~ 0.21ms
+[server]   2025-04-21 09:44:20 /@fs/etc/passwd ............................ ~ 501.20ms
+[server]   2025-04-21 09:44:21 /@fs/C://windows/win.ini ..................... ~ 0.13ms
+[server]   2025-04-21 09:44:22 /@fs/etc/passwd ............................ ~ 500.32ms
+[server]   2025-04-21 09:44:22 /etc/passwd .................................. ~ 0.15ms
+[server]   2025-04-21 09:44:23 /@fs/C://windows/win.ini ................... ~ 502.55ms
+[server]   2025-04-21 13:03:35 /@fs/root/.bash_history .................... ~ 500.32ms
+[server]   2025-04-21 13:21:37 /@fs/root/.bash_history ...................... ~ 0.14ms
+[server]   2025-04-21 14:53:20 /@fs/root/.bash_history ...................... ~ 0.13ms
+[server]   88.214.25.121:65315 Invalid request (Malformed HTTP request)
+[server]   2025-04-21 16:04:14 .............................................. ~ 0.24ms
+[server]   2025-04-21 20:37:22 / .......................................... ~ 500.34ms
+[server]   47.251.92.215:53726 Invalid request (Unsupported SSL request)
+[server]   2025-04-21 21:19:18 .............................................. ~ 0.23ms
+[server]   2025-04-21 21:19:28 / ................................................ ~ 1s
+[server]   2025-04-21 21:19:44 / .......................................... ~ 504.07ms
+[server]   2025-04-21 21:19:45 / ............................................... ~ 10s
+[server]   2025-04-21 21:19:45 / ............................................... ~ 11s
+[server]   2025-04-21 21:19:55 / ................................................ ~ 1s
+[server]   2025-04-21 21:19:56 / ................................................ ~ 1s
+[server]   2025-04-21 21:19:56 / ................................................ ~ 1s
+[server]   2025-04-21 21:19:56 / ................................................ ~ 1s
+[server]   2025-04-21 21:19:57 / ................................................ ~ 1s
+[server]   2025-04-21 21:19:58 / ................................................ ~ 1s
+[server]   2025-04-21 21:19:58 / ................................................ ~ 1s
+[server]   2025-04-21 21:19:59 / ................................................ ~ 1s
+[server]   2025-04-21 21:20:00 / .......................................... ~ 502.33ms
+[server]   2025-04-21 21:20:01 / .......................................... ~ 502.61ms
+[server]   2025-04-21 21:20:01 / ................................................ ~ 1s
+[server]   2025-04-21 21:20:01 / ................................................ ~ 1s
+[server]   2025-04-21 21:20:02 / ................................................ ~ 1s
+[server]   2025-04-21 21:20:02 / ................................................ ~ 1s
+[server]   2025-04-21 21:20:04 / ................................................ ~ 1s
+[server]   2025-04-21 21:20:04 /build/assets/welcome-RJLG7bQV.js ................ ~ 1s
+[server]   2025-04-21 21:20:04 /build/assets/welcome-RJLG7bQV.js ............ ~ 0.90ms
+[server]   2025-04-21 21:20:04 / .......................................... ~ 501.44ms
+[server]   2025-04-21 21:20:04 /build/assets/welcome-RJLG7bQV.js .......... ~ 503.48ms
+[server]   2025-04-21 21:20:05 /build/assets/welcome-RJLG7bQV.js ............ ~ 0.56ms
+[server]   2025-04-21 21:20:03 /build/assets/app-XQeDG7tH.js .................... ~ 2s
+[server]   2025-04-21 21:20:05 /build/assets/welcome-RJLG7bQV.js ............ ~ 0.07ms
+[server]   2025-04-21 21:20:04 /build/assets/app-XQeDG7tH.js .................... ~ 2s
+[server]   2025-04-21 21:20:04 /build/assets/app-XQeDG7tH.js .................... ~ 1s
+[server]   2025-04-21 21:20:05 /build/assets/app-XQeDG7tH.js .................... ~ 1s
+[server]   2025-04-21 21:20:07 /favicon.ico ............................... ~ 500.36ms
+[server]   2025-04-21 21:20:08 /favicon.ico ................................. ~ 0.17ms
+[server]   2025-04-21 21:20:09 / .......................................... ~ 500.33ms
+[server]   2025-04-21 21:20:05 /build/assets/app-XQeDG7tH.js .................... ~ 4s
+[server]   2025-04-21 21:20:09 /favicon.ico ................................. ~ 1.18ms
+[server]   2025-04-21 21:20:09 /favicon.ico ................................. ~ 1.15ms
+[server]   2025-04-21 21:20:10 /favicon.ico ................................. ~ 0.16ms
+[server]   2025-04-21 21:20:10 /build/assets/welcome-RJLG7bQV.js ............ ~ 0.20ms
+[server]   2025-04-21 21:20:10 /build/assets/app-XQeDG7tH.js .............. ~ 500.98ms
+[server]   2025-04-21 21:20:11 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-21 21:20:14 /favicon.ico ................................. ~ 0.15ms
+[server]   2025-04-21 21:20:14 /favicon.ico ................................. ~ 0.09ms
+[server]   2025-04-21 21:20:25 / .......................................... ~ 502.82ms
+[server]   2025-04-21 21:20:59 / .......................................... ~ 501.08ms
+[server]   2025-04-21 21:21:01 /build/assets/welcome-RJLG7bQV.js ............ ~ 0.14ms
+[server]   2025-04-21 21:21:00 /build/assets/app-XQeDG7tH.js .................... ~ 1s
+[server]   2025-04-21 21:21:09 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-22 01:55:08 ................................................. ~ 10s
+[server]   2025-04-22 01:59:30 / .......................................... ~ 504.08ms
+[server]   3.15.156.212:48854 Invalid request (Unsupported SSL request)
+[server]   2025-04-22 02:01:33 .............................................. ~ 0.24ms
+[server]   3.15.156.212:57666 Invalid request (Unexpected EOF)
+[server]   2025-04-22 02:03:45 ................................................. ~ 10s
+[server]   3.15.156.212:47950 Invalid request (Unsupported SSL request)
+[server]   2025-04-22 02:05:33 .............................................. ~ 0.19ms
+[server]   64.62.197.224:11053 Invalid request (Unsupported SSL request)
+[server]   2025-04-22 03:15:05 .............................................. ~ 0.19ms
+[server]   64.62.197.226:58521 Invalid request (Unsupported SSL request)
+[server]   2025-04-22 03:15:11 .............................................. ~ 0.24ms
+[server]   2025-04-22 04:55:03 / .......................................... ~ 504.05ms
+[server]   104.234.115.223:49928 Invalid request (Unsupported SSL request)
+[server]   2025-04-22 08:27:50 .............................................. ~ 0.22ms
+[server]   2025-04-22 08:28:02 / .......................................... ~ 500.35ms
+[server]   104.234.115.223:39738 Invalid request (Unsupported SSL request)
+[server]   2025-04-22 08:28:35 .............................................. ~ 0.22ms
+[server]   2025-04-22 08:28:41 /favicon.ico ................................. ~ 0.15ms
+[server]   167.94.138.50:40208 Invalid request (Connection reset by peer)
+[server]   2025-04-22 08:56:06 .................................................. ~ 4s
+[server]   167.94.138.50:32994 Invalid request (Unsupported SSL request)
+[server]   2025-04-22 08:56:10 ............................................ ~ 500.89ms
+[server]   2025-04-22 08:56:12 / ................................................ ~ 4s
+[server]   2025-04-22 08:56:25 / ................................................ ~ 1s
+[server]   2025-04-22 08:56:28 /favicon.ico ............................... ~ 500.33ms
+[server]   167.94.138.50:59768 Invalid request (Malformed HTTP request)
+[server]   2025-04-22 08:56:31 .................................................. ~ 1s
+[server]   167.94.138.50:41166 Invalid request (Unsupported SSL request)
+[server]   2025-04-22 08:56:39 .................................................. ~ 1s
+[server]   2025-04-22 11:36:04 / .......................................... ~ 504.05ms
+[server]   2025-04-22 11:36:19 /favicon.ico ................................. ~ 0.13ms
+[server]   2025-04-22 11:36:22 / .......................................... ~ 501.12ms
+[server]   65.49.1.218:11085 [404]: CONNECT www.shadowserver.org:443
+[server]   2025-04-22 11:36:24 ............................................ ~ 504.15ms
+[server]   94.102.49.82:36889 Invalid request (Unsupported SSL request)
+[server]   2025-04-22 12:04:54 .............................................. ~ 0.21ms
+[server]   94.102.49.82:37040 Invalid request (Unsupported SSL request)
+[server]   2025-04-22 12:04:55 .............................................. ~ 0.20ms
+[server]   194.165.16.164:65144 Invalid request (Malformed HTTP request)
+[server]   2025-04-22 13:25:46 .............................................. ~ 0.20ms
+[server]   2025-04-22 16:24:02 / .......................................... ~ 504.06ms
+[server]   2025-04-22 20:10:32 / ................................................ ~ 1s
+[server]   2025-04-22 20:11:02 / ................................................ ~ 1s
+[server]   2025-04-22 20:11:05 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-22 20:11:07 /favicon.ico ................................. ~ 0.17ms
+[server]   2025-04-23 02:14:30 / .......................................... ~ 501.69ms
+[server]   2025-04-23 02:31:33 / .......................................... ~ 500.38ms
+[server]   2025-04-23 04:12:37 / .......................................... ~ 500.34ms
+[server]   167.94.138.127:56068 Invalid request (Connection reset by peer)
+[server]   2025-04-23 04:13:51 .................................................. ~ 4s
+[server]   2025-04-23 04:13:54 .................................................. ~ 2s
+[server]   2025-04-23 04:13:57 / ................................................ ~ 4s
+[server]   2025-04-23 04:14:09 / ................................................ ~ 2s
+[server]   2025-04-23 04:14:14 / ................................................ ~ 1s
+[server]   2025-04-23 04:14:16 /favicon.ico ............................... ~ 500.37ms
+[server]   167.94.138.127:39164 Invalid request (Malformed HTTP request)
+[server]   2025-04-23 04:14:18 .................................................. ~ 1s
+[server]   167.94.138.127:50172 Invalid request (Unsupported SSL request)
+[server]   2025-04-23 04:14:26 .................................................. ~ 1s
+[server]   3.137.163.14:37782 Invalid request (Unsupported SSL request)
+[server]   2025-04-23 04:15:56 .............................................. ~ 0.21ms
+[server]   2025-04-23 04:16:11 / .......................................... ~ 500.31ms
+[server]   2025-04-23 04:16:26 /favicon.ico ................................. ~ 0.14ms
+[server]   2025-04-23 04:16:29 / .......................................... ~ 504.05ms
+[server]   184.105.247.252:16658 [404]: CONNECT www.shadowserver.org:443
+[server]   2025-04-23 04:16:32 ............................................ ~ 502.79ms
+[server]   3.137.163.14:42654 Invalid request (Unexpected EOF)
+[server]   2025-04-23 04:17:56 ................................................. ~ 10s
+[server]   3.137.163.14:45812 Invalid request (Unsupported SSL request)
+[server]   2025-04-23 04:20:00 .............................................. ~ 0.23ms
+[server]   2025-04-23 05:08:43 / .......................................... ~ 500.37ms
+[server]   2025-04-23 06:35:57 / .......................................... ~ 504.04ms
+[server]   2025-04-23 06:35:58 /favicon.ico ................................. ~ 0.16ms
+[server]   216.218.206.67:34172 Invalid request (Unsupported SSL request)
+[server]   2025-04-23 07:00:20 .............................................. ~ 0.21ms
+[server]   216.218.206.67:34182 Invalid request (Unsupported SSL request)
+[server]   2025-04-23 07:00:26 .............................................. ~ 0.24ms
+[server]   2025-04-23 07:13:15 / .......................................... ~ 503.68ms
+[server]   162.142.125.195:32810 Invalid request (Connection reset by peer)
+[server]   2025-04-23 07:36:30 .................................................. ~ 3s
+[server]   2025-04-23 07:36:33 .................................................. ~ 1s
+[server]   2025-04-23 07:36:35 / ................................................ ~ 4s
+[server]   2025-04-23 07:36:45 / ................................................ ~ 1s
+[server]   2025-04-23 07:36:55 /favicon.ico ..................................... ~ 1s
+[server]   162.142.125.195:48318 Invalid request (Malformed HTTP request)
+[server]   2025-04-23 07:36:56 ............................................ ~ 501.66ms
+[server]   162.142.125.195:41078 Invalid request (Unsupported SSL request)
+[server]   2025-04-23 07:37:06 .............................................. ~ 0.21ms
+[server]   20.171.26.110:50770 Invalid request (Unsupported SSL request)
+[server]   2025-04-23 08:35:22 .............................................. ~ 0.20ms
+[server]   2025-04-23 10:07:51 / ............................................ ~ 0.13ms

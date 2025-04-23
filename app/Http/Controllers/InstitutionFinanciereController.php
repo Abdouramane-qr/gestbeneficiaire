@@ -29,6 +29,7 @@ class InstitutionFinanciereController extends Controller
             'nom' => 'required|string|max:255',
             'adresse' => 'required|string|max:255',
             'ville' => 'required|string|max:255',
+            'agence' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
 
@@ -44,7 +45,7 @@ class InstitutionFinanciereController extends Controller
     {
         $institutionFinanciere->load('beneficiaires');
 
-        return Inertia::render('InstitutionFinanciere/Show', [
+        return Inertia::render('InstitutionFinanciere/show', [
             'institution' => $institutionFinanciere
         ]);
     }
@@ -58,6 +59,7 @@ class InstitutionFinanciereController extends Controller
             'nom' => 'required|string|max:255',
             'adresse' => 'required|string|max:255',
             'ville' => 'required|string|max:255',
+            'agence' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
 

@@ -190,6 +190,9 @@ interface Exercice {
 interface Periode {
   id: number;
   type_periode: string;
+  exercice_id: number;
+  date_debut: string;
+  date_fin: string;
 }
 
 interface Collecte {
@@ -199,6 +202,9 @@ interface Collecte {
   periode_id: number;
   date_collecte: string;
   donnees: Record<string, any>;
+  type_collecte: 'standard' | 'brouillon';
+  promoteur_id?: number;
+  ong_id?: number;
 }
 
 interface EditProps {

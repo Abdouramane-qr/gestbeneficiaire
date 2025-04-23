@@ -45,15 +45,15 @@ export default function Index({ periodes }: PeriodeIndexProps) {
         return date.toLocaleDateString('fr-FR');
     };
 
-    const getTypePeriodeLabel = (type: string) => {
-        const types: { [key: string]: string } = {
-            'mensuel': 'Mensuel',
-            'trimestriel': 'Trimestriel',
-            'semestriel': 'Semestriel',
-            'annuel': 'Annuel',
-        };
-        return types[type] || type;
-    };
+    // const getTypePeriodeLabel = (type: string) => {
+    //     const types: { [key: string]: string } = {
+    //         'mensuel': 'Mensuel',
+    //         'trimestriel': 'Trimestriel',
+    //         'semestriel': 'Semestriel',
+    //         'annuel': 'Annuel',
+    //     };
+    //     return types[type] || type;
+    // };
 
     const confirmDelete = (id: number) => {
         setPeriodeToDelete(id);

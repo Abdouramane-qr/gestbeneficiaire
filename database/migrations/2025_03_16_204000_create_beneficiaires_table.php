@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('prenom');
             $table->date('date_de_naissance');
             $table->enum('genre', ['Homme', 'Femme']);
-            $table->boolean('handicap')->default(false);
+           // $table->boolean('handicap')->default(false);
             $table->string('contact');
             $table->enum('niveau_instruction', ['Analphabète', 'Alphabétise',  'Primaire',  'CEP', 'BEPC', 'Baccalauréat', 'Universitaire']);
             $table->string('email')->nullable();

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('nom')->unique();
             $table->string('adresse');
             $table->string('ville');
+            $table->string('agence')->nullable();
             $table->text('description')->nullable();
             $table->timestamps();
         });

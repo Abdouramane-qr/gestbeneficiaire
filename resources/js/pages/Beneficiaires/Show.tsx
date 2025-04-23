@@ -28,7 +28,7 @@ interface Beneficiaire {
     prenom: string;
     date_de_naissance: string;
     genre: string;
-    handicap: boolean;
+   // handicap: boolean;
     contact: string;
     email: string;
     niveau_instruction: string;
@@ -75,10 +75,10 @@ const Show: React.FC<{ beneficiaire: Beneficiaire }> = ({ beneficiaire }) => {
                                 <span className="font-medium w-40 inline-block text-gray-700 dark:text-gray-300">Date de naissance :</span>
                                 <span className="text-gray-900 dark:text-gray-100">{formatDate(beneficiaire.date_de_naissance)}</span>
                             </p>
-                            <p className="flex items-start">
+                            {/* <p className="flex items-start">
                                 <span className="font-medium w-40 inline-block text-gray-700 dark:text-gray-300">Situation de handicap :</span>
                                 <span className="text-gray-900 dark:text-gray-100">{beneficiaire.handicap ? 'Oui' : 'Non'}</span>
-                            </p>
+                            </p> */}
                             <p className="flex items-start">
                                 <span className="font-medium w-40 inline-block text-gray-700 dark:text-gray-300">Email :</span>
                                 <span className="text-gray-900 dark:text-gray-100">{beneficiaire.email || 'Non spécifié'}</span>

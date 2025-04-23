@@ -117,18 +117,18 @@ user={auth.user}>
               </div>
             </div>
             <div>
-              <div className="mb-3">
+              {/* <div className="mb-3">
                 <span className="text-gray-600">Date de début: </span>
                 <span className="text-gray-900">
                   {coach.date_debut ? new Date(coach.date_debut).toLocaleDateString() : 'Non renseignée'}
                 </span>
-              </div>
-              <div className="mb-3">
+              </div> */}
+              {/* <div className="mb-3">
                 <span className="text-gray-600">Fin de contrat: </span>
                 <span className="text-gray-900">
                   {coach.fin_contrat ? new Date(coach.fin_contrat).toLocaleDateString() : 'Non renseignée'}
                 </span>
-              </div>
+              </div> */}
               <div className="mb-3">
                 <span className="text-gray-600">Statut: </span>
                 <span className={`px-2 py-1 rounded-full text-xs ${
@@ -141,12 +141,12 @@ user={auth.user}>
               </div>
             </div>
           </div>
-          {coach.description && (
+          {/* {coach.description && (
             <div className="mt-4">
               <h4 className="text-sm font-medium text-gray-700 mb-2">Description</h4>
               <p className="text-gray-800">{coach.description}</p>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Liste des promoteurs */}

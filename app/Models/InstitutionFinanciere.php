@@ -10,7 +10,7 @@ class InstitutionFinanciere extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['nom','adresse','ville','description'];
+    protected $fillable = ['nom','adresse','ville','agence','description'];
     protected $dates = ['deleted_at'];
 
     protected $table = 'institution_financieres';

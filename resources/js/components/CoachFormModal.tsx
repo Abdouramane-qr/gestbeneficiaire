@@ -13,10 +13,10 @@ interface Coach {
   telephone?: string;
   ong_id?: string;
   specialite?: string;
-  description?: string;
+  //description?: string;
   est_actif?: boolean;
-  date_debut?: string;
-  fin_contrat?: string;
+//   date_debut?: string;
+//   fin_contrat?: string;
 }
 
 interface Ong {
@@ -39,10 +39,10 @@ export default function CoachFormModal({ isOpen, closeModal, coach, ongs }: Coac
     telephone: coach?.telephone || '',
     ong_id: coach?.ong_id || '',
     specialite: coach?.specialite || '',
-    description: coach?.description || '',
+   // description: coach?.description || '',
     est_actif: coach?.est_actif ?? true,
-    date_debut: coach?.date_debut || '',
-    fin_contrat: coach?.fin_contrat || ''
+    // date_debut: coach?.date_debut || '',
+    // fin_contrat: coach?.fin_contrat || ''
   });
 
   useEffect(() => {
@@ -56,10 +56,10 @@ export default function CoachFormModal({ isOpen, closeModal, coach, ongs }: Coac
           telephone: coach.telephone || '',
           ong_id: coach.ong_id || '',
           specialite: coach.specialite || '',
-          description: coach.description || '',
+        //  description: coach.description || '',
           est_actif: coach.est_actif ?? true,
-          date_debut: coach.date_debut || '',
-          fin_contrat: coach.fin_contrat || ''
+        //   date_debut: coach.date_debut || '',
+        //   fin_contrat: coach.fin_contrat || ''
         });
       }
     }
@@ -219,35 +219,6 @@ export default function CoachFormModal({ isOpen, closeModal, coach, ongs }: Coac
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  {/* Date de début */}
-                  <div>
-                    <label htmlFor="date_debut" className="block text-sm font-medium text-gray-700">
-                      Date de début
-                    </label>
-                    <input
-                      type="date"
-                      id="date_debut"
-                      value={data.date_debut}
-                      onChange={(e) => setData('date_debut', e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                    />
-                  </div>
-
-                  {/* Fin de contrat */}
-                  <div>
-                    <label htmlFor="fin_contrat" className="block text-sm font-medium text-gray-700">
-                      Fin de contrat
-                    </label>
-                    <input
-                      type="date"
-                      id="fin_contrat"
-                      value={data.fin_contrat}
-                      onChange={(e) => setData('fin_contrat', e.target.value)}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                    />
-                  </div>
-                </div>
 
                 {/* Est actif */}
                 <div className="mt-4">
@@ -266,19 +237,6 @@ export default function CoachFormModal({ isOpen, closeModal, coach, ongs }: Coac
                   </div>
                 </div>
 
-                {/* Description */}
-                <div className="mt-4">
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    value={data.description}
-                    onChange={(e) => setData('description', e.target.value)}
-                    rows={3}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                  />
-                </div>
 
                 <div className="mt-6 flex justify-end space-x-3">
                   <button

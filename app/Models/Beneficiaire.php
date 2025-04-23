@@ -18,7 +18,7 @@ class Beneficiaire extends Model
         'prenom',
         'date_de_naissance',
         'genre',
-        'handicap',
+        //'handicap',
         'contact',
         'niveau_instruction',
         'email',
@@ -41,7 +41,7 @@ public function coaches(): BelongsToMany
         ->withTimestamps();
 }
     // Un bénéficiaire peut avoir plusieurs entreprises
-    public function entreprise()
+    public function entreprises()
     {
         return $this->hasMany(Entreprise::class, 'beneficiaires_id');
     }

@@ -6,6 +6,7 @@ use App\Models\Collecte;
 use App\Models\Entreprise;
 use App\Models\Exercice;
 use App\Models\Periode;
+use App\Models\Beneficiaire;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -79,6 +80,7 @@ class CollecteController extends Controller
           'collectes' => $collectes,
           'filters' => $request->only(['search', 'periode_id', 'exercice_id', 'entreprise_id', 'type_collecte', 'occasionnel']),
           'periodes' => Periode::all(),
+          'beneficiaires' => Beneficiaire::all(), // Ajoutez cette ligne
           'exercices' => Exercice::orderBy('annee', 'desc')->get(),
           'entreprises' => Entreprise::select('id', 'nom_entreprise')->get(),
           'visibleColumns' => [
@@ -362,111 +364,7 @@ public function getAvailablePeriodes(Request $request)
             ]);
         }
     }
-    /**
-     * Met à jour une collecte existante
-     */
-   /*  public function update(Request $request, Collecte $collecte)
-    {
-        Log::info('Données reçues pour mise à jour:', $request->all());
 
-        try {
-            // S'assurer que type_collecte a une valeur par défaut si non fourni
-            $data = $request->all();
-            if (!isset($data['type_collecte'])) {
-                // Si on convertit de brouillon à standard
-                if ($collecte->type_collecte === 'brouillon' && isset($data['convertToStandard']) && $data['convertToStandard']) {
-                    $data['type_collecte'] = 'standard';
-                } else {
-                    // Sinon garder le type existant
-                    $data['type_collecte'] = $collecte->type_collecte;
-                }
-            }
-
-            $validated = Validator::make($data, [
-                'entreprise_id' => 'required|exists:entreprises,id',
-                'exercice_id' => 'required|exists:exercices,id',
-                'periode_id' => 'required|exists:periodes,id',
-                'date_collecte' => 'required|date',
-                'donnees' => 'required|array',
-                'type_collecte' => 'required|in:standard,brouillon'
-            ])->validate();
-
-            Log::info('Données validées:', $validated);
-            Log::info('État actuel de la collecte: ' . $collecte->type_collecte . ' -> demandé: ' . $validated['type_collecte']);
-
-            // Vérification de la période par rapport à l'exercice
-            $periode = Periode::findOrFail($validated['periode_id']);
-            if ($periode->exercice_id != $validated['exercice_id']) {
-                return $this->sendErrorResponse($request, 'periode_id', 'La période ne correspond pas à l\'exercice sélectionné.');
-            }
-
-            // Cas spécial: conversion de brouillon à standard
-            $isConverting = $collecte->type_collecte === 'brouillon' && $validated['type_collecte'] === 'standard';
-
-            if ($isConverting) {
-                Log::info('Tentative de conversion brouillon -> standard');
-
-                // Vérifier s'il existe déjà une collecte standard pour cette entreprise/période
-                $existing = Collecte::where('entreprise_id', $validated['entreprise_id'])
-                    ->where('periode_id', $validated['periode_id'])
-                    ->where('type_collecte', 'standard')
-                    ->where('id', '!=', $collecte->id)
-                    ->exists();
-
-                if ($existing) {
-                    return $this->sendErrorResponse(
-                        $request,
-                        'general',
-                        'Une collecte standard existe déjà pour cette entreprise et période. Impossible de convertir ce brouillon.'
-                    );
-                }
-
-                Log::info('La conversion est possible, aucune collecte standard existante.');
-            }
-
-            // Avant de sauvegarder, recalculer les indicateurs calculés automatiquement
-            $validatedDonnees = $this->recalculateIndicateurs(
-                $validated['donnees'],
-                $validated['entreprise_id'],
-                $periode->type_periode,
-                $collecte->id
-            );
-
-            // Mise à jour des données
-            $collecte->update([
-                'entreprise_id' => $validated['entreprise_id'],
-                'exercice_id' => $validated['exercice_id'],
-                'periode_id' => $validated['periode_id'],
-                'date_collecte' => $validated['date_collecte'],
-                'donnees' => $validatedDonnees,
-                'type_collecte' => $validated['type_collecte'],
-                'periode' => $periode->type_periode ?? 'Non spécifié'
-            ]);
-
-            // Message de succès spécifique pour la conversion
-            $message = $isConverting
-                ? 'Brouillon converti avec succès en collecte standard'
-                : 'Collecte mise à jour avec succès';
-
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => $message,
-                    'isConverted' => $isConverting,
-                    'collecte' => $collecte
-                ]);
-            }
-
-            return redirect()->route('collectes.index')
-                ->with('success', $message);
-
-        } catch (\Exception $e) {
-            Log::error('Erreur mise à jour collecte: '.$e->getMessage());
-            Log::error($e->getTraceAsString());
-
-            return $this->sendErrorResponse($request, 'general', 'Une erreur est survenue: '.$e->getMessage());
-        }
-    } */
     public function update(Request $request, Collecte $collecte)
     {
         Log::info('Données reçues pour mise à jour:', $request->all());
@@ -879,7 +777,6 @@ private function mathEval(string $expr): float
 
     /**
      * Définit les indicateurs calculés et leurs dépendances
-     * Idéalement, cette configuration serait dans un fichier de config ou en BDD
      */
     private function getCalculatedIndicatorsDependencies(): array
     {
@@ -1519,90 +1416,7 @@ private function exportSingleToPdf($collecte, $categoriesDisponibles, $filename)
             $field => $message
         ]);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-//---------------------------Collecte Occasionnelle---------------------------//
-
-    /**
- * Affiche le modal pour créer une collecte occasionnelle
- */
-public function createOccasionnel()
-{
-    // Cette méthode n'est pas directement utilisée puisque
-    // l'ouverture du modal est gérée côté client
-    return response()->json(['success' => true]);
 }
 
 
 
-/**
- * Stocke une nouvelle collecte occasionnelle
- */
-public function storeOccasionnel(Request $request)
-{
-    try {
-        $validated = $request->validate([
-            'entreprise_id' => 'required|exists:entreprises,id',
-            'exercice_id' => 'required|exists:exercices,id',
-            'date_collecte' => 'required|date',
-            'donnees' => 'required|array',
-            'type_collecte' => 'required|in:standard,brouillon'
-        ]);
-
-        Log::info('Tentative de création d\'une collecte occasionnelle', [
-            'entreprise_id' => $request->input('entreprise_id'),
-            'exercice_id' => $request->input('exercice_id'),
-            'date_collecte' => $request->input('date_collecte'),
-            'type_collecte' => $request->input('type_collecte')
-        ]);
-
-        // Pour les collectes occasionnelles, nous n'avons pas de période
-        // mais nous utilisons le type 'Occasionnelle' directement
-        $validated['periode_id'] = null; // Pas de période spécifique
-        $validated['periode'] = 'Occasionnelle'; // Type de période
-        $validated['user_id'] = Auth::id();
-
-        $collecte = Collecte::create($validated);
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $validated['type_collecte'] === 'standard'
-                    ? 'Collecte occasionnelle enregistrée avec succès'
-                    : 'Brouillon de collecte occasionnelle enregistré avec succès',
-                'collecte_id' => $collecte->id
-            ]);
-        }
-
-        return redirect()->route('collectes.index')
-            ->with('success', $validated['type_collecte'] === 'standard'
-                ? 'Collecte occasionnelle enregistrée avec succès'
-                : 'Brouillon de collecte occasionnelle enregistré avec succès');
-
-    } catch (\Exception $e) {
-        Log::error('Erreur création collecte occasionnelle: '.$e->getMessage());
-
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Une erreur est survenue: ' . $e->getMessage()
-            ], 500);
-        }
-
-        return back()->withErrors([
-            'general' => 'Une erreur est survenue: '.$e->getMessage()
-        ]);
-    }
-}
-
-}

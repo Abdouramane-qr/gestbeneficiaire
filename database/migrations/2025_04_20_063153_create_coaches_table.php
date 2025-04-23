@@ -19,10 +19,10 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('telephone')->nullable();
             $table->string('specialite')->nullable();
-            $table->text('description')->nullable();
+            // $table->text('description')->nullable();
             $table->boolean('est_actif')->default(true);
-            $table->date('date_debut')->nullable();
-            $table->date('fin_contrat')->nullable();
+            // $table->date('date_debut')->nullable();
+            // $table->date('fin_contrat')->nullable();
             $table->timestamps();
         });
     }

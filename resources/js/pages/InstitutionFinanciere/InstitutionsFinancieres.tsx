@@ -12,6 +12,7 @@ interface Institution {
     nom: string;
     adresse: string;
     ville: string;
+    agence: string;
     description: string;
     contact: string;
     email: string;
@@ -145,6 +146,7 @@ const InstitutionsFinancieres = () => {
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Adresse</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Agence</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ville</th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                                         </tr>
@@ -156,6 +158,7 @@ const InstitutionsFinancieres = () => {
                                                     <td className="px-6 py-4">{institution.nom}</td>
                                                     <td className="px-6 py-4">{institution.description}</td>
                                                     <td className="px-6 py-4">{institution.adresse}</td>
+                                                    <td className="px-6 py-4">{institution.agence}</td>
                                                     <td className="px-6 py-4">{institution.ville}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                                                         <div className="flex space-x-2">
