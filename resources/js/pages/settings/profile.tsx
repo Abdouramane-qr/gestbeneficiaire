@@ -1,4 +1,3 @@
-import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Transition } from '@headlessui/react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
@@ -11,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { BreadcrumbItem, SharedData } from '@/types/index';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -41,7 +41,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <AppLayout title="Profile settings" breadcrumbs={breadcrumbs}>
             <Head title="Profile settings" />
 
             <SettingsLayout>

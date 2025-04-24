@@ -1,4 +1,3 @@
-
 //---------------------------------------------
 
 import FormulaireExceptionnelButton from '@/components/FormulaireExceptionnelButton';
@@ -10,7 +9,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import {
     CheckCircleIcon,
     ChevronsUpDownIcon,
-    DownloadIcon,
+    FileSpreadsheetIcon,
     FileTextIcon,
     FilterIcon,
     MoonIcon,
@@ -458,40 +457,41 @@ const CollectesIndex = ({ collectes, entreprises, exercices, periodes, filters =
                             </div>
 
                             {/* Deuxième ligne : Autres boutons */}
-                            <div className="flex flex-wrap justify-end gap-2">
-                                <button
-                                    onClick={() => setShowFilters(!showFilters)}
-                                    className="inline-flex items-center rounded-lg border-2 border-gray-300 bg-gray-200 px-5 py-3 text-gray-700 shadow-md transition hover:bg-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                                >
-                                    <FilterIcon className="mr-2 h-4 w-4" />
-                                    {showFilters ? 'Masquer les filtres' : 'Filtres'}
-                                </button>
+                            <div className="flex flex-col sm:flex-row justify-end items-center mb-4 gap-4">
+  <button
+    onClick={() => setShowFilters(!showFilters)}
+    className="inline-flex items-center rounded-lg border-2 border-gray-300 bg-gray-200 px-5 py-3 text-gray-700 shadow-md transition hover:bg-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+  >
+    <FilterIcon className="mr-2 h-4 w-4" />
+    {showFilters ? 'Masquer les filtres' : 'Filtres'}
+  </button>
 
-                                <button
-                                    type="button"
-                                    className="inline-flex items-center rounded-lg border-2 border-gray-300 bg-gray-200 px-5 py-3 text-gray-700 shadow-md transition hover:bg-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                                    onClick={() => exportData('excel')}
-                                >
-                                    <DownloadIcon className="mr-2 h-4 w-4" />
-                                    Exporter en Excel
-                                </button>
+  <button
+    type="button"
+    onClick={() => exportData('excel')}
+    className="px-5 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition flex items-center shadow-md"
+  >
+    <FileSpreadsheetIcon className="w-5 h-5 mr-2" />
+    Excel
+  </button>
 
-                                <button
-                                    onClick={() => exportData('pdf')}
-                                    className="inline-flex items-center rounded-lg border-2 border-gray-300 bg-gray-200 px-5 py-3 text-gray-700 shadow-md transition hover:bg-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                                >
-                                    <DownloadIcon className="mr-2 h-4 w-4" />
-                                    Exporter en PDF
-                                </button>
+  <button
+    onClick={() => exportData('pdf')}
+    className="px-5 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition flex items-center shadow-md"
+  >
+    <FileTextIcon className="w-5 h-5 mr-2" />
+    PDF
+  </button>
 
-                                <button
-                                    onClick={printCollectes}
-                                    className="inline-flex items-center rounded-lg border-2 border-gray-300 bg-gray-200 px-5 py-3 text-gray-700 shadow-md transition hover:bg-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                                >
-                                    <PrinterIcon className="mr-2 h-4 w-4" />
-                                    Imprimer
-                                </button>
-                            </div>
+  <button
+    onClick={printCollectes}
+    className="px-5 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition flex items-center shadow-md"
+  >
+    <PrinterIcon className="w-5 h-5 mr-2" />
+    Imprimer
+  </button>
+</div>
+
                         </div>
 
                         {/* Filtres */}

@@ -19,13 +19,13 @@ return new class extends Migration
             $table->string('village')->nullable();
             $table->enum('type_beneficiaire', ['Individuel', 'Coopérative', 'Autre']);
             $table->string('nom');
-            $table->string('prenom');
-            $table->date('date_de_naissance');
-            $table->enum('genre', ['Homme', 'Femme']);
-           // $table->boolean('handicap')->default(false);
+            $table->string('prenom')->nullable();
+            $table->date('date_de_naissance')->nullable();
+            $table->string('nom_cooperative')->nullable();
+            $table->string('numero_enregistrement')->nullable();
+            $table->enum('genre', ['Homme', 'Femme'])->nullable();
             $table->string('contact');
-            $table->enum('niveau_instruction', ['Analphabète', 'Alphabétise',  'Primaire',  'CEP', 'BEPC', 'Baccalauréat', 'Universitaire']);
-            $table->string('email')->nullable();
+            $table->enum('niveau_instruction', ['Analphabète', 'Alphabétisé', 'Primaire', 'CEP', 'BEPC', 'Baccalauréat', 'Universitaire'])->nullable();            $table->string('email')->nullable();
 
             $table->timestamps();
         });

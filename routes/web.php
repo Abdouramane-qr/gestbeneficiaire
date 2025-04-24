@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\{
@@ -43,16 +46,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 
-// Route pour les collectes occasionnelles
-// Route::post('/collectes/occasionnel', [CollecteController::class, 'storeOccasionnel'])
-//  ->name('collectes.storeOccasionnel');
+// Route pour les collectes
+Route::pattern('collecte', '[0-9]+'); // Cela force le paramètre à être un nombre
+
     Route::get('/collectes/{collecte}', [CollecteController::class, 'show']);
    // Route::get('/collectes/{collecte}/edit', [CollecteController::class, 'edit'])->name('collectes.edit');
 // Route pour récupérer les périodes disponibles (AJAX)
 Route::get('/collectes/periodes-disponibles', [CollecteController::class, 'getAvailablePeriodes'])
     ->name('collectes.periodes-disponibles');
 
-Route::pattern('collecte', '[0-9]+'); // Cela force le paramètre à être un nombre
 
     // Collectes
     Route::prefix('collectes')->name('collectes.')->group(function () {
@@ -63,35 +65,10 @@ Route::pattern('collecte', '[0-9]+'); // Cela force le paramètre à être un no
         Route::put('/{collecte}/convert-to-standard', [CollecteController::class, 'convertToStandard'])->name('convert-to-standard');
     });
 
-  // Routes pour l'analyse des indicateurs
-
-   Route::get('/analyse/rapport-global', [AnalyseController::class, 'rapportGlobal'])->name('analyse.rapport.global');
-
-   // Route pour les données statistiques (avec hachage MD5) - CORRIGÉE
-   Route::get('/analyse/rapport-global/donnees', [AnalyseController::class, 'statistiquesData'])->name('analyse.rapport.global.donnees');
-
-   // Routes pour les indicateurs
-   Route::get('/analyse/indicateurs/donnees', [AnalyseController::class, 'getIndicateursData'])->name('analyse.indicateurs.donnees');
-
-   // Routes pour le tableau de bord analytique
-   Route::get('/analyse/dashboard/donnees', [AnalyseController::class, 'dashboardDonnees'])->name('analyse.dashboard.donnees');
-
-   // Routes pour les séries temporelles
-   Route::get('/analyse/timeseries/donnees', [AnalyseController::class, 'getTimeSeriesData'])->name('analyse.timeseries.donnees');
-
-   // Routes pour les données comparatives
-   Route::get('/analyse/comparative/donnees', [AnalyseController::class, 'getComparativeData'])->name('analyse.comparative.donnees');
 
 
-// Assurez-vous que cette route est définie correctement
-Route::get('/analyse/analyse/rapport-global/donnees', [AnalyseController::class, 'statistiquesData'])
-    ->name('analyse.analyse.rapport-global.donnees');
-// Routes pour l'analyse
-Route::get('/analyse/rapport-global', [AnalyseController::class, 'rapportGlobal'])->name('analyse.rapport.global');
-Route::get('/analyse/donnees', [AnalyseController::class, 'donnees'])->name('analyse.donnees');
-Route::get('/analyse/dashboard/donnees', [AnalyseController::class, 'dashboardDonnees'])->name('analyse.dashboard.donnees');
+
 Route::post('/analyse/export', [AnalyseController::class, 'export'])->name('analyse.export');
-Route::post('/analyse/rapport', [AnalyseController::class, 'rapport'])->name('analyse.rapport');
 
  // Routes pour la synthèse
 Route::get('/analyse/synthese', [AnalyseController::class, 'synthese'])->name('synthese');
@@ -100,7 +77,15 @@ Route::get('/analyse/synthese/donnees', [AnalyseController::class, 'getSyntheseD
 Route::get('/entreprises/export', [EntrepriseController::class, 'export'])->name('entreprises.export');
 
     // Routes pour l'export des bénéficiaires
-    Route::get('/beneficiaires/export', [BeneficiaireController::class, 'export'])->name('beneficiaires.export');
+
+// Route pour l'exportation
+Route::get('/beneficiaires/export', [BeneficiaireController::class, 'export'])->name('beneficiaires.export');
+
+// Routes pour la prévisualisation des PDF (optionnel, utile pour le développement)
+Route::get('/beneficiaires/pdf-preview', [BeneficiaireController::class, 'generatePdfView'])->name('beneficiaires.pdf-preview');
+Route::get('/beneficiaires/pdf-preview/{id}', [BeneficiaireController::class, 'generatePdfView'])->name('beneficiaires.pdf-preview.detail');
+
+    //Route::get('/beneficiaires/export', [BeneficiaireController::class, 'export'])->name('beneficiaires.export');
 // Ressources accessibles globalement (ou place-les aussi dans auth si besoin)
 Route::resource('beneficiaires', BeneficiaireController::class);
 Route::resource('entreprises', EntrepriseController::class);
@@ -109,7 +94,6 @@ Route::resource('InstitutionFinanciere', InstitutionFinanciereController::class)
 Route::resource('indicateurs', IndicateurController::class);
 
 // !!! La route export doit être définie avant cette ressource si elle n’est pas protégée
-Route::resource('collectes', CollecteController::class);
 
 // Routes pour les coachs
 Route::resource('coaches', CoachController::class);
@@ -126,17 +110,45 @@ Route::resource('collectes/Exception', App\Http\Controllers\FormulaireExceptionn
 ]);
 
 Route::get('/collectes/Exception', [App\Http\Controllers\FormulaireExceptionnelController::class, 'index'])->name('index');
+Route::resource('collectes', controller: CollecteController::class);
 
-    // Route::prefix('formulaires/exceptionnels')->name('formulaires.exceptionnels.')->group(function () {
-    //     Route::get('/', [App\Http\Controllers\FormulaireExceptionnelController::class, 'index'])->name('index');
-    //     Route::get('/create', [App\Http\Controllers\FormulaireExceptionnelController::class, 'create'])->name('create');
-    //     Route::post('/', [App\Http\Controllers\FormulaireExceptionnelController::class, 'store'])->name('store');
-    //     Route::get('/{collecte}', [App\Http\Controllers\FormulaireExceptionnelController::class, 'show'])->name('show');
-    //     Route::get('/{collecte}/edit', [App\Http\Controllers\FormulaireExceptionnelController::class, 'edit'])->name('edit');
-    //     Route::put('/{collecte}', [App\Http\Controllers\FormulaireExceptionnelController::class, 'update'])->name('update');
-    //     Route::delete('/{collecte}', [App\Http\Controllers\FormulaireExceptionnelController::class, 'destroy'])->name('destroy');
-    // });
 
+
+// Routes pour les rôles (protégées par middleware)
+Route::middleware(['auth', 'verified', 'permission:utilisateurs,view'])->prefix('roles')->group(function () {
+    Route::get('/', [RoleController::class, 'index'])->name('roles.index');
+    Route::get('/create', [RoleController::class, 'create'])->name('roles.create')->middleware('permission:utilisateurs,create');
+    Route::post('/', [RoleController::class, 'store'])->name('roles.store')->middleware('permission:utilisateurs,create');
+    Route::get('/{role}', [RoleController::class, 'show'])->name('roles.show');
+    Route::get('/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit')->middleware('permission:utilisateurs,edit');
+    Route::put('/{role}', [RoleController::class, 'update'])->name('roles.update')->middleware('permission:utilisateurs,edit');
+    Route::delete('/{role}', [RoleController::class, 'destroy'])->name('roles.destroy')->middleware('permission:utilisateurs,delete');
+});
+
+// Routes pour le profil utilisateur
+Route::middleware(['auth', 'verified'])->prefix('profile')->group(function () {
+    Route::get('/', [ProfileController::class, 'show'])->name('profile.show');
+   // Route::get('/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+   // Route::put('/', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/password', [ProfileController::class, 'editPassword'])->name('profile.edit.password');
+    Route::put('/password', [ProfileController::class, 'updatePassword'])->name('profile.update.password');
+});
+
+// Routes pour les utilisateurs (protégées par middleware)
+Route::middleware(['auth', 'verified', 'permission:utilisateurs,view'])->prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index'])->name('users.index');
+    Route::get('/create', [UserController::class, 'create'])->name('users.create')->middleware('permission:utilisateurs,create');
+    Route::post('/', [UserController::class, 'store'])->name('users.store')->middleware('permission:utilisateurs,create');
+    Route::get('/{user}', [UserController::class, 'show'])->name('users.show');
+    Route::get('/{user}/edit', [UserController::class, 'edit'])->name('users.edit')->middleware('permission:utilisateurs,edit');
+    Route::put('/{user}', [UserController::class, 'update'])->name('users.update')->middleware('permission:utilisateurs,edit');
+    Route::get('/{user}/password', [UserController::class, 'editPassword'])->name('users.edit.password')->middleware('permission:utilisateurs,edit');
+    Route::put('/{user}/password', [UserController::class, 'updatePassword'])->name('users.update.password')->middleware('permission:utilisateurs,edit');
+    Route::delete('/{user}', [UserController::class, 'destroy'])->name('users.destroy')->middleware('permission:utilisateurs,delete');
+});
+
+
+Route::get('/data-dashboard', [UserController::class, 'getDashboard'])->name('users.dashboard')->middleware(['auth', 'verified']);
 // Fichiers de configuration et d’auth
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

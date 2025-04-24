@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp, Settings, UserRoundPen, ShieldCheck, GraduationCap,  } from 'lucide-react';
+import { UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp, Settings, UserRoundPen, ShieldCheck, GraduationCap, Folder, BookOpen,  } from 'lucide-react';
 import AppLogo from './app-logo';
 
 // Créer un type pour les items avec sous-menus
@@ -86,7 +86,7 @@ const mainNavItems: NavItemWithSubmenu[] = [
             },
             {
                 title: 'Liste des collectes',
-                href: route('collectes.index'), // Liste toutes les collectes
+                href: 'collectes', // Liste toutes les collectes
                 icon: Database,
             },
 
@@ -95,7 +95,6 @@ const mainNavItems: NavItemWithSubmenu[] = [
                 title: 'Collectes Liste Exceptionel',
                 href: route('collectes.index',{
                     'occasionnel': 'true',
-                    'exercice': 'false',
                 }), // Liste toutes les collectes
                 icon: Database,
             },
@@ -134,12 +133,18 @@ const mainNavItems: NavItemWithSubmenu[] = [
         children: [
             {
                 title: 'Profiles',
-                href: 'collectes', // Utiliser la fonction route() d'Inertia
+                href: route('users.index'), // Utiliser la fonction route() d'Inertia
                 icon: UserRoundPen ,
             },
             {
                 title: 'Roles',
-                href: 'Analyse/RapportSynthetique', // Liste toutes les collectes
+                href: route('roles.index'), // Liste toutes les collectes
+                icon: ShieldCheck ,
+            },
+
+            {
+                title: 'Vue Generale',
+                href: route('users.dashboard'), // Liste toutes les collectes
                 icon: ShieldCheck ,
             },
 
@@ -149,14 +154,14 @@ const mainNavItems: NavItemWithSubmenu[] = [
 
 const footerNavItems: NavItem[] = [
     // {
-    //     title: 'Repository',
-    //     href: 'https://github.com/laravel/react-starter-kit',
+    //     title: 'Dashboard de Gestion',
+    //     href: route('users.dashboard'),
     //     icon: Folder,
     // },
     // {
     //     title: 'Documentation',
-    //     href: 'https://laravel.com/docs/starter-kits',
-    //     icon: BookOpen,
+    //     href: route('users.dashboard'),
+    //             icon: BookOpen,
     // },
 ];
 

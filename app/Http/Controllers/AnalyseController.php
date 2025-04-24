@@ -124,25 +124,7 @@ public function synthese()
     /**
      * Résumé simplifié des données
      */
-    public function resume()
-    {
-        $exerciceActif = Exercice::where('actif', true)->first();
-        $exercices = Exercice::all();
-        $periodes = $exerciceActif ? Periode::where('exercice_id', $exerciceActif->id)->get() : [];
-
-        $filtres = [
-            'regions' => DB::table('beneficiaires')->select('regions')->distinct()->pluck('regions'),
-            'provinces' => DB::table('beneficiaires')->select('provinces')->distinct()->pluck('provinces'),
-            'communes' => DB::table('beneficiaires')->select('communes')->distinct()->pluck('communes')
-        ];
-
-        return Inertia::render('Analyses/Index', [
-            'exerciceActif' => $exerciceActif,
-            'exercices' => $exercices,
-            'periodes' => $periodes,
-            'filtres' => $filtres
-        ]);
-    }
+    
 
     /**
      * Récupérer les données d'indicateurs filtrées

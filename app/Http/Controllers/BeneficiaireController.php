@@ -9,14 +9,15 @@ use App\Models\InstitutionFinanciere;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class BeneficiaireController extends Controller
 {
     // 📌 Liste des bénéficiaires avec leurs ONG et institutions financières
     public function index()
     {
-
-    $beneficiaires = Beneficiaire::with([ 'entreprises'])
+        $beneficiaires = Beneficiaire::with(['entreprises'])
             ->orderBy('nom')
             ->get();
 
@@ -33,182 +34,270 @@ class BeneficiaireController extends Controller
     {
         $beneficiaire->load(['ong', 'institutionFinanciere', 'entreprise']);
 
-       // dd($beneficiaire); // 🔎 Vérifie le contenu de l'objet
+        // dd($beneficiaire); // 🔎 Vérifie le contenu de l'objet
 
         return Inertia::render('Beneficiaires/Show', [
-
             'beneficiaire' => $beneficiaire
         ]);
     }
 
     // 📌 Stocker un bénéficiaire (Création)
     public function store(Request $request)
-    {
-        //dd($request->all()); // 🔹 Vérifie les données envoyées avant insertion
+{
+    //dd($request->all()); // 🔹 Vérifie les données envoyées avant insertion
 
+    // Validation de base pour tous les types de bénéficiaires
+    $baseRules = [
+        'regions' => 'required|string',
+        'provinces' => 'required|string',
+        'communes' => 'required|string',
+        'village' => 'nullable|string',
+        'type_beneficiaire' => ['required', Rule::in(['Individuel', 'Coopérative', 'Autre'])],
+        'contact' => 'required|string|max:20',
+        'email' => 'nullable|email|unique:beneficiaires,email',
+    ];
 
-
-        $validated = $request->validate([
-            'regions' => 'required|string',
-            'provinces' => 'required|string',
-            'communes' => 'required|string',
-            'village' => 'nullable|string',
-            'type_beneficiaire' => 'required|string',
+    // Règles conditionnelles selon le type de bénéficiaire
+    if ($request->input('type_beneficiaire') === 'Individuel') {
+        // Règles pour type Individuel
+        $typeRules = [
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
             'date_de_naissance' => 'required|date',
-            'genre' => 'required|in:Homme,Femme',
-           // 'handicap' => 'required|boolean',
-            'entreprise_id' => 'nullable|exists:entreprises,id',
-            'contact' => 'required|string|max:20',
-            'email' => 'nullable|email|unique:beneficiaires,email',
+            'genre' => ['required', Rule::in(['Homme', 'Femme'])],
             'niveau_instruction' => 'required|string',
-
-
-        ]);
-
-
-        // dd($validated);
-
-        Beneficiaire::create($validated);
-
-
-        return redirect()->route('beneficiaires.index')->with('success', 'Bénéficiaire ajouté avec succès.');
+            'nom_cooperative' => 'nullable',
+            'numero_enregistrement' => 'nullable',
+        ];
+    } elseif ($request->input('type_beneficiaire') === 'Coopérative') {
+        // Règles pour type Coopérative
+        $typeRules = [
+            'nom_cooperative' => 'required|string|max:255',
+            'numero_enregistrement' => 'required|string|max:255',
+            'nom' => 'nullable|string|max:255',
+            'prenom' => 'nullable|string|max:255',
+            'date_de_naissance' => 'nullable|date',
+            'genre' => 'nullable',
+            'niveau_instruction' => 'nullable|string',
+        ];
+    } else {
+        // Règles pour type Autre
+        $typeRules = [
+            'nom' => 'required|string|max:255',
+            'numero_enregistrement' => 'nullable|string|max:255',
+            'prenom' => 'nullable|string|max:255',
+            'date_de_naissance' => 'nullable|date',
+            'genre' => 'nullable',
+            'niveau_instruction' => 'nullable|string',
+            'nom_cooperative' => 'nullable',
+        ];
     }
+
+    // Fusion des règles de base et conditionnelles
+    $rules = array_merge($baseRules, $typeRules);
+
+    // Validation avec les règles combinées
+    $validated = $request->validate($rules);
+
+    // Solution pour l'erreur de contrainte "not null" sur la colonne "nom"
+    if ($request->input('type_beneficiaire') === 'Coopérative' && empty($validated['nom']) && !empty($validated['nom_cooperative'])) {
+        $validated['nom'] = $validated['nom_cooperative'];
+    }
+
+    Beneficiaire::create($validated);
+
+    return redirect()->route('beneficiaires.index')->with('success', 'Promoteur ajouté avec succès.');
+}
 
     // 📌 Mettre à jour un bénéficiaire
     public function update(Request $request, Beneficiaire $beneficiaire)
-    {
+{
+    // Validation de base pour tous les types de bénéficiaires
+    $baseRules = [
+        'regions' => 'required|string',
+        'provinces' => 'required|string',
+        'communes' => 'required|string',
+        'village' => 'nullable|string',
+        'type_beneficiaire' => ['required', Rule::in(['Individuel', 'Coopérative', 'Autre'])],
+        'contact' => 'required|string|max:20',
+        'email' => "nullable|email|unique:beneficiaires,email,{$beneficiaire->id}",
+    ];
 
-
-        $validated = $request->validate([
-            'regions' => 'required|string',
-            'provinces' => 'required|string',
-            'communes' => 'required|string',
-            'village' => 'nullable|string',
-            'type_beneficiaire' => 'required|string',
+    // Règles conditionnelles selon le type de bénéficiaire
+    if ($request->input('type_beneficiaire') === 'Individuel') {
+        // Règles pour type Individuel
+        $typeRules = [
             'nom' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
             'date_de_naissance' => 'required|date',
-            'genre' => 'required|in:Homme,Femme',
-            //'handicap' => 'required|boolean',
-            'contact' => 'required|string|max:20',
-            'email' => "nullable|email|unique:beneficiaires,email,{$beneficiaire->id}",
+            'genre' => ['required', Rule::in(['Homme', 'Femme'])],
             'niveau_instruction' => 'required|string',
-            'activite' => 'required|string',
-            'domaine_activite' => 'required|string',
-            'niveau_mise_en_oeuvre' => 'required|string',
-            'entreprise_id' => 'nullable|exists:entreprises,id',
-            'ong_id' => 'nullable|exists:ongs,id',
-            'institution_financiere_id' => 'nullable|exists:institution_financieres,id',
-            'date_inscription' => 'required|date',
-            'statut_actuel' => 'nullable|string',
-        ]);
-
-        $beneficiaire->update($validated);
-
-        return redirect()->route('beneficiaires.index')->with('success', 'Bénéficiaire mis à jour.');
+            'nom_cooperative' => 'nullable',
+            'numero_enregistrement' => 'nullable',
+        ];
+    } elseif ($request->input('type_beneficiaire') === 'Coopérative') {
+        // Règles pour type Coopérative
+        $typeRules = [
+            'nom_cooperative' => 'required|string|max:255',
+            'numero_enregistrement' => 'required|string|max:255',
+            'nom' => 'nullable|string|max:255',
+            'prenom' => 'nullable|string|max:255',
+            'date_de_naissance' => 'nullable|date',
+            'genre' => 'nullable',
+            'niveau_instruction' => 'nullable|string',
+        ];
+    } else {
+        // Règles pour type Autre
+        $typeRules = [
+            'nom' => 'required|string|max:255',
+            'numero_enregistrement' => 'nullable|string|max:255',
+            'prenom' => 'nullable|string|max:255',
+            'date_de_naissance' => 'nullable|date',
+            'genre' => 'nullable',
+            'niveau_instruction' => 'nullable|string',
+            'nom_cooperative' => 'nullable',
+        ];
     }
+
+    // Fusion des règles de base et conditionnelles
+    $rules = array_merge($baseRules, $typeRules);
+
+    // Validation avec les règles combinées
+    $validated = $request->validate($rules);
+
+    // Solution pour l'erreur de contrainte "not null" sur la colonne "nom"
+    if ($request->input('type_beneficiaire') === 'Coopérative' && empty($validated['nom']) && !empty($validated['nom_cooperative'])) {
+        $validated['nom'] = $validated['nom_cooperative'];
+    }
+
+    $beneficiaire->update($validated);
+
+    return redirect()->route('beneficiaires.index')->with('success', 'Promoteur mis à jour avec succès.');
+}
 
     // 📌 Supprimer un bénéficiaire
     public function destroy(Beneficiaire $beneficiaire)
     {
         $beneficiaire->delete();
-        return redirect()->route('beneficiaires.index')->with('success', 'Bénéficiaire supprimé.');
+        return redirect()->route('beneficiaires.index')->with('success', 'Promoteur supprimé.');
     }
 
-    /**
- * Export a PDF document for beneficiaires
- */
-public function export(Request $request)
-{
-    try {
-        // Valider les paramètres de requête
-        $validated = $request->validate([
-            'format' => 'required|in:pdf',
-            'beneficiaire_ids' => 'sometimes|array',
-            'beneficiaire_ids.*' => 'integer|exists:beneficiaires,id',
-            'search' => 'sometimes|string|max:100',
-            'mode' => 'sometimes|string|in:detail,list',
-        ]);
+/**
+     * Exporte les bénéficiaires au format PDF ou Excel
+     *
+     * @param Request $request
+     * @return mixed
+     */
+    public function export(Request $request)
+    {
+        // Récupération des paramètres
+        $format = $request->input('format', 'pdf');
+        $mode = $request->input('mode', 'list');
+        $beneficiaireIds = $request->input('beneficiaire_ids', []);
+        $search = $request->input('search', '');
+        $filterType = $request->input('filter_type', 'tous');
 
-        // Si c'est un export détaillé d'un seul bénéficiaire
-        if ($request->has('mode') && $request->input('mode') === 'detail'
-            && $request->has('beneficiaire_ids') && count($request->input('beneficiaire_ids')) === 1) {
-
-            $beneficiaireId = $request->input('beneficiaire_ids')[0];
-            $beneficiaire = Beneficiaire::findOrFail($beneficiaireId);
-
-            $filename = 'promoteur_detail_' . $beneficiaireId . '_' . date('Y-m-d_His');
-
-            // Export en PDF pour un bénéficiaire détaillé
-            return $this->exportDetailToPdf($beneficiaire, $filename);
-        }
-
-        // Export de liste (comportement par défaut)
-        // Construire la requête de base
+        // Récupération des bénéficiaires selon les critères
         $query = Beneficiaire::query();
 
-        // Filtre de recherche
-        if ($request->has('search')) {
-            $searchTerm = $request->input('search');
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('nom', 'like', "%{$searchTerm}%")
-                    ->orWhere('prenom', 'like', "%{$searchTerm}%")
-                    ->orWhere('contact', 'like', "%{$searchTerm}%")
-                    ->orWhere('regions', 'like', "%{$searchTerm}%")
-                    ->orWhere('type_beneficiaire', 'like', "%{$searchTerm}%");
+        // Filtrer par ids si spécifiés
+        if (!empty($beneficiaireIds)) {
+            $query->whereIn('id', $beneficiaireIds);
+        }
+
+        // Appliquer le filtre de recherche si spécifié
+        if (!empty($search)) {
+            $query->where(function($q) use ($search) {
+                $q->where('nom', 'like', "%{$search}%")
+                  ->orWhere('prenom', 'like', "%{$search}%")
+                  ->orWhere('contact', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('regions', 'like', "%{$search}%")
+                  ->orWhere('village', 'like', "%{$search}%");
             });
         }
 
-        // Si des IDs spécifiques sont fournis, filtrer par ces IDs
-        if ($request->has('beneficiaire_ids') && is_array($request->input('beneficiaire_ids'))) {
-            $query->whereIn('id', $request->input('beneficiaire_ids'));
+        // Appliquer le filtre par type si ce n'est pas 'tous'
+        if ($filterType !== 'tous') {
+            $query->where('type_beneficiaire', $filterType);
         }
 
         // Récupérer les bénéficiaires
-        $beneficiaires = $query->orderBy('nom', 'asc')->get();
+        $beneficiaires = $query->get();
 
-        // Nombre total de bénéficiaires à exporter
-        $totalBeneficiaires = $beneficiaires->count();
+        // Formatage de la date pour le nom du fichier
+        $dateStr = now()->format('Y-m-d_H-i');
 
-        // Si aucun bénéficiaire trouvé, rediriger avec un message
-        if ($totalBeneficiaires === 0) {
-            return back()->with('error', 'Aucune donnée à exporter.');
+        // Export PDF
+        if ($format === 'pdf') {
+            // En mode détail avec un seul bénéficiaire
+            if ($mode === 'detail' && count($beneficiaires) === 1) {
+                // Utiliser la vue détail avec le premier bénéficiaire
+                $beneficiaire = $beneficiaires->first();
+                $title = "Détails du promoteur - {$beneficiaire->nom} {$beneficiaire->prenom}";
+                $filename = "promoteur_" . Str::slug($beneficiaire->nom . "_" . $beneficiaire->prenom) . "_{$dateStr}.pdf";
+
+                // Génération du PDF avec le bon nom de variable au singulier
+                $pdf = PDF::loadView('pdf.beneficiaire_detail', [
+                    'beneficiaire' => $beneficiaire,
+                    'title' => $title,
+                    'date' => now()->format('d/m/Y')
+                ]);
+            } else {
+                // Mode liste pour plusieurs bénéficiaires
+                $title = "Liste des promoteurs" . ($filterType !== 'tous' ? " - " . $filterType : "");
+                $filename = "liste_promoteurs" . ($filterType !== 'tous' ? "_" . Str::slug($filterType) : "") . "_{$dateStr}.pdf";
+
+                // Génération du PDF avec la variable au pluriel
+                $pdf = PDF::loadView('pdf.beneficiaires_list', [
+                    'beneficiaires' => $beneficiaires,
+                    'title' => $title,
+                    'date' => now()->format('d/m/Y'),
+                    'filtres' => [
+                        'type' => $filterType !== 'tous' ? $filterType : null,
+                        'search' => $search ?: null
+                    ]
+                ]);
+            }
+
+            // Configuration du PDF
+            $pdf->setPaper('a4');
+
+            // Téléchargement du PDF
+            return $pdf->download($filename);
         }
 
-        $filename = 'promoteurs_' . date('Y-m-d_His');
+        // Pour d'autres formats (comme Excel), on peut ajouter d'autres méthodes d'export ici
+        // mais elles seront gérées côté client avec SheetJS
 
-        // Export en PDF pour une liste de bénéficiaires
-        return $this->exportToPdf($beneficiaires, $filename);
-
-    } catch (\Exception $e) {
-
-        return back()->with('error', 'Une erreur est survenue lors de l\'export: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'Format d\'exportation non pris en charge.');
     }
-}
 
-/**
- * Export les détails d'un bénéficiaire en PDF
- */
-private function exportDetailToPdf($beneficiaire, $filename)
-{
-    $pdf = PDF::loadView('pdf.beneficiaire-details', [
-        'beneficiaire' => $beneficiaire
-    ]);
+    /**
+     * Méthode pour générer les vues PDF
+     * Cette méthode est accessible aux routes dédiées pour la génération de PDF
+     */
+    public function generatePdfView(Request $request, $id = null)
+    {
+        // Si un ID est fourni, c'est un détail sinon c'est une liste
+        if ($id) {
+            $beneficiaire = Beneficiaire::findOrFail($id);
+            return view('pdf.beneficiaire_detail', [
+                'beneficiaire' => $beneficiaire,
+                'title' => "Détails du promoteur - {$beneficiaire->nom} {$beneficiaire->prenom}",
+                'date' => now()->format('d/m/Y')
+            ]);
+        } else {
+            // Pour la prévisualisation de la liste, on limite à 20 entrées
+            $beneficiaires = Beneficiaire::take(20)->get();
+            return view('pdf.beneficiaires_list', [
+                'beneficiaires' => $beneficiaires,
+                'title' => "Liste des promoteurs (aperçu)",
+                'date' => now()->format('d/m/Y'),
+                'filtres' => null
+            ]);
+        }
+    }
 
-    return $pdf->download($filename . '.pdf');
-}
 
-/**
- * Export une liste de bénéficiaires en PDF
- */
-private function exportToPdf($beneficiaires, $filename)
-{
-    $pdf = PDF::loadView('pdf.beneficiaires-list', [
-        'beneficiaires' => $beneficiaires
-    ]);
-
-    return $pdf->download($filename . '.pdf');
-}
 }

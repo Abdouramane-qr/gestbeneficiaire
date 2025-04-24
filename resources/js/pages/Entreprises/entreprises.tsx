@@ -7,42 +7,14 @@ import ShowEntreprise from './show';
 import EntrepriseFormModal from '@/components/entrepriseFormModal';
 import AppLayout from '@/layouts/app-layout';
 
-// Types (à ajuster selon vos besoins)
-interface Beneficiaire {
-  id: number;
-  nom: string;
-  prenom: string;
-}
-
-interface ONG {
-  id: number;
-  nom: string;
-  sigle?: string;
-}
-
-interface InstitutionFinanciere {
-  id: number;
-  nom: string;
-}
-
-interface Entreprise {
-  id: number;
-  nom_entreprise: string;
-  secteur_activite: string;
-  ville: string;
-  pays: string;
-  date_creation: string;
-  beneficiaire?: Beneficiaire | null;
-  ong?: ONG | null;
-  institutionFinanciere?: InstitutionFinanciere | null;
-}
+import { Beneficiaire, ONG, InstitutionFinanciere, Entreprise } from '@/types/interfaces';
 
 const Entreprises = () => {
-  const { 
-    entreprises, 
-    beneficiaires, 
-    ongs, 
-    institutionsFinancieres 
+  const {
+    entreprises,
+    beneficiaires,
+    ongs,
+    institutionsFinancieres
   } = usePage().props as unknown as {
     entreprises: Entreprise[];
     beneficiaires: Beneficiaire[];
@@ -71,9 +43,13 @@ const Entreprises = () => {
   };
 
   const onSuccess = () => {
-    router.get(route('entreprises.index'), {
-      onSuccess: () => toast.success("Liste des entreprises mise à jour."),
-      onError: () => toast.error("Échec de la mise à jour de la liste des entreprises."),
+    router.get(route('entreprises.index'), {}, {
+      onSuccess: () => {
+        toast.success("Liste des entreprises mise à jour.");
+      },
+      onError: () => {
+        toast.error("Échec de la mise à jour de la liste des entreprises.");
+      }
     });
   };
 
@@ -127,8 +103,8 @@ const Entreprises = () => {
       return;
     }
 
-    const contentToPrint = showDetailView && selectedEntreprise 
-      ? detailsRef.current 
+    const contentToPrint = showDetailView && selectedEntreprise
+      ? detailsRef.current
       : tableRef.current;
 
     if (!contentToPrint) {
@@ -195,15 +171,15 @@ const Entreprises = () => {
   // Exportation Excel
   const exportToExcel = () => {
     try {
-      const data = showDetailView && selectedEntreprise 
+      const data = showDetailView && selectedEntreprise
         ? [selectedEntreprise].map(e => ({
             'Nom': e.nom_entreprise,
             'Secteur d\'activité': e.secteur_activite,
             'Ville': e.ville,
             'Pays': e.pays,
             'Date de création': new Date(e.date_creation).toLocaleDateString('fr-FR'),
-            'Promoteur': e.beneficiaire 
-              ? `${e.beneficiaire.nom} ${e.beneficiaire.prenom}` 
+            'Promoteur': e.beneficiaire
+              ? `${e.beneficiaire.nom} ${e.beneficiaire.prenom}`
               : 'N/A'
           }))
         : filteredEntreprises.map(e => ({
@@ -212,8 +188,8 @@ const Entreprises = () => {
             'Ville': e.ville,
             'Pays': e.pays,
             'Date de création': new Date(e.date_creation).toLocaleDateString('fr-FR'),
-            'Promoteur': e.beneficiaire 
-              ? `${e.beneficiaire.nom} ${e.beneficiaire.prenom}` 
+            'Promoteur': e.beneficiaire
+              ? `${e.beneficiaire.nom} ${e.beneficiaire.prenom}`
               : 'N/A'
           }));
 
@@ -397,6 +373,10 @@ const Entreprises = () => {
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Promoteur
                       </th>
+
+                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                       Type de Promoteur
+                      </th>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Date de création
                       </th>
@@ -433,6 +413,10 @@ const Entreprises = () => {
                             {entreprise.beneficiaire
                               ? `${entreprise.beneficiaire.nom} ${entreprise.beneficiaire.prenom}`
                               : 'N/A'}
+                          </td>
+
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            {entreprise.beneficiaire.type_beneficiaire}
                           </td>
 
                           <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">

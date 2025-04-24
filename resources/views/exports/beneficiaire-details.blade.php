@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{{-- <!DOCTYPE html>
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
@@ -123,4 +123,4 @@
         Document généré le {{ date('d/m/Y') }} - Système de Suivi des PME
     </div>
 </body>
-</html>
+</html> --}}
