@@ -169,10 +169,93 @@
 
 // // Définition du layout
 // Show.layout = (page: React.ReactNode) => <AppLayout children={page} />;
-import React from 'react';
+// import React from 'react';
+// import { Head } from '@inertiajs/react';
+// import CollecteForm from './CollecteForm';
+// import AppLayout from '@/layouts/app-layout';
+
+// interface Entreprise {
+//   id: number;
+//   nom_entreprise: string;
+// }
+
+// interface Exercice {
+//   id: number;
+//   annee: number;
+//   date_debut: string;
+//   date_fin: string;
+//   actif: boolean;
+// }
+
+// interface Periode {
+//   id: number;
+//   type_periode: string;
+//   exercice_id: number;
+//   date_debut: string;
+//   date_fin: string;
+// }
+
+// interface Collecte {
+//   id: number;
+//   entreprise_id: number;
+//   exercice_id: number;
+//   periode_id: number;
+//   date_collecte: string;
+//   donnees: Record<string, any>;
+//   type_collecte: 'standard' | 'brouillon';
+//   promoteur_id?: number;
+//   ong_id?: number;
+// }
+
+// interface EditProps {
+//   entreprises: Entreprise[];
+//   exercices: Exercice[];
+//   periodes: Periode[];
+//   collecte: Collecte;
+//   auth: any;
+//   errors: Record<string, string>;
+//   flash: Record<string, string>;
+// }
+
+// const Edit: React.FC<EditProps> = ({
+//   entreprises,
+//   exercices,
+//   periodes,
+//   collecte,
+
+// }) => {
+//     return (
+//         <AppLayout title={`Modifier la collecte #${collecte.id}`}>
+//           <Head title={`Modifier la collecte #${collecte.id}`} />
+//           <div className="py-12">
+//             <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+//               <div className="flex justify-between items-center mb-6">
+//                 <h1 className="text-2xl font-semibold text-gray-800">
+//                   Modifier la collecte #{collecte.id}
+//                 </h1>
+//               </div>
+
+//               <CollecteForm
+//                 entreprises={entreprises}
+//                 exercices={exercices}
+//                 periodes={periodes}
+//                 collecte={collecte}
+//                 isEditing={true}
+//               />
+//             </div>
+//           </div>
+//         </AppLayout>
+
+//   );
+// };
+
+// export default Edit;
+import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
 import CollecteForm from './CollecteForm';
 import AppLayout from '@/layouts/app-layout';
+import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { WifiOffIcon, WifiIcon, RefreshCcw } from 'lucide-react';
 
 interface Entreprise {
   id: number;
@@ -212,9 +295,13 @@ interface EditProps {
   exercices: Exercice[];
   periodes: Periode[];
   collecte: Collecte;
-  auth: any;
-  errors: Record<string, string>;
-  flash: Record<string, string>;
+  collectes?: { periode_id: number }[];
+  promoteurs?: any[];
+  ong?: any;
+  userType?: 'admin' | 'ong' | 'coach';
+  auth?: any;
+  errors?: Record<string, string>;
+  flash?: Record<string, string>;
 }
 
 const Edit: React.FC<EditProps> = ({
@@ -222,30 +309,100 @@ const Edit: React.FC<EditProps> = ({
   exercices,
   periodes,
   collecte,
-
+  collectes = [],
+  promoteurs = [],
+  ong,
+  userType = 'admin'
 }) => {
-    return (
-        <AppLayout title={`Modifier la collecte #${collecte.id}`}>
-          <Head title={`Modifier la collecte #${collecte.id}`} />
-          <div className="py-12">
-            <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-semibold text-gray-800">
-                  Modifier la collecte #{collecte.id}
-                </h1>
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { pendingUploads, syncData, isInitialized } = useOfflineStorage();
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Surveiller les changements de connectivité
+  useEffect(() => {
+    const handleOnlineStatus = () => {
+      setIsOnline(navigator.onLine);
+    };
+
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOnlineStatus);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOnlineStatus);
+    };
+  }, []);
+
+  const handleSync = async () => {
+    if (!isOnline) return;
+
+    try {
+      setIsSyncing(true);
+      await syncData();
+    } catch (error) {
+      console.error('Erreur de synchronisation:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  return (
+    <AppLayout title={`Modifier la collecte #${collecte.id}`}>
+      <Head title={`Modifier la collecte #${collecte.id}`} />
+      <div className="py-12">
+        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
+              Modifier la collecte #{collecte.id}
+              {collecte.type_collecte === 'brouillon' && (
+                <span className="ml-2 text-xs bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 px-2 py-1 rounded-full">
+                  Brouillon
+                </span>
+              )}
+            </h1>
+
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center">
+                {isOnline ? (
+                  <span className="flex items-center text-green-600 dark:text-green-400 text-sm">
+                    <WifiIcon className="w-4 h-4 mr-1" />
+                    En ligne
+                  </span>
+                ) : (
+                  <span className="flex items-center text-yellow-600 dark:text-yellow-400 text-sm">
+                    <WifiOffIcon className="w-4 h-4 mr-1" />
+                    Hors ligne
+                  </span>
+                )}
               </div>
 
-              <CollecteForm
-                entreprises={entreprises}
-                exercices={exercices}
-                periodes={periodes}
-                collecte={collecte}
-                isEditing={true}
-              />
+              {pendingUploads > 0 && isOnline && (
+                <button
+                  onClick={handleSync}
+                  disabled={isSyncing || !isOnline}
+                  className="inline-flex items-center text-xs bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white px-3 py-1 rounded-full disabled:opacity-50"
+                >
+                  <RefreshCcw className={`w-3 h-3 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Synchronisation...' : `Synchroniser (${pendingUploads})`}
+                </button>
+              )}
             </div>
           </div>
-        </AppLayout>
 
+          <CollecteForm
+            entreprises={entreprises}
+            exercices={exercices}
+            periodes={periodes}
+            collectes={collectes}
+            collecte={collecte}
+            promoteurs={promoteurs}
+            ong={ong}
+            userType={userType}
+            isEditing={true}
+          />
+        </div>
+      </div>
+    </AppLayout>
   );
 };
 

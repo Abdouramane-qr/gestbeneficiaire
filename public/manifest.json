@@ -1,0 +1,55 @@
+{
+    "name": "Suivi PME",
+    "short_name": "SuiviPME",
+    "description": "Application de suivi des PME avec fonctionnalités hors ligne",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4f46e5",
+    "icons": [
+      {
+        "src": "/icons/icon-192x192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "/icons/icon-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ],
+    "orientation": "any",
+    "categories": ["business", "productivity"],
+    "lang": "fr-FR",
+    "dir": "ltr",
+    "prefer_related_applications": false,
+    "related_applications": [],
+    "shortcuts": [
+      {
+        "name": "Nouvelle collecte",
+        "url": "/collectes/create",
+        "description": "Créer une nouvelle collecte de données",
+        "icons": [
+          {
+            "src": "/icons/shortcut-create-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+          }
+        ]
+      },
+      {
+        "name": "Liste des collectes",
+        "url": "/collectes",
+        "description": "Voir toutes les collectes",
+        "icons": [
+          {
+            "src": "/icons/shortcut-list-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+          }
+        ]
+      }
+    ]
+  }

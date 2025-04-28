@@ -23,11 +23,11 @@ const mainNavItems: NavItemWithSubmenu[] = [
         icon: ClipboardCheck,
         href: '/dashboard',
         children: [
-          {
-            title: 'Analyse des Indicateurs',  // Nouveau sous-menu
-            href: 'analyse/rapport-global',
-            icon: TrendingUp,  // Ou BarChart selon votre préférence
-          },
+        //   {
+        //     title: 'Analyse des Indicateurs',  // Nouveau sous-menu
+        //     href: 'analyse/rapport-global',
+        //     icon: TrendingUp,  // Ou BarChart selon votre préférence
+        //   },
           {
             title: 'Analyse',  // Nouveau sous-menu
             href: '/analyse/synthese',

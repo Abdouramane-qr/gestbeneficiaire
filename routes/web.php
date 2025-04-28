@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+
 use Inertia\Inertia;
 use App\Http\Controllers\{
     AnalyseController,
@@ -17,6 +18,8 @@ use App\Http\Controllers\{
     ONGController,
     PeriodeController,
     DashboardController,
+ OfflineSyncController,
+
 };
 
 // Accueil
@@ -150,5 +153,13 @@ Route::middleware(['auth', 'verified', 'permission:utilisateurs,view'])->prefix(
 
 Route::get('/data-dashboard', [UserController::class, 'getDashboard'])->name('users.dashboard')->middleware(['auth', 'verified']);
 // Fichiers de configuration et d’auth
+
+
+
+
+ // Routes pour la synchronisation offline
+ Route::post('/collectes/sync-offline-data', [OfflineSyncController::class, 'syncOfflineData'])->name('collectes.sync-offline-data');
+
+
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
