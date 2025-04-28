@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp, Settings, UserRoundPen, ShieldCheck, GraduationCap, Folder, BookOpen,  } from 'lucide-react';
+import { UserRoundSearch, Building2, Landmark, Wallet,  Database,  ClipboardCheck, FilePlus, TrendingUp, Settings, UserRoundPen, ShieldCheck, GraduationCap, MonitorCheck  } from 'lucide-react';
 import AppLogo from './app-logo';
 
 // Créer un type pour les items avec sous-menus
@@ -32,7 +32,13 @@ const mainNavItems: NavItemWithSubmenu[] = [
             title: 'Analyse',  // Nouveau sous-menu
             href: '/analyse/synthese',
             icon: TrendingUp,  // Ou BarChart selon votre préférence
-          }
+          },
+
+          {
+            title: 'Vue Generale',
+            href: route('users.dashboard'), // Liste toutes les collectes
+            icon: MonitorCheck ,
+        },
         ]
 },
     {
@@ -86,7 +92,7 @@ const mainNavItems: NavItemWithSubmenu[] = [
             },
             {
                 title: 'Liste des collectes',
-                href: 'collectes', // Liste toutes les collectes
+                href: route('collectes.index'), // Liste toutes les collectes
                 icon: Database,
             },
 
@@ -99,13 +105,13 @@ const mainNavItems: NavItemWithSubmenu[] = [
                 icon: Database,
             },
             {
-                title: 'Periode Creation',
+                title: 'Creation Periode',
                 href: route('periodes.create'), // Liste toutes les collectes
                 icon: Database,
             },
 
             {
-                title: 'Periode Liste',
+                title: 'Liste Periode ',
                 href: route('periodes.index'), // Liste toutes les collectes
                 icon: Database,
             },
@@ -113,13 +119,13 @@ const mainNavItems: NavItemWithSubmenu[] = [
 
 
             {
-                title: 'Exercies Creation',
+                title: 'Creation Exercies ',
                 href: route('exercices.store'), // Liste toutes les collectes
                 icon: Database,
             },
 
             {
-                title: 'Exercies Liste',
+                title: 'Liste Exercies ',
                 href: route('exercices.index'), // Liste toutes les collectes
                 icon: Database,
             },
@@ -142,11 +148,7 @@ const mainNavItems: NavItemWithSubmenu[] = [
                 icon: ShieldCheck ,
             },
 
-            {
-                title: 'Vue Generale',
-                href: route('users.dashboard'), // Liste toutes les collectes
-                icon: ShieldCheck ,
-            },
+
 
         ]
     },

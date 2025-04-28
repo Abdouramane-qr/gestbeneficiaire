@@ -103,7 +103,7 @@
             @foreach($collectes as $collecte)
             <tr>
                 <td>{{ $collecte->entreprise->nom_entreprise }}</td>
-                <td>{{ $collecte->exercice->annee }}</td>
+                <td>{{ $collecte->exercice?->annee }}</td>
                 <td>
                     @if(is_object($collecte->periode))
                         {{ $collecte->periode->type_periode }}

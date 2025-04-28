@@ -58,28 +58,75 @@ class Collecte extends Model
         return $query->where('type_collecte', 'brouillon');
     }
 
-    // Helpers pour accéder aux données
-    public function getCategoryData(string $category): array
+    /**
+     * Ensure donnees is always returned as an array
+     *
+     * @return array
+     */
+    public function getDonneesAsArray(): array
     {
-        return is_array($this->donnees) ? ($this->donnees[$category] ?? []) : [];
+        if (is_string($this->donnees)) {
+            return json_decode($this->donnees, true) ?? [];
+        }
+
+        return is_array($this->donnees) ? $this->donnees : [];
     }
 
+    /**
+     * Get data for a specific category
+     *
+     * @param string $category
+     * @return array
+     */
+    public function getCategoryData(string $category): array
+    {
+        $donnees = $this->getDonneesAsArray();
+        return $donnees[$category] ?? [];
+    }
+
+    /**
+     * Check if an indicator exists in a category
+     *
+     * @param string $category
+     * @param string $indicateur
+     * @return bool
+     */
     public function hasIndicateur(string $category, string $indicateur): bool
     {
         return isset($this->getCategoryData($category)[$indicateur]);
     }
 
+    /**
+     * Get value for a specific indicator
+     *
+     * @param string $category
+     * @param string $indicateur
+     * @return mixed|null
+     */
     public function getIndicateurValue(string $category, string $indicateur)
     {
         return $this->getCategoryData($category)[$indicateur] ?? null;
     }
 
+    /**
+     * Get all categories in donnees
+     *
+     * @return array
+     */
     public function getCategories(): array
     {
-        return is_array($this->donnees) ? array_keys($this->donnees) : [];
+        return array_keys($this->getDonneesAsArray());
     }
 
-
-
-
+    /**
+     * Get all indicators for a specific category
+     *
+     * @param string $category
+     * @return array
+     */
+    public function getIndicateurs(string $category): array
+    {
+        $categoryData = $this->getCategoryData($category);
+        return is_array($categoryData) ? $categoryData : [];
+    }
 }

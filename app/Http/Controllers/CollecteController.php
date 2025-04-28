@@ -19,8 +19,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\TemplateProcessor;
-use PhpOffice\PhpWord\IOFactory;
-use PhpOffice\PhpWord\Settings;
 
 class CollecteController extends Controller
 {
@@ -1184,7 +1182,7 @@ private function mathEval(string $expr): float
     }
 
 
-    /**
+       /**
      * Export des collectes en Word ou Excel
      */
     public function export(Request $request)
@@ -1226,7 +1224,9 @@ private function mathEval(string $expr): float
                 if ($request->input('format') === 'word') {
                     return $this->exportDetailToWord($collecte);
                 } else if ($request->input('format') === 'pdf') {
-                    return $this->exportDetailToPdf($collecte);
+                    $categoriesDisponibles = array_keys(is_array($collecte->donnees) ? $collecte->donnees : []);
+                    $filename = 'collecte_' . $collecte->id . '_' . date('Y-m-d_H-i-s');
+                    return $this->exportDetailToPdf($collecte, $categoriesDisponibles, $filename);
                 }
             }
 
@@ -1234,9 +1234,21 @@ private function mathEval(string $expr): float
             if ($request->input('format') === 'word') {
                 return $this->exportToWord($request);
             } else if ($request->input('format') === 'pdf') {
-                return $this->exportToPdf($request);
+                $query = Collecte::query()->with(['entreprise', 'exercice', 'periode', 'user']);
+                if ($request->has('collecte_ids')) {
+                    $query->whereIn('id', $request->input('collecte_ids'));
+                }
+                $collectes = $query->get();
+                $filename = 'collectes_list_' . date('Y-m-d_H-i-s');
+                return $this->exportToPdf($collectes, $filename);
             } else if ($request->input('format') === 'excel') {
-                return $this->exportToExcel($request);
+                $query = Collecte::query()->with(['entreprise', 'exercice', 'periode', 'user']);
+                if ($request->has('collecte_ids')) {
+                    $query->whereIn('id', $request->input('collecte_ids'));
+                }
+                $collectes = $query->get();
+                $filename = 'collectes_list_' . date('Y-m-d_H-i-s');
+                return $this->exportToExcel($collectes, $filename);
             }
 
             return response()->json(['error' => 'Format non supporté'], 400);
@@ -1255,17 +1267,17 @@ private function mathEval(string $expr): float
         try {
             // Créer une nouvelle instance de PhpWord
             $phpWord = new PhpWord();
-            
+
             // Charger le template
             $templatePath = storage_path('app/templates/collecte_template.docx');
             $templateProcessor = new TemplateProcessor($templatePath);
 
             // Préparer les données pour le template
             $donnees = is_string($collecte->donnees) ? json_decode($collecte->donnees, true) : $collecte->donnees;
-            
+
             // Remplacer les variables dans le template
             $templateProcessor->setValue('entreprise_nom', $collecte->entreprise->nom_entreprise);
-            $templateProcessor->setValue('exercice_annee', $collecte->exercice->annee);
+            $templateProcessor->setValue('exercice_annee', $collecte->exercice?->annee ?? 'Non spécifié');
             $templateProcessor->setValue('periode_type', $collecte->periode ? $collecte->periode->type_periode : 'Non spécifié');
             $templateProcessor->setValue('date_collecte', $collecte->date_collecte);
             $templateProcessor->setValue('user_name', $collecte->user->name);
@@ -1323,7 +1335,7 @@ private function mathEval(string $expr): float
 
             // Créer une nouvelle instance de PhpWord
             $phpWord = new PhpWord();
-            
+
             // Charger le template
             $templatePath = storage_path('app/templates/collectes_list_template.docx');
             $templateProcessor = new TemplateProcessor($templatePath);
@@ -1332,11 +1344,11 @@ private function mathEval(string $expr): float
             $collectesData = [];
             foreach ($collectes as $collecte) {
                 $donnees = is_string($collecte->donnees) ? json_decode($collecte->donnees, true) : $collecte->donnees;
-                
+
                 $collectesData[] = [
                     'entreprise_nom' => $collecte->entreprise->nom_entreprise,
-                    'exercice_annee' => $collecte->exercice->annee,
-                    'periode_type' => $collecte->periode ? $collecte->periode->type_periode : 'Non spécifié',
+                    'exercice_annee' => $collecte->exercice?->annee,
+                    'periode_type' => (is_object($collecte->periode) && $collecte->periode !== null) ? $collecte->periode->type_periode : (is_string($collecte->periode) ? $collecte->periode : 'Non spécifié'),
                     'date_collecte' => $collecte->date_collecte,
                     'user_name' => $collecte->user->name,
                     'donnees' => $donnees
@@ -1346,10 +1358,10 @@ private function mathEval(string $expr): float
             // Remplacer les variables dans le template
             $templateProcessor->setValue('date_export', now()->format('d/m/Y H:i'));
             $templateProcessor->setValue('user_name', auth()->user()->name);
-            
+
             // Cloner la section pour chaque collecte
             $templateProcessor->cloneRow('entreprise_nom', count($collectesData));
-            
+
             // Remplir les données
             foreach ($collectesData as $index => $data) {
                 $rowNumber = $index + 1;
@@ -1455,7 +1467,7 @@ private function exportSingleToPdf($collecte, $categoriesDisponibles, $filename)
         return $pdf->download("{$filename}.pdf");
     }
 
-    /**
+       /**
      * Helper pour envoyer une réponse d'erreur cohérente
      */
 

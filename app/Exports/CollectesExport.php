@@ -54,8 +54,8 @@ class CollectesExport implements FromCollection, WithHeadings, WithMapping, With
         return [
             $collecte->id,
             $collecte->entreprise->nom_entreprise,
-            $collecte->exercice->annee,
-            $collecte->periode->type_periode,
+            $collecte->exercice?->annee,
+            $this->formatPeriode($collecte->periode), // Utilisation d'une méthode auxiliaire
             $collecte->date_collecte->format('d/m/Y'),
             $collecte->type_collecte === 'brouillon' ? 'Brouillon' : 'Standard',
             $collecte->user ? $collecte->user->name : 'Non spécifié',
@@ -64,6 +64,24 @@ class CollectesExport implements FromCollection, WithHeadings, WithMapping, With
         ];
     }
 
+
+    private function formatPeriode($periode)
+{
+    if (empty($periode)) {
+        return 'Non spécifié';
+    }
+
+    if (is_string($periode)) {
+        return $periode; // Retourne la chaîne telle quelle (ex: 'Occasionnelle')
+    }
+
+    // Si c'est un objet, accéder à ses propriétés
+    if (is_object($periode)) {
+        return $periode->nom ?? $periode->type_periode ?? 'Non spécifié';
+    }
+
+    return 'Non spécifié';
+}
     /**
      * Styles pour le document Excel
      */
