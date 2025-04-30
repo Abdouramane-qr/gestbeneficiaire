@@ -674,7 +674,7 @@ export class IndicateurCalculator {
                     label: 'Coût des matières premières',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Coût total des matières premières utilisées dans la production',
                 },
                 {
@@ -682,7 +682,7 @@ export class IndicateurCalculator {
                     label: "Coût de la main d'œuvre directe",
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Coût total de la main-d'œuvre directement impliquée dans la production",
                 },
                 {
@@ -690,7 +690,7 @@ export class IndicateurCalculator {
                     label: 'Coût des frais généraux',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Coût des frais généraux liés à l'exploitation",
                 },
                 {
@@ -698,7 +698,7 @@ export class IndicateurCalculator {
                     label: "Produits d'exploitation",
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Montant total des produits d'exploitation",
                 },
                 {
@@ -706,7 +706,7 @@ export class IndicateurCalculator {
                     label: 'Coût de production',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Coût total de la production',
                 },
                 {
@@ -714,7 +714,7 @@ export class IndicateurCalculator {
                     label: 'Subvention OIM',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant de la subvention OIM reçue',
                 },
                 {
@@ -722,7 +722,7 @@ export class IndicateurCalculator {
                     label: 'Autres subventions',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant des autres subventions reçues',
                 },
                 {
@@ -730,7 +730,7 @@ export class IndicateurCalculator {
                     label: "Subventions d'investissement",
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Montant des subventions d'investissement reçues",
                 },
                 {
@@ -738,7 +738,7 @@ export class IndicateurCalculator {
                     label: 'Total des actifs',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Montant total des actifs de l'entreprise",
                 },
                 {
@@ -746,7 +746,7 @@ export class IndicateurCalculator {
                     label: 'Capital social',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Montant du capital social de l'entreprise",
                 },
                 {
@@ -754,7 +754,7 @@ export class IndicateurCalculator {
                     label: 'Réserves sociales',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Montant des réserves sociales de l'entreprise",
                 },
                 {
@@ -762,7 +762,7 @@ export class IndicateurCalculator {
                     label: 'Report à nouveau',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant du report à nouveau',
                 },
                 {
@@ -770,7 +770,7 @@ export class IndicateurCalculator {
                     label: "Résultat net de l'exercice",
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Résultat net de l'exercice comptable",
                 },
                 {
@@ -778,7 +778,7 @@ export class IndicateurCalculator {
                     label: 'Emprunts liés au projet',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant des emprunts contractés dans le cadre du projet',
                 },
                 {
@@ -786,7 +786,7 @@ export class IndicateurCalculator {
                     label: 'Autres emprunts',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant des autres emprunts contractés',
                 },
                 {
@@ -794,7 +794,7 @@ export class IndicateurCalculator {
                     label: "Résultat net d'exploitation",
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Résultat net d'exploitation",
                 },
                 {
@@ -802,7 +802,7 @@ export class IndicateurCalculator {
                     label: 'Capitaux propres',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant total des capitaux propres',
                 },
                 {
@@ -810,7 +810,7 @@ export class IndicateurCalculator {
                     label: 'Dettes financières',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant total des dettes financières',
                 },
             ],
@@ -820,7 +820,7 @@ export class IndicateurCalculator {
                     label: 'Actifs immobilisés',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant total des actifs immobilisés',
                 },
                 {
@@ -828,7 +828,7 @@ export class IndicateurCalculator {
                     label: 'Stocks',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant total des stocks',
                 },
                 {
@@ -836,7 +836,7 @@ export class IndicateurCalculator {
                     label: 'Créances clients',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant total des créances clients',
                 },
                 {
@@ -844,7 +844,7 @@ export class IndicateurCalculator {
                     label: 'Créances fiscales',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant total des créances fiscales',
                 },
                 {
@@ -852,7 +852,7 @@ export class IndicateurCalculator {
                     label: 'Dettes fournisseurs',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant total des dettes fournisseurs',
                 },
                 {
@@ -860,7 +860,7 @@ export class IndicateurCalculator {
                     label: 'Dettes sociales',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant total des dettes sociales',
                 },
                 {
@@ -868,7 +868,7 @@ export class IndicateurCalculator {
                     label: 'Dettes fiscales',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant total des dettes fiscales',
                 },
                 {
@@ -890,7 +890,7 @@ export class IndicateurCalculator {
                     label: 'Capital remboursé',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant du capital remboursé',
                 },
                 {
@@ -898,7 +898,7 @@ export class IndicateurCalculator {
                     label: 'Capital échu',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant du capital échu',
                 },
                 {
@@ -1083,7 +1083,7 @@ export class IndicateurCalculator {
                     label: "Chiffre d'affaires",
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Montant cumulé des ventes réalisées par l'entreprise sur une période donnée",
                 },
             ],
@@ -1096,7 +1096,7 @@ export class IndicateurCalculator {
                     label: 'Charges financières (intérêts et frais)',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant des intérêts et frais financiers',
                 },
                 {
@@ -1104,7 +1104,7 @@ export class IndicateurCalculator {
                     label: 'Dettes de financement',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Montant total des dettes de financement',
                 },
                 {
@@ -1112,7 +1112,7 @@ export class IndicateurCalculator {
                     label: 'Moyenne des capitaux propres',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Moyenne des capitaux propres sur la période',
                 },
 
@@ -1138,7 +1138,7 @@ export class IndicateurCalculator {
                     label: "Produit d'exploitation",
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: 'Autosuffisance opérationnelle',
                 },
             ],
@@ -1148,7 +1148,7 @@ export class IndicateurCalculator {
                     label: 'Montant cumulé des crédits reçus',
                     type: 'number',
                     required: true,
-                    unite: 'FCFA',
+                    unite: '',
                     definition: "Montant total des crédits reçus au cours de l'année N-1",
                 },
                 {

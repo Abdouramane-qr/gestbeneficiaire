@@ -129,4 +129,32 @@ class Collecte extends Model
         $categoryData = $this->getCategoryData($category);
         return is_array($categoryData) ? $categoryData : [];
     }
+
+
+
+// Assurez-vous que les accesseurs/mutateurs traitent correctement les données
+public function getDonneesAttribute($value)
+{
+    if (is_string($value)) {
+        return json_decode($value, true) ?: [];
+    }
+    return $value ?: [];
+}
+
+public function setDonneesAttribute($value)
+{
+    $this->attributes['donnees'] = is_array($value) ? json_encode($value) : $value;
+}
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($model) {
+            // Ensure periode is properly capitalized
+            if ($model->periode) {
+                $model->periode = ucfirst(strtolower($model->periode));
+            }
+        });
+    }
 }

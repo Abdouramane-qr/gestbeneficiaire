@@ -13,10 +13,7 @@ interface Coach {
   telephone?: string;
   ong_id?: string;
   specialite?: string;
-  //description?: string;
   est_actif?: boolean;
-//   date_debut?: string;
-//   fin_contrat?: string;
 }
 
 interface Ong {

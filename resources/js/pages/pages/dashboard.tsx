@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import { Head, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DashboardProps } from '@/types/dasb';
@@ -8,72 +8,18 @@ import EvolutionChart from './evolution-chart';
 import RegionalStats from './regional-stats';
 import SectorDistribution from './sector-distribution';
 import StatsCards from './stats-cards';
+import { AlertCircle, CheckCircle, Info } from 'lucide-react'; // Importez les icônes si nécessaire
+import { toast, Toaster } from 'sonner';
 
-// Import des composants séparés
-// types/dashboard.ts
-
-// Types pour les statistiques de base
-export interface StatsCardsProps {
-    totalEntreprises: number;
-    totalBeneficiaires: number;
-    totalCollectes: number;
-  }
-
-  // Types pour l'évolution des entreprises par mois
-  export interface EvolutionData {
-    name: string;
-    entreprises: number;
-    beneficiaires: number;
-  }
-
-  // Types pour la distribution par secteur
-  export interface SectorData {
-    name: string;
-    value: number;
-  }
-
-  // Types pour les statistiques régionales
-  export interface RegionalData {
-    region: string;
-    total: number;
-    entreprises: number;
-  }
-
-  // Types pour les données de collecte
-  export interface CommercialData {
-    prospects_total: number;
-    clients_total: number;
-    contrats_total: number;
-  }
-
-  export interface TresorerieData {
-    montant_impayes: number;
-    employes_total: number;
-  }
-
-  export interface CollecteData {
-    periode: string;
-    commercial: CommercialData;
-    tresorerie: TresorerieData;
-  }
-
-  export interface CollecteStats {
-    name: string;
-    prospects: number;
-    clients: number;
-    contrats: number;
-    employes: number;
-  }
-
-  // Types pour les indicateurs
-  export interface IndicatorSummaryItem {
-    period: string;
-    category: string;
-    count: number;
-  }
-
-  // Type principal pour les props du Dashboard
-
+// Types des props de la page incluant les messages flash
+interface PageProps {
+  flash: {
+    error?: string;
+    success?: string;
+    message?: string;
+    warning?: string;
+  };
+}
 
 export default function Dashboard({
   totalEntreprises = 0,
@@ -87,9 +33,46 @@ export default function Dashboard({
 }: DashboardProps) {
   const [timeRange, setTimeRange] = useState('month');
 
+  // Récupérer les messages flash depuis les props Inertia
+  const { flash } = usePage().props as unknown as PageProps;
+
+  // Afficher les messages flash lorsqu'ils sont présents
+  useEffect(() => {
+    if (flash.error) {
+      toast.error(flash.error, {
+        duration: 5000,
+        icon: <AlertCircle className="h-5 w-5 text-red-500" />
+      });
+    }
+    if (flash.success) {
+      toast.success(flash.success, {
+        duration: 4000,
+        icon: <CheckCircle className="h-5 w-5 text-green-500" />
+      });
+    }
+    if (flash.message) {
+      toast.info(flash.message, {
+        duration: 4000,
+        icon: <Info className="h-5 w-5 text-blue-500" />
+      });
+    }
+    if (flash.warning) {
+      toast(
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-5 w-5 text-amber-500" />
+          <span>{flash.warning}</span>
+        </div>
+      , { duration: 4000 });
+    }
+  }, [flash]);
+
   return (
     <AppLayout title='Tableau de Board'>
       <Head title="Tableau de bord" />
+
+      {/* Toaster pour afficher les notifications */}
+      <Toaster position="top-right" />
+
       <div className="flex h-full flex-1 flex-col gap-4 p-4">
         {/* En-tête avec filtres */}
         <div className="flex flex-wrap justify-between items-center gap-4">
@@ -109,14 +92,12 @@ export default function Dashboard({
           </div>
         </div>
 
-
         {/* Composants séparés */}
         <StatsCards
           totalEntreprises={totalEntreprises}
           totalBeneficiaires={totalBeneficiaires}
           totalCollectes={totalCollectes}
         />
-
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <EvolutionChart data={entreprisesParMois} />

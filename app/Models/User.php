@@ -63,6 +63,10 @@ class User extends Authenticatable
      */
     public function hasPermission(string $module, string $action): bool
     {
+        // Autorisation temporaire pour les indicateurs
+    if ($module === 'indicateurs' && $action === 'view') {
+        return true;
+    }
         if (!$this->role) {
             return false;
         }

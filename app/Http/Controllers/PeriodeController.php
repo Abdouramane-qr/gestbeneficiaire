@@ -54,7 +54,7 @@ class PeriodeController extends Controller
     public function store(Request $request)
     {
 
-        \Log::info('Données reçues : ', $request->all());
+        Log::info('Données reçues : ', $request->all());
 
         $validator = Validator::make($request->all(), [
             'exercice_id' => 'required|exists:exercices,id',
@@ -121,7 +121,7 @@ class PeriodeController extends Controller
 
         // Si la validation échoue, renvoie automatiquement avec les erreurs
         if ($validator->fails()) {
-            \Log::info($validator->errors()); // Enregistre les erreurs dans le fichier de log
+            Log::info($validator->errors()); // Enregistre les erreurs dans le fichier de log
             return back()
                 ->withErrors($validator)
                 ->withInput();

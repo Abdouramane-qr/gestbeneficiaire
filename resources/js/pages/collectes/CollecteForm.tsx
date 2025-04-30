@@ -1111,9 +1111,13 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
                     window.location.href = route('collectes.index');
                 }, 1500);
             },
-            onError: (errors) => {
+            onError: (errors: { [key: string]: string } | string) => {
                 console.error('Erreurs lors de la conversion:', errors);
-                toast.error(errors.message || errors.general || 'Erreur lors de la conversion du brouillon');
+                if (typeof errors === 'string') {
+                    toast.error(errors);
+                } else {
+                    toast.error(errors.message || errors.general || 'Erreur lors de la conversion du brouillon');
+                }
             }
         });
     };
@@ -1209,6 +1213,91 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
         }
     };
 
+    // const handleSubmit = async (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     setIsSubmitting(true);
+
+    //     const typeCollecte = isEditing && collecte?.type_collecte === 'brouillon'
+    //         ? 'standard'
+    //         : (isDraft ? 'brouillon' : 'standard');
+
+    //     const dataToSubmit = {
+    //         entreprise_id: data.entreprise_id,
+    //         exercice_id: data.exercice_id,
+    //         periode_id: data.periode_id,
+    //         date_collecte: data.date_collecte,
+    //         donnees: data.donnees,
+    //         type_collecte: typeCollecte,
+    //         promoteur_id: data.promoteur_id || null,
+    //         ong_id: data.ong_id || null,
+    //         convertToStandard: isEditing && collecte?.type_collecte === 'brouillon'
+    //     };
+
+    //     if (isOnline) {
+    //         if (isEditing && collecte) {
+    //             if (collecte.type_collecte === 'brouillon' && typeCollecte === 'standard') {
+    //                 router.put(route('collectes.convert-to-standard', collecte.id), {}, {
+    //                     onSuccess: () => {
+    //                         toast.success('Brouillon converti en collecte standard');
+    //                         setTimeout(() => window.location.href = route('collectes.index'), 1000);
+    //                     },
+    //                     onError: (errors) => {
+    //                         console.error('Erreurs de conversion:', errors);
+    //                         toast.error(errors.message || Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(', '));
+    //                         setIsSubmitting(false);
+    //                     }
+    //                 });
+    //             } else {
+    //                 put(route('collectes.update', collecte.id), dataToSubmit, {
+    //                     onSuccess: () => {
+    //                         toast.success('Collecte mise à jour avec succès');
+    //                         setTimeout(() => window.location.href = route('collectes.index'), 1000);
+    //                     },
+    //                     onError: (errors) => {
+    //                         console.error('Erreurs de mise à jour:', errors);
+    //                         toast.error(errors.message || Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(', '));
+    //                         setIsSubmitting(false);
+    //                     }
+    //                 });
+    //             }
+    //         } else {
+    //             post(route('collectes.store'), dataToSubmit, {
+    //                 onSuccess: () => {
+    //                     toast.success('Collecte enregistrée avec succès');
+    //                     setTimeout(() => window.location.href = route('collectes.index'), 1000);
+    //                 },
+    //                 onError: (errors) => {
+    //                     toast.error(errors.message || Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(', '));
+    //                     setIsSubmitting(false);
+    //                 }
+    //             });
+    //         }
+    //     } else {
+    //         try {
+    //             if (!isInitialized) {
+    //                 toast.error('Le mode hors ligne n\'est pas encore initialisé. Veuillez patienter...');
+    //                 setIsSubmitting(false);
+    //                 return;
+    //             }
+
+    //             await saveOffline(
+    //                 parseInt(data.entreprise_id),
+    //                 parseInt(data.exercice_id),
+    //                 data.periode_id,
+    //                 data.donnees,
+    //                 isDraft
+    //             );
+    //             toast.success('Données sauvegardées localement en attente de synchronisation');
+    //             reset();
+    //             setStep(1);
+    //             setIsSubmitting(false);
+    //         } catch (error) {
+    //             console.error('Erreur lors de la sauvegarde offline:', error);
+    //             toast.error('Erreur lors de la sauvegarde locale');
+    //             setIsSubmitting(false);
+    //         }
+    //     }
+    // };
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -1229,43 +1318,52 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
             convertToStandard: isEditing && collecte?.type_collecte === 'brouillon'
         };
 
+        // Définir les messages en fonction du contexte
+        const successMessages = {
+            update: 'Collecte mise à jour avec succès',
+            create: 'Collecte enregistrée avec succès',
+            convert: 'Brouillon converti en collecte standard',
+            offline: 'Données sauvegardées localement en attente de synchronisation'
+        };
+
+        // Gestionnaire de succès général
+        const handleSuccess = (message: string) => {
+            toast.success(message);
+            if (message !== successMessages.offline) {
+                setTimeout(() => window.location.href = route('collectes.index'), 1000);
+            } else {
+                reset();
+                setStep(1);
+            }
+            setIsSubmitting(false);
+        };
+
+        // Gestionnaire d'erreur général
+        const handleError = (errors: any) => {
+            console.error('Erreurs:', errors);
+            const errorMessage = errors.message ||
+                (typeof errors === 'object' ? Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(', ') : 'Une erreur est survenue');
+            toast.error(errorMessage);
+            setIsSubmitting(false);
+        };
+
         if (isOnline) {
             if (isEditing && collecte) {
                 if (collecte.type_collecte === 'brouillon' && typeCollecte === 'standard') {
                     router.put(route('collectes.convert-to-standard', collecte.id), {}, {
-                        onSuccess: () => {
-                            toast.success('Brouillon converti en collecte standard');
-                            setTimeout(() => window.location.href = route('collectes.index'), 1000);
-                        },
-                        onError: (errors) => {
-                            console.error('Erreurs de conversion:', errors);
-                            toast.error(errors.message || Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(', '));
-                            setIsSubmitting(false);
-                        }
+                        onSuccess: () => handleSuccess(successMessages.convert),
+                        onError: handleError
                     });
                 } else {
                     put(route('collectes.update', collecte.id), dataToSubmit, {
-                        onSuccess: () => {
-                            toast.success('Collecte mise à jour avec succès');
-                            setTimeout(() => window.location.href = route('collectes.index'), 1000);
-                        },
-                        onError: (errors) => {
-                            console.error('Erreurs de mise à jour:', errors);
-                            toast.error(errors.message || Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(', '));
-                            setIsSubmitting(false);
-                        }
+                        onSuccess: () => handleSuccess(successMessages.update),
+                        onError: handleError
                     });
                 }
             } else {
                 post(route('collectes.store'), dataToSubmit, {
-                    onSuccess: () => {
-                        toast.success('Collecte enregistrée avec succès');
-                        setTimeout(() => window.location.href = route('collectes.index'), 1000);
-                    },
-                    onError: (errors) => {
-                        toast.error(errors.message || Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(', '));
-                        setIsSubmitting(false);
-                    }
+                    onSuccess: () => handleSuccess(successMessages.create),
+                    onError: handleError
                 });
             }
         } else {
@@ -1283,10 +1381,7 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
                     data.donnees,
                     isDraft
                 );
-                toast.success('Données sauvegardées localement en attente de synchronisation');
-                reset();
-                setStep(1);
-                setIsSubmitting(false);
+                handleSuccess(successMessages.offline);
             } catch (error) {
                 console.error('Erreur lors de la sauvegarde offline:', error);
                 toast.error('Erreur lors de la sauvegarde locale');

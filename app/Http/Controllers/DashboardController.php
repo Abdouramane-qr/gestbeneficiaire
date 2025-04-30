@@ -14,14 +14,14 @@ class DashboardController extends Controller
     public function index()
     {
         // Debug de départ
-        \Log::info('==== DASHBOARD CONTROLLER EXECUTION ====');
+        //\Log::info('==== DASHBOARD CONTROLLER EXECUTION ====');
 
         // Statistiques de base
         $totalEntreprises = Entreprise::count();
         $totalBeneficiaires = Beneficiaire::count();
         $totalCollectes = Collecte::count();
 
-        \Log::info("Stats de base: {$totalEntreprises} entreprises, {$totalBeneficiaires} bénéficiaires, {$totalCollectes} collectes");
+       // \Log::info("Stats de base: {$totalEntreprises} entreprises, {$totalBeneficiaires} bénéficiaires, {$totalCollectes} collectes");
 
         // Données des entreprises par mois
         $entreprisesParMois = collect(range(1, 12))->map(function ($mois) {
@@ -260,7 +260,7 @@ class DashboardController extends Controller
                             'performance' => $donneesPerformance
                         ];
                     } catch (\Exception $e) {
-                        \Log::error('Erreur dans le traitement d\'une collecte: ' . $e->getMessage());
+                        //\Log::error('Erreur dans le traitement d\'une collecte: ' . $e->getMessage());
                         return [
                             'periode' => $collecte->periode ?: 'Non spécifié',
                             'commercial' => ['prospects_total' => 0, 'clients_total' => 0, 'contrats_total' => 0],
@@ -347,13 +347,13 @@ class DashboardController extends Controller
                     ];
                 }
 
-                \Log::info('Données d\'exemple générées: ' . count($collectesParCategorie) . ' éléments');
+                //\Log::info('Données d\'exemple générées: ' . count($collectesParCategorie) . ' éléments');
             }
 
-            \Log::info('Collectes traitées: ' . count($collectesParCategorie) . ' éléments');
+            //\Log::info('Collectes traitées: ' . count($collectesParCategorie) . ' éléments');
         } catch (\Exception $e) {
-            \Log::error('Erreur générale dans le traitement des collectes: ' . $e->getMessage());
-            \Log::error($e->getTraceAsString());
+            //\Log::error('Erreur générale dans le traitement des collectes: ' . $e->getMessage());
+//\Log::error($e->getTraceAsString());
         }
 
         // Get all indicator categories and periods
@@ -402,10 +402,10 @@ class DashboardController extends Controller
                     ];
                 }
             }
-            \Log::info('Résumé des indicateurs généré: ' . count($indicatorSummary) . ' éléments');
+           // \Log::info('Résumé des indicateurs généré: ' . count($indicatorSummary) . ' éléments');
         } catch (\Exception $e) {
-            \Log::error('Erreur lors de la génération du résumé des indicateurs: ' . $e->getMessage());
-            \Log::error($e->getTraceAsString());
+            // \Log::error('Erreur lors de la génération du résumé des indicateurs: ' . $e->getMessage());
+            // \Log::error($e->getTraceAsString());
         }
 
         return Inertia::render('pages/dashboard', [

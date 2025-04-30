@@ -123,4 +123,46 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'providers' => [
+    // ...
+   App\Providers\IndicateursServiceProvider::class,
+    Illuminate\Cache\CacheServiceProvider::class,
+    Illuminate\Redis\RedisServiceProvider::class,
+    Illuminate\Filesystem\FilesystemServiceProvider::class,
+    Illuminate\Foundation\Providers\FoundationServiceProvider::class,
+    Illuminate\View\ViewServiceProvider::class,
+    Illuminate\Encryption\EncryptionServiceProvider::class,
+    Illuminate\Cookie\CookieServiceProvider::class,
+    Illuminate\Session\SessionServiceProvider::class,
+    Illuminate\Auth\AuthServiceProvider::class,
+
+    Illuminate\Cache\CacheServiceProvider::class,
+    Illuminate\Hashing\HashServiceProvider::class,
+    Illuminate\Validation\ValidationServiceProvider::class,
+    Illuminate\Translation\TranslationServiceProvider::class,
+    Illuminate\Notifications\NotificationServiceProvider::class,
+    Illuminate\Broadcasting\BroadcastServiceProvider::class,
+    Illuminate\Routing\RoutingServiceProvider::class,
+    Illuminate\Database\DatabaseServiceProvider::class,
+    Illuminate\Foundation\Providers\ConsoleSupportServiceProvider::class,
+    Illuminate\Bus\BusServiceProvider::class,
+    Illuminate\Queue\QueueServiceProvider::class,
+
+
+
+
+
+
+],
+
+'aliases' => [
+    // ...
+    'Cache' => Illuminate\Support\Facades\Cache::class,
+    'File' => Illuminate\Support\Facades\File::class,
+    'Storage' => Illuminate\Support\Facades\Storage::class,
+    'View' => Illuminate\Support\Facades\View::class,
+
+    // ...
+],
+
 ];

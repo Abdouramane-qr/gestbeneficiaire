@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 use Inertia\Inertia;
 use App\Http\Controllers\{
@@ -13,12 +15,13 @@ use App\Http\Controllers\{
     CoachController,
     EntrepriseController,
     ExerciceController,
-    IndicateurController,
     InstitutionFinanciereController,
     ONGController,
     PeriodeController,
     DashboardController,
  OfflineSyncController,
+ IndicateursAnalyseController,
+
 
 };
 
@@ -30,6 +33,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Pages des indicateurs (routes Inertia)
+    Route::get('/indicateurs/analyse', [IndicateursAnalyseController::class, 'index'])->name('indicateurs.analyse');
+    Route::get('/indicateurs/detail/{indicateurId}', [IndicateursAnalyseController::class, 'showIndicateur'])->name('indicateurs.detail');
+    Route::get('/indicateurs/evolution', [IndicateursAnalyseController::class, 'evolution'])->name('indicateurs.evolution');
 
     // Ressources principales
     Route::resources([
@@ -94,7 +102,7 @@ Route::resource('beneficiaires', BeneficiaireController::class);
 Route::resource('entreprises', EntrepriseController::class);
 Route::resource('ong', ONGController::class);
 Route::resource('InstitutionFinanciere', InstitutionFinanciereController::class);
-Route::resource('indicateurs', IndicateurController::class);
+//Route::resource('indicateurs', IndicateurController::class);
 
 // !!! La route export doit être définie avant cette ressource si elle n’est pas protégée
 
@@ -159,6 +167,35 @@ Route::get('/data-dashboard', [UserController::class, 'getDashboard'])->name('us
 
  // Routes pour la synchronisation offline
  Route::post('/collectes/sync-offline-data', [OfflineSyncController::class, 'syncOfflineData'])->name('collectes.sync-offline-data');
+
+
+
+
+
+ /*
+ |--------------------------------------------------------------------------
+ | API Routes
+ |--------------------------------------------------------------------------
+
+ */
+
+
+
+// Routes API - Ne pas appliquer le middleware Inertia à ces routes
+Route::prefix('api')->group(function () {
+    Route::middleware(['auth'])->group(function () {
+        // API pour les indicateurs - Ces endpoints retournent du JSON, pas des réponses Inertia
+        Route::get('/indicateurs/analyse', [IndicateursAnalyseController::class, 'getAnalyseData']);
+        Route::get('/indicateurs/evolution', [IndicateursAnalyseController::class, 'getIndicateurEvolution']);
+        Route::get('/indicateurs/export-excel', [IndicateursAnalyseController::class, 'exportExcel']);
+        Route::get('/indicateurs/periodes', [IndicateursAnalyseController::class, 'getPeriodes']);
+        Route::get('/indicateurs/exercices', [IndicateursAnalyseController::class, 'getExercices']);
+        Route::get('/indicateurs/entreprises', [IndicateursAnalyseController::class, 'getEntreprises']);
+    });
+});
+
+
+//Route Temporaires:
 
 
 require __DIR__ . '/settings.php';
