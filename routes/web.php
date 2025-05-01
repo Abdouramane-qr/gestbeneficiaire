@@ -191,6 +191,8 @@ Route::prefix('api')->group(function () {
         Route::get('/indicateurs/periodes', [IndicateursAnalyseController::class, 'getPeriodes']);
         Route::get('/indicateurs/exercices', [IndicateursAnalyseController::class, 'getExercices']);
         Route::get('/indicateurs/entreprises', [IndicateursAnalyseController::class, 'getEntreprises']);
+        Route::get('/indicateurs/analyse-integree', [IndicateursAnalyseController::class, 'showAnalyseIntegree'])
+    ->name('indicateurs.analyse-integree');
     });
 });
 

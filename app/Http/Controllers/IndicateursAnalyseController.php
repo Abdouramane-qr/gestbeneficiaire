@@ -44,12 +44,15 @@ class IndicateursAnalyseController extends Controller
         // Période par défaut
         $periodeType = $request->input('periode_type', 'Trimestrielle');
 
+        // S'assurer que exceptionnel est inclus dans les périodes
+        $periodes = ['Trimestrielle', 'Semestrielle', 'Annuelle', 'Occasionnelle'];
+
         return Inertia::render('Indicateurs/Analyse', [
             'exercices' => $exercices,
             'entreprises' => $entreprises,
             'defaultExerciceId' => $exerciceId,
             'defaultPeriodeType' => $periodeType,
-            'periodes' => ['Trimestrielle', 'Semestrielle', 'Annuelle'],
+            'periodes' => $periodes, // Périodes standardisées
             // On ne charge pas les données ici, elles seront chargées via une API
         ]);
     }
@@ -76,8 +79,12 @@ class IndicateursAnalyseController extends Controller
                 'entreprise_id' => $entrepriseId
             ]);
 
+            // Normaliser le type de période pour éviter les problèmes de casse
+            $periodeType = $this->normalizePeriodeType($periodeType);
+
             // Vérifier la validité du type de période
-            if (!in_array($periodeType, ['Trimestrielle', 'Semestrielle', 'Annuelle', 'Occasionnelle'])) {
+            $periodesValides = ['Trimestriel', 'Semestriel', 'Annuel', 'Occasionnelle'];
+            if (!in_array($periodeType, $periodesValides)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Type de période invalide',
@@ -89,12 +96,13 @@ class IndicateursAnalyseController extends Controller
             $donneesAvecCalculs = [];
             $donnees = [];
             $donneesVides = true;
+            $isDemo = false;
 
             // Déterminer les variations possibles du nom de période
             $variationsPeriode = $this->getVariationsPeriode($periodeType);
 
             // Récupérer les collectes pour la période demandée avec toutes les variations possibles
-            $query = \App\Models\Collecte::where(function($q) use ($variationsPeriode) {
+            $query = Collecte::where(function($q) use ($variationsPeriode) {
                 foreach ($variationsPeriode as $index => $variation) {
                     if ($index === 0) {
                         $q->where('periode', 'like', '%' . $variation . '%');
@@ -171,7 +179,7 @@ class IndicateursAnalyseController extends Controller
                         if (!is_array($indicateurs) ||
                             in_array($categorie, [
                                 'type_collecte', 'formType', 'beneficiaires_id',
-                                'beneficiaire_nom', 'beneficiaire_prenom'
+                                'nom', 'prenom'
                             ])) {
                             continue;
                         }
@@ -215,28 +223,21 @@ class IndicateursAnalyseController extends Controller
 
             // Si aucune donnée valide n'a été trouvée, utiliser des données de démo
             if (empty($donneesAvecCalculs)) {
-                Log::warning('Aucune donnée trouvée ou traitable, utilisation des données de démo');
+                Log::warning('Aucune donnée trouvée ou traitable');
 
-                // Facteur multiplicateur selon la période
-                $facteur = 1;
-                switch ($periodeType) {
-                    case 'Trimestrielle':
-                        $facteur = 0.25;
-                        break;
-                    case 'Semestrielle':
-                        $facteur = 0.5;
-                        break;
-                    case 'Annuelle':
-                        $facteur = 1;
-                        break;
-                    default:
-                        $facteur = 1;
-                }
-
-                // Utiliser des données de démo adaptées à la période
-                $donneesAvecCalculs = $this->getDonneesDemoParPeriode($periodeType, $facteur, $entrepriseId);
+                // Retourner la réponse sans données de démo
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'raw_data' => [],
+                    'periode_type' => $periodeType,
+                    'exercice_id' => $exerciceId,
+                    'entreprise_id' => $entrepriseId,
+                    'demo_data' => false,
+                    'no_data' => true, // Nouveau flag pour indiquer clairement l'absence de données
+                    'timestamp' => now()->toIso8601String(),
+                ]);
             }
-
             // Retourner la réponse avec les données
             return response()->json([
                 'success' => true,
@@ -245,7 +246,7 @@ class IndicateursAnalyseController extends Controller
                 'periode_type' => $periodeType,
                 'exercice_id' => $exerciceId,
                 'entreprise_id' => $entrepriseId,
-                'demo_data' => empty($collectes->count()),
+                'demo_data' => $isDemo, // Indiquer si ce sont des données de démo
                 'timestamp' => now()->toIso8601String(),
             ]);
         } catch (\Exception $e) {
@@ -261,6 +262,35 @@ class IndicateursAnalyseController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
+    }
+
+    /**
+     * Normalise le type de période pour éviter les problèmes de casse
+     *
+     * @param string $periodeType
+     * @return string
+     */
+    private function normalizePeriodeType(string $periodeType): string
+    {
+        // Convertir en minuscules pour la comparaison
+        $type = strtolower($periodeType);
+
+        // Renvoyer le format standard
+        if (strpos($type, 'trimestre') !== false || strpos($type, 'trimestriel') !== false) {
+            return 'Trimestriel';
+        }
+        if (strpos($type, 'semestre') !== false || strpos($type, 'semestriel') !== false) {
+            return 'Semestriel';
+        }
+        if (strpos($type, 'annuel') !== false || strpos($type, 'annee') !== false || strpos($type, 'an') !== false) {
+            return 'Annuel';
+        }
+        if (strpos($type, 'exception') !== false || strpos($type, 'occasion') !== false) {
+            return 'Occasionnelle';
+        }
+
+        // Par défaut, retourner la valeur originale
+        return $periodeType;
     }
 
     /**
@@ -283,21 +313,34 @@ class IndicateursAnalyseController extends Controller
         switch ($periodeType) {
             case 'Trimestrielle':
                 $variations[] = 'trimestre';
-                $variations[] = 'trimestriel';
+                $variations[] = 'Trimestriel';
+                $variations[] = 'trim';
+                $variations[] = 't1'; // Premier trimestre
+                $variations[] = 't2'; // Deuxième trimestre
+                $variations[] = 't3'; // Troisième trimestre
+                $variations[] = 't4'; // Quatrième trimestre
                 break;
             case 'Semestrielle':
                 $variations[] = 'semestre';
-                $variations[] = 'semestriel';
+                $variations[] = 'Semestriel';
+                $variations[] = 'sem';
+                $variations[] = 's1'; // Premier semestre
+                $variations[] = 's2'; // Deuxième semestre
                 break;
             case 'Annuelle':
                 $variations[] = 'annuel';
-                $variations[] = 'annee';
+                $variations[] = 'Annuel';
                 $variations[] = 'an';
+                $variations[] = 'année';
+                $variations[] = 'ann';
                 break;
             case 'Occasionnelle':
                 $variations[] = 'occasionnel';
                 $variations[] = 'exceptionnel';
                 $variations[] = 'exception';
+                $variations[] = 'except';
+                $variations[] = 'occasion';
+                $variations[] = 'occa';
                 break;
         }
 
@@ -311,13 +354,113 @@ class IndicateursAnalyseController extends Controller
      * @param string $periodeType
      * @return array
      */
+    // private function transformerDonneesExceptionnelles(array $donneesExceptionnelles, string $periodeType): array
+    // {
+    //     // Créer une structure standard compatible avec votre frontend
+    //     $donneesTransformees = [];
+
+    //     // Traiter spécifiquement selon la période
+    //     if ($periodeType === 'Occasionnelle') {
+    //         // Création de catégories basées sur les données exceptionnelles
+    //         $indicateursFormation = [];
+    //         $indicateursBancarisation = [];
+    //         $indicateursAppreciation = [];
+
+    //         // Traiter les données de formation
+    //         if (isset($donneesExceptionnelles['formation_technique_recu']) && $donneesExceptionnelles['formation_technique_recu']) {
+    //             $indicateursFormation['formation_technique_recu'] = 1;
+    //         }
+
+    //         if (isset($donneesExceptionnelles['formation_entrepreneuriat_recu']) && $donneesExceptionnelles['formation_entrepreneuriat_recu']) {
+    //             $indicateursFormation['formation_entrepreneuriat_recu'] = 1;
+    //         }
+
+    //         if (isset($donneesExceptionnelles['formations_techniques']) && is_array($donneesExceptionnelles['formations_techniques'])) {
+    //             $indicateursFormation['nbr_formations_techniques'] = count($donneesExceptionnelles['formations_techniques']);
+    //         }
+
+    //         if (isset($donneesExceptionnelles['formations_entrepreneuriat']) && is_array($donneesExceptionnelles['formations_entrepreneuriat'])) {
+    //             $indicateursFormation['nbr_formations_entrepreneuriat'] = count($donneesExceptionnelles['formations_entrepreneuriat']);
+    //         }
+
+    //         // Traiter les données de bancarisation
+    //         if (isset($donneesExceptionnelles['est_bancarise_demarrage'])) {
+    //             $indicateursBancarisation['est_bancarise_demarrage'] = $donneesExceptionnelles['est_bancarise_demarrage'] ? 1 : 0;
+    //         }
+
+    //         if (isset($donneesExceptionnelles['est_bancarise_fin'])) {
+    //             $indicateursBancarisation['est_bancarise_fin'] = $donneesExceptionnelles['est_bancarise_fin'] ? 1 : 0;
+    //         }
+
+    //         // Traiter les données d'appréciation
+    //         foreach (['appreciation_organisation_interne_demarrage', 'appreciation_services_adherents_demarrage',
+    //                   'appreciation_relations_externes_demarrage', 'appreciation_organisation_interne_fin',
+    //                   'appreciation_services_adherents_fin', 'appreciation_relations_externes_fin'] as $cle) {
+    //             if (isset($donneesExceptionnelles[$cle]) && is_numeric($donneesExceptionnelles[$cle])) {
+    //                 $indicateursAppreciation[$cle] = $donneesExceptionnelles[$cle];
+    //             }
+    //         }
+
+    //         // Regrouper par catégories
+    //         if (!empty($indicateursFormation)) {
+    //             $donneesTransformees['Indicateurs de formation'] = $indicateursFormation;
+    //         }
+
+    //         if (!empty($indicateursBancarisation)) {
+    //             $donneesTransformees['Indicateurs de bancarisation'] = $indicateursBancarisation;
+    //         }
+
+    //         if (!empty($indicateursAppreciation)) {
+    //             $donneesTransformees['Indicateurs d\'appréciation'] = $indicateursAppreciation;
+    //         }
+
+    //         // Ajouter les autres données comme catégorie générique si nécessaire
+    //         $autresIndicateurs = [];
+    //         foreach ($donneesExceptionnelles as $cle => $valeur) {
+    //             if (is_numeric($valeur) &&
+    //                 !in_array($cle, array_merge(
+    //                     array_keys($indicateursFormation),
+    //                     array_keys($indicateursBancarisation),
+    //                     array_keys($indicateursAppreciation)
+    //                 ))) {
+    //                 $autresIndicateurs[$cle] = $valeur;
+    //             }
+    //         }
+
+    //         if (!empty($autresIndicateurs)) {
+    //             $donneesTransformees['Autres indicateurs exceptionnels'] = $autresIndicateurs;
+    //         }
+    //     }
+
+    //     // Si aucune donnée transformée, retourner les données brutes
+    //     if (empty($donneesTransformees)) {
+    //         // Extraire seulement les valeurs numériques
+    //         $donneesNumeriques = [];
+    //         foreach ($donneesExceptionnelles as $cle => $valeur) {
+    //             if (is_numeric($valeur)) {
+    //                 $donneesNumeriques[$cle] = $valeur;
+    //             }
+    //         }
+
+    //         if (!empty($donneesNumeriques)) {
+    //             $donneesTransformees['Indicateurs exceptionnels'] = $donneesNumeriques;
+    //         }
+    //     }
+
+    //     return $donneesTransformees;
+    // }
     private function transformerDonneesExceptionnelles(array $donneesExceptionnelles, string $periodeType): array
     {
         // Créer une structure standard compatible avec votre frontend
         $donneesTransformees = [];
 
-        // Traiter spécifiquement selon la période
-        if ($periodeType === 'Occasionnelle') {
+        // Si le tableau contient déjà la clé 'beneficiaire_nom', c'est probablement un formulaire exceptionnel complet
+        if (isset($donneesExceptionnelles['beneficiaire_nom']) ||
+            isset($donneesExceptionnelles['beneficiaires_id'])) {
+
+            // Traitement spécifique pour le type de formulaire exceptionnel
+            Log::info('Détection d\'un formulaire exceptionnel complet');
+
             // Création de catégories basées sur les données exceptionnelles
             $indicateursFormation = [];
             $indicateursBancarisation = [];
@@ -371,27 +514,27 @@ class IndicateursAnalyseController extends Controller
                 $donneesTransformees['Indicateurs d\'appréciation'] = $indicateursAppreciation;
             }
 
-            // Ajouter les autres données comme catégorie générique si nécessaire
-            $autresIndicateurs = [];
-            foreach ($donneesExceptionnelles as $cle => $valeur) {
-                if (is_numeric($valeur) &&
-                    !in_array($cle, array_merge(
-                        array_keys($indicateursFormation),
-                        array_keys($indicateursBancarisation),
-                        array_keys($indicateursAppreciation)
-                    ))) {
-                    $autresIndicateurs[$cle] = $valeur;
-                }
-            }
+            // Ajouter des informations sur le bénéficiaire pour aider à l'identification
+            if (isset($donneesExceptionnelles['nom']) || isset($donneesExceptionnelles['prenom'])) {
+                $nomComplet = trim(($donneesExceptionnelles['nom'] ?? '') . ' ' .
+                                 ($donneesExceptionnelles['prenom'] ?? ''));
 
-            if (!empty($autresIndicateurs)) {
-                $donneesTransformees['Autres indicateurs exceptionnels'] = $autresIndicateurs;
+                if (!empty($nomComplet)) {
+                    $donneesTransformees['Informations bénéficiaire'] = [
+                        'nom_beneficiaire' => $nomComplet,
+                        'id_beneficiaire' => $donneesExceptionnelles['beneficiaires_id'] ?? 0
+                    ];
+                }
             }
         }
 
-        // Si aucune donnée transformée, retourner les données brutes
+        // Si aucune donnée transformée, extraire les valeurs numériques
         if (empty($donneesTransformees)) {
-            // Extraire seulement les valeurs numériques
+            // Log pour débogage
+            Log::info('Extraction des valeurs numériques depuis les données exceptionnelles', [
+                'keys' => array_keys($donneesExceptionnelles)
+            ]);
+
             $donneesNumeriques = [];
             foreach ($donneesExceptionnelles as $cle => $valeur) {
                 if (is_numeric($valeur)) {
@@ -404,11 +547,16 @@ class IndicateursAnalyseController extends Controller
             }
         }
 
+        // Log du résultat pour débogage
+        Log::info('Données transformées depuis le format exceptionnel', [
+            'categories' => array_keys($donneesTransformees)
+        ]);
+
         return $donneesTransformees;
     }
-
     /**
      * Générer des données de démonstration pour le tableau de bord selon la période
+     * Les données de démo sont clairement marquées
      *
      * @param string $periodeType
      * @param float $facteur
@@ -491,7 +639,7 @@ class IndicateursAnalyseController extends Controller
                             'label' => 'Nombre de cycles de production réalisés',
                             'value' => 20,
                             'target' => 22,
-                            'evolution' => '-12%',
+'evolution' => '-12%',
                             'unite' => '',
                             'definition' => 'Nombre de cycles de production réalisés au cours du semestre',
                             'is_calculated' => false,
@@ -596,7 +744,7 @@ class IndicateursAnalyseController extends Controller
                 return [
                     "Ratios de Rentabilité et de solvabilité de l'entreprise" => [
                         [
-                            'id' => 'charges_financières',
+                            'id' => 'charges_financieres',
                             'label' => 'Charges financières (intérêts et frais)',
                             'value' => 25000,
                             'target' => 22500,
@@ -636,7 +784,7 @@ class IndicateursAnalyseController extends Controller
                             'value' => 256000,
                             'target' => 281600,
                             'evolution' => '+10%',
-                            'unite' => '',
+                            'unite' => 'FCFA',
                             'definition' => 'Montant cumulé des crédits reçus',
                             'is_calculated' => false,
                             'metadata' => ['demo' => true]
@@ -847,7 +995,7 @@ class IndicateursAnalyseController extends Controller
             $validated = $request->validate([
                 'indicateur_id' => 'required|string',
                 'categorie' => 'required|string',
-                'periode_type' => 'required|string|in:Trimestrielle,Semestrielle,Annuelle',
+                'periode_type' => 'required|string|in:Trimestriel, Semestriel, Annuel,Occasionnelle',
                 'exercice_id' => 'nullable|integer|exists:exercices,id',
                 'entreprise_id' => 'nullable|integer|exists:entreprises,id',
             ]);
@@ -867,9 +1015,14 @@ class IndicateursAnalyseController extends Controller
                 $entrepriseId
             );
 
+            // Indiquer si ce sont des données de démo
+            $isDemo = count($evolutionData['evolution_data']) === 0 ||
+                      (isset($evolutionData['metadata']) && isset($evolutionData['metadata']['demo']) && $evolutionData['metadata']['demo']);
+
             return response()->json([
                 'success' => true,
                 'data' => $evolutionData,
+                'demo_data' => $isDemo
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de la récupération des données d\'évolution: ' . $e->getMessage());
@@ -891,8 +1044,9 @@ class IndicateursAnalyseController extends Controller
     public function exportExcel(Request $request)
     {
         try {
+            // Validation des entrées
             $validated = $request->validate([
-                'periode_type' => 'required|string|in:Trimestrielle,Semestrielle,Annuelle',
+                'periode_type' => 'required|string|in:Trimestrielle,Semestrielle,Annuelle,Occasionnelle',
                 'categorie' => 'nullable|string',
                 'exercice_id' => 'nullable|integer|exists:exercices,id',
                 'entreprise_id' => 'nullable|integer|exists:entreprises,id',
@@ -903,19 +1057,59 @@ class IndicateursAnalyseController extends Controller
             $exerciceId = $validated['exercice_id'] ?? null;
             $entrepriseId = $validated['entreprise_id'] ?? null;
 
-            // Générer l'export Excel
-            return $this->indicateursService->exportIndicateursToExcel(
+            // Log détaillé pour le débogage
+            Log::info('Demande d\'exportation Excel', [
+                'periodeType' => $periodeType,
+                'categorie' => $categorie,
+                'exerciceId' => $exerciceId,
+                'entrepriseId' => $entrepriseId
+            ]);
+
+            // Déléguer au service avec gestion d'erreur explicite
+            $response = $this->indicateursService->exportIndicateursToExcel(
                 $periodeType,
                 $categorie,
                 $exerciceId,
                 $entrepriseId
             );
+
+            // Si le service retourne une réponse JSON (en cas d'erreur), la relayer
+            if ($response instanceof \Illuminate\Http\JsonResponse) {
+                Log::info('Réponse JSON reçue du service, relai au client', [
+                    'status' => $response->getStatusCode()
+                ]);
+                return $response;
+            }
+
+            // Sinon, c'est une réponse de téléchargement de fichier
+            Log::info('Fichier Excel généré avec succès');
+            return $response;
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Erreur de validation des entrées
+            Log::warning('Validation échouée pour l\'exportation Excel', [
+                'errors' => $e->errors()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Paramètres d\'exportation invalides',
+                'error' => $e->errors()
+            ], 422);
+
         } catch (\Exception $e) {
-            Log::error('Erreur lors de l\'exportation Excel: ' . $e->getMessage());
+            // Autre erreur inattendue
+            Log::error('Erreur inattendue lors de l\'exportation Excel', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Une erreur est survenue lors de l\'exportation',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error' => config('app.debug') ? $e->getMessage() : 'Erreur interne du serveur'
             ], 500);
         }
     }
@@ -935,6 +1129,9 @@ class IndicateursAnalyseController extends Controller
             $periodeType = $request->query('periode_type', 'Trimestrielle');
             $exerciceId = $request->query('exercice_id');
 
+            // Normaliser le type de période
+            $periodeType = $this->normalizePeriodeType($periodeType);
+
             if (!$categorie) {
                 return redirect()->route('indicateurs.analyse')
                     ->with('error', 'La catégorie est requise pour afficher les détails d\'un indicateur');
@@ -951,12 +1148,17 @@ class IndicateursAnalyseController extends Controller
             // Récupérer les exercices pour les filtres
             $exercices = Exercice::orderBy('annee', 'desc')->get();
 
+            // Vérifier si ce sont des données de démo
+            $isDemo = count($evolutionData['evolution_data']) === 0 ||
+                     (isset($evolutionData['metadata']) && isset($evolutionData['metadata']['demo']) && $evolutionData['metadata']['demo']);
+
             return Inertia::render('Indicateurs/Detail', [
                 'indicateur' => $evolutionData,
                 'exercices' => $exercices,
                 'periodeType' => $periodeType,
                 'categorie' => $categorie,
                 'exerciceId' => $exerciceId,
+                'demo_data' => $isDemo
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'affichage des détails de l\'indicateur: ' . $e->getMessage());
@@ -964,6 +1166,33 @@ class IndicateursAnalyseController extends Controller
                 ->with('error', 'Une erreur est survenue lors de l\'affichage des détails de l\'indicateur');
         }
     }
+
+
+    public function showAnalyseIntegree(Request $request)
+    {
+        // Récupérer les exercices et les entreprises pour les filtres
+        $exercices = Exercice::orderBy('annee', 'desc')->get();
+        $entreprises = Entreprise::select('id', 'nom_entreprise')->orderBy('nom_entreprise')->get();
+
+        // Par défaut, on utilise le dernier exercice actif
+        $exerciceActif = Exercice::where('actif', true)->orderBy('annee', 'desc')->first();
+        $exerciceId = $request->input('exercice_id', $exerciceActif ? $exerciceActif->id : null);
+
+        // Période par défaut
+        $periodeType = $request->input('periode_type', 'Trimestrielle');
+
+        // Périodes standardisées
+        $periodes = ['Trimestriel', 'Semestriel', 'Annuel', 'Occasionnelle'];
+
+        return Inertia::render('Indicateurs/AnalyseIntegree', [
+            'exercices' => $exercices,
+            'entreprises' => $entreprises,
+            'defaultExerciceId' => $exerciceId,
+            'defaultPeriodeType' => $periodeType,
+            'periodes' => $periodes,
+        ]);
+    }
+
 
     /**
      * Récupère la liste des exercices disponibles
@@ -1046,3 +1275,4 @@ class IndicateursAnalyseController extends Controller
         }
     }
 }
+
