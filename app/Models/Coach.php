@@ -15,15 +15,13 @@ class Coach extends Model
         'telephone',
         'specialite',
         'ong_id',
-        //'description',
+
         'est_actif',
-        // 'date_debut',
-        // 'fin_contrat',
+
     ];
 
     protected $casts = [
-        // 'date_debut' => 'date',
-        // 'fin_contrat' => 'date',
+       
         'est_actif' => 'boolean',
     ];
 

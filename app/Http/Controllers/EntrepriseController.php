@@ -216,7 +216,7 @@ public function export(Request $request)
         return $this->exportToPdf($entreprises, $filename);
 
     } catch (\Exception $e) {
-       
+
         return back()->with('error', 'Une erreur est survenue lors de l\'export: ' . $e->getMessage());
     }
 }
@@ -243,5 +243,32 @@ private function exportToPdf($entreprises, $filename)
     ]);
 
     return $pdf->download($filename . '.pdf');
+}
+
+
+/**
+ * Récupère la liste des entreprises pour l'API
+ *
+ * @return \Illuminate\Http\JsonResponse
+ */
+public function getEntreprises()
+{
+    try {
+        $entreprises = Entreprise::select('id', 'nom_entreprise', 'secteur_activite')
+            ->orderBy('nom_entreprise')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $entreprises,
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Erreur lors de la récupération des entreprises: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Une erreur est survenue lors de la récupération des entreprises',
+            'error' => config('app.debug') ? $e->getMessage() : null,
+        ], 500);
+    }
 }
 }

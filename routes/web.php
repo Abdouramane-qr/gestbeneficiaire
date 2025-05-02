@@ -182,6 +182,8 @@ Route::get('/data-dashboard', [UserController::class, 'getDashboard'])->name('us
 
 
 // Routes API - Ne pas appliquer le middleware Inertia à ces routes
+
+
 Route::prefix('api')->group(function () {
     Route::middleware(['auth'])->group(function () {
         // API pour les indicateurs - Ces endpoints retournent du JSON, pas des réponses Inertia
@@ -195,7 +197,8 @@ Route::prefix('api')->group(function () {
     ->name('indicateurs.analyse-integree');
     });
 });
-
+Route::get('/api/beneficiaires', [IndicateursAnalyseController::class, 'getBeneficiaires'])
+    ->name('api.beneficiaires');
 
 //Route Temporaires:
 

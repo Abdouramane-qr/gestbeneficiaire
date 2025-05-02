@@ -1644,6 +1644,834 @@
 // };
 
 // export default Analyse;
+// // resources/js/Pages/Indicateurs/Analyse.tsx
+// import { Head, Link } from '@inertiajs/react';
+// import axios from 'axios';
+// import React, { useEffect, useMemo, useState } from 'react';
+// import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
+// // Composants d'interface utilisateur
+// import { PageProps } from '@/types';
+
+// // Icônes pour l'interface (utilise Lucide React)
+// import AppLayout from '@/layouts/app-layout';
+// import { AlertCircle, ChevronDown, ChevronUp, Download, Eye, FileSpreadsheet, Info, RefreshCw as Refresh, X } from 'lucide-react';
+
+// // Types pour les données d'indicateurs
+// interface Indicateur {
+//     id: string;
+//     label: string;
+//     value: number;
+//     target: number;
+//     evolution: string;
+//     unite: string;
+//     definition: string;
+//     is_calculated?: boolean;
+//     metadata?: {
+//         entreprise_ids: number[];
+//         collecte_ids: number[];
+//         periodes: string[];
+//         nombre_points_donnees: number;
+//         demo?: boolean;
+//     };
+// }
+
+// interface IndicateursParCategorie {
+//     [categorie: string]: Indicateur[];
+// }
+
+// interface Exercice {
+//     id: number;
+//     annee: number;
+//     date_debut: string;
+//     date_fin: string;
+//     actif: boolean;
+// }
+
+// interface Entreprise {
+//     id: number;
+//     nom_entreprise: string;
+//     secteur_activite: string;
+// }
+
+// // Props pour le composant
+// interface AnalyseProps extends PageProps {
+//     exercices: Exercice[];
+//     entreprises: Entreprise[];
+//     defaultExerciceId: number | null;
+//     defaultPeriodeType: string;
+//     periodes: string[];
+// }
+
+// // Constantes pour les couleurs
+// const COLORS = {
+//     primary: '#3498db',
+//     secondary: '#2ecc71',
+//     tertiary: '#e74c3c',
+//     dark: '#2c3e50',
+//     light: '#ecf0f1',
+//     warning: '#f39c12',
+//     success: '#27ae60',
+// };
+
+// const NoDataMessage: React.FC = () => {
+//     return (
+//         <div className="mb-6 rounded-lg border-l-4 border-yellow-400 bg-yellow-50 p-6 shadow-sm">
+//             <div className="flex">
+//                 <div className="flex-shrink-0">
+//                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+//                         <path
+//                             strokeLinecap="round"
+//                             strokeLinejoin="round"
+//                             strokeWidth={2}
+//                             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+//                         />
+//                     </svg>
+//                 </div>
+//                 <div className="ml-3">
+//                     <h3 className="text-lg font-medium text-yellow-800">Aucune donnée disponible</h3>
+//                     <div className="mt-2 text-yellow-700">
+//                         <p>Aucune donnée n'a été trouvée pour les critères sélectionnés. Veuillez vérifier que:</p>
+//                         <ul className="mt-1 ml-5 list-disc">
+//                             <li>Des collectes de données ont été effectuées pour cette période</li>
+//                             <li>L'entreprise sélectionnée a des données associées</li>
+//                             <li>L'exercice choisi contient des données pour cette période</li>
+//                         </ul>
+//                         <p className="mt-2">Essayez de modifier les filtres ou d'effectuer une nouvelle collecte de données.</p>
+//                     </div>
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// };
+
+// const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, defaultExerciceId, defaultPeriodeType, periodes }) => {
+//     // États
+//     const [activeTab, setActiveTab] = useState<'analysis' | 'calculations'>('analysis');
+//     const [activePeriode, setActivePeriode] = useState<string>(defaultPeriodeType);
+//     const [activeCategorie, setActiveCategorie] = useState<string>('');
+//     const [selectedExerciceId, setSelectedExerciceId] = useState<number | null>(defaultExerciceId);
+//     const [selectedEntrepriseId, setSelectedEntrepriseId] = useState<number | null>(null);
+//     const [indicateursData, setIndicateursData] = useState<IndicateursParCategorie>({});
+//     const [isLoading, setIsLoading] = useState<boolean>(true);
+//     const [error, setError] = useState<string | null>(null);
+//     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+//     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+//     const [visibleColumns, setVisibleColumns] = useState({
+//         valeur: true,
+//         cible: true,
+//         evolution: true,
+//         definition: true,
+//     });
+//     const [isDemoData, setIsDemoData] = useState<boolean>(false);
+
+//     const formatNumber = (num: number): string => {
+//         if (typeof num !== 'number') return String(num);
+//         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+//     };
+
+//     useEffect(() => {
+//         fetchIndicateursData();
+//     }, [activePeriode, selectedExerciceId, selectedEntrepriseId]);
+
+//     const fetchIndicateursData = async () => {
+//         try {
+//             setIsLoading(true);
+//             setError(null);
+//             setIsDemoData(false);
+
+//             const periodeToUse = activePeriode || 'Trimestrielle';
+
+//             console.log('Envoi des paramètres:', {
+//                 periode_type: periodeToUse,
+//                 exercice_id: selectedExerciceId,
+//                 entreprise_id: selectedEntrepriseId,
+//             });
+
+//             const response = await axios.get('/api/indicateurs/analyse', {
+//                 params: {
+//                     periode_type: periodeToUse,
+//                     exercice_id: selectedExerciceId,
+//                     entreprise_id: selectedEntrepriseId,
+//                 },
+//                 headers: {
+//                     Accept: 'application/json',
+//                     'X-Requested-With': 'XMLHttpRequest',
+//                 },
+//             });
+
+//             if (response.data.success) {
+//                 if (response.data.no_data) {
+//                     setIndicateursData({});
+//                 } else {
+//                     setIndicateursData(response.data.data);
+//                     setIsDemoData(response.data.demo_data || false);
+//                 }
+
+//                 setLastUpdate(new Date());
+
+//                 const categories = Object.keys(response.data.data || {});
+//                 if (categories.length > 0 && (!activeCategorie || !categories.includes(activeCategorie))) {
+//                     setActiveCategorie(categories[0]);
+//                 } else if (categories.length === 0) {
+//                     setActiveCategorie('');
+//                 }
+//             } else {
+//                 setError('Échec de la récupération des données');
+//             }
+//         } catch (err) {
+//             console.error('Erreur lors de la récupération des données:', err);
+//             setError('Une erreur est survenue lors de la récupération des données');
+//         } finally {
+//             setIsLoading(false);
+//         }
+//     };
+
+//     const categoriesDisponibles = useMemo(() => {
+//         return Object.keys(indicateursData);
+//     }, [indicateursData]);
+
+//     const indicateursActifs = useMemo(() => {
+//         if (!activeCategorie || !indicateursData[activeCategorie]) return [];
+//         return indicateursData[activeCategorie];
+//     }, [indicateursData, activeCategorie]);
+
+//     const exportToExcel = (categorie: string) => {
+//         const params = new URLSearchParams({
+//             periode_type: activePeriode,
+//             categorie: categorie,
+//         });
+
+//         if (selectedExerciceId) {
+//             params.append('exercice_id', selectedExerciceId.toString());
+//         }
+
+//         if (selectedEntrepriseId) {
+//             params.append('entreprise_id', selectedEntrepriseId.toString());
+//         }
+
+//         window.location.href = `/api/indicateurs/export-excel?${params.toString()}`;
+//     };
+
+//     const exportAllToExcel = () => {
+//         const params = new URLSearchParams({
+//             periode_type: activePeriode,
+//         });
+
+//         if (selectedExerciceId) {
+//             params.append('exercice_id', selectedExerciceId.toString());
+//         }
+
+//         if (selectedEntrepriseId) {
+//             params.append('entreprise_id', selectedEntrepriseId.toString());
+//         }
+
+//         window.location.href = `/api/indicateurs/export-excel?${params.toString()}`;
+//     };
+
+//     const toggleCategoryExpand = (categorie: string) => {
+//         setExpandedCategories((prev) => ({
+//             ...prev,
+//             [categorie]: !prev[categorie],
+//         }));
+//     };
+
+//     const generateChartData = (indicateur: Indicateur) => {
+//         const baseValue = indicateur.value * 0.7;
+//         return [
+//             { name: 'P1', value: Math.round(baseValue) },
+//             { name: 'P2', value: Math.round(baseValue * 1.2) },
+//             { name: 'P3', value: Math.round(baseValue * 1.3) },
+//             { name: 'P4', value: indicateur.value },
+//         ];
+//     };
+
+//     const generateSummaryChartData = () => {
+//         if (!indicateursActifs.length) return [];
+//         const limitedIndicateurs = indicateursActifs.slice(0, 8);
+//         return limitedIndicateurs.map((ind) => ({
+//             name: ind.label.length > 20 ? ind.label.substring(0, 20) + '...' : ind.label,
+//             valeur: ind.value,
+//             cible: ind.target,
+//         }));
+//     };
+
+//     const getEvolutionClass = (evolution: string) => {
+//         if (!evolution) return 'neutral';
+//         if (evolution.startsWith('+')) return 'positive';
+//         if (evolution.startsWith('-')) return 'negative';
+//         return 'neutral';
+//     };
+
+//     const viewIndicateurDetails = (indicateurId: string) => {
+//         const params = new URLSearchParams({
+//             categorie: activeCategorie,
+//             periode_type: activePeriode,
+//         });
+
+//         if (selectedExerciceId) {
+//             params.append('exercice_id', selectedExerciceId.toString());
+//         }
+
+//         window.location.href = `/indicateurs/detail/${indicateurId}?${params.toString()}`;
+//     };
+
+//     return (
+//         <AppLayout
+//             title="Tableau de Bord des Indicateurs"
+//             user={auth.user}
+//             header={<h2 className="text-xl leading-tight font-semibold text-gray-800">Tableau de Bord des Indicateurs</h2>}
+//         >
+//             <Head title="Analyse des Indicateurs" />
+
+//             <div className="bg-gradient-to-r from-blue-800 to-blue-600 p-4 text-white md:p-6">
+//                 <div className="flex items-center justify-between">
+//                     <div>
+//                         <h1 className="text-xl font-bold md:text-2xl">Tableau de Bord des Indicateurs</h1>
+//                         <p className="mt-1 text-sm opacity-80 md:text-base">Analyse des performances et export des données</p>
+//                     </div>
+//                     <div className="flex gap-2">
+//                         <Link
+//                             href={route('indicateurs.analyse-integree')}
+//                             className="flex items-center gap-2 rounded-md bg-white/20 px-3 py-2 text-sm text-white transition-colors hover:bg-white/30"
+//                         >
+//                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+//                                 <path
+//                                     fillRule="evenodd"
+//                                     d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z"
+//                                     clipRule="evenodd"
+//                                 />
+//                             </svg>
+//                             <span className="hidden md:inline">Interface avancée</span>
+//                         </Link>
+//                         <button
+//                             onClick={() => fetchIndicateursData()}
+//                             className="flex items-center gap-2 rounded-md bg-white/20 px-3 py-2 text-sm text-white transition-colors hover:bg-white/30"
+//                         >
+//                             <Refresh size={16} />
+//                             <span className="hidden md:inline">Actualiser</span>
+//                         </button>
+//                     </div>
+//                 </div>
+//             </div>
+
+//             {/* Alerte pour les données de démo */}
+//             {isDemoData && (
+//                 <div className="border-l-4 border-yellow-400 bg-yellow-50 p-4">
+//                     <div className="flex">
+//                         <div className="flex-shrink-0">
+//                             <AlertCircle className="h-5 w-5 text-yellow-400" />
+//                         </div>
+//                         <div className="ml-3">
+//                             <p className="text-sm text-yellow-700">
+//                                 <span className="font-medium">Attention:</span> Aucune donnée réelle n'a été trouvée pour les critères sélectionnés.
+//                                 Des données de démonstration sont affichées à titre d'exemple.
+//                             </p>
+//                         </div>
+//                     </div>
+//                 </div>
+//             )}
+
+//             {/* Filtres */}
+//             <div className="border-b border-gray-200 bg-gray-50 p-4">
+//                 <div className="flex flex-wrap items-center gap-4">
+//                     {/* Sélecteur d'exercice */}
+//                     <div className="w-full md:w-auto">
+//                         <label className="mb-1 block text-sm font-medium text-gray-700">Exercice</label>
+//                         <select
+//                             value={selectedExerciceId || ''}
+//                             onChange={(e) => setSelectedExerciceId(e.target.value ? parseInt(e.target.value) : null)}
+//                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+//                         >
+//                             <option value="">Tous les exercices</option>
+//                             {exercices.map((exercice) => (
+//                                 <option key={exercice.id} value={exercice.id}>
+//                                     {exercice.annee} {exercice.actif && '(Actif)'}
+//                                 </option>
+//                             ))}
+//                         </select>
+//                     </div>
+
+//                     {/* Sélecteur d'entreprise */}
+//                     <div className="w-full md:w-auto">
+//                         <label className="mb-1 block text-sm font-medium text-gray-700">Entreprise</label>
+//                         <select
+//                             value={selectedEntrepriseId || ''}
+//                             onChange={(e) => setSelectedEntrepriseId(e.target.value ? parseInt(e.target.value) : null)}
+//                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+//                         >
+//                             <option value="">Toutes les entreprises</option>
+//                             {entreprises.map((entreprise) => (
+//                                 <option key={entreprise.id} value={entreprise.id}>
+//                                     {entreprise.nom_entreprise}
+//                                 </option>
+//                             ))}
+//                         </select>
+//                     </div>
+
+//                     {/* Filtres appliqués */}
+//                     {(selectedExerciceId || selectedEntrepriseId) && (
+//                         <div className="ml-auto flex items-center gap-2">
+//                             <button
+//                                 onClick={() => {
+//                                     setSelectedExerciceId(null);
+//                                     setSelectedEntrepriseId(null);
+//                                 }}
+//                                 className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800"
+//                             >
+//                                 <X size={14} />
+//                                 <span>Réinitialiser les filtres</span>
+//                             </button>
+//                         </div>
+//                     )}
+//                 </div>
+//             </div>
+
+//             {/* Onglets */}
+//             <div className="flex border-b border-gray-200 bg-gray-100">
+//                 <button
+//                     className={`px-4 py-3 font-medium ${activeTab === 'analysis' ? 'border-b-2 border-blue-600 bg-white text-blue-600' : 'text-gray-600'}`}
+//                     onClick={() => setActiveTab('analysis')}
+//                 >
+//                     Analyse & Visualisation
+//                 </button>
+//                 <button
+//                     className={`px-4 py-3 font-medium ${activeTab === 'calculations' ? 'border-b-2 border-blue-600 bg-white text-blue-600' : 'text-gray-600'}`}
+//                     onClick={() => setActiveTab('calculations')}
+//                 >
+//                     Détail des Indicateurs
+//                 </button>
+//             </div>
+
+//             {/* État de chargement */}
+//             {isLoading && (
+//                 <div className="flex h-64 items-center justify-center">
+//                     <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500"></div>
+//                 </div>
+//             )}
+
+//             {/* Affichage des erreurs */}
+//             {error && !isLoading && (
+//                 <div className="mx-4 my-4 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700">
+//                     <p className="font-medium">Erreur</p>
+//                     <p>{error}</p>
+//                     <button onClick={fetchIndicateursData} className="mt-2 rounded bg-red-200 px-3 py-1 text-sm text-red-800 hover:bg-red-300">
+//                         Réessayer
+//                     </button>
+//                 </div>
+//             )}
+
+//             {/* Contenu de l'onglet d'analyse */}
+//             {activeTab === 'analysis' && !isLoading && !error && (
+//                 <div className="p-4 md:p-6">
+//                     {/* Sélecteur de période */}
+//                     <div className="mb-6">
+//                         <h3 className="mb-2 font-medium text-gray-700">Période:</h3>
+//                         <div className="flex flex-wrap gap-2">
+//                             {periodes.map((periode) => (
+//                                 <button
+//                                     key={periode}
+//                                     className={`rounded-md px-3 py-2 text-sm ${
+//                                         activePeriode === periode ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+//                                     }`}
+//                                     onClick={() => {
+//                                         setActivePeriode(periode);
+//                                         const newCategories = Object.keys(indicateursData);
+//                                         if (newCategories.length > 0) {
+//                                             setActiveCategorie(newCategories[0]);
+//                                         }
+//                                     }}
+//                                 >
+//                                     {periode}
+//                                 </button>
+//                             ))}
+//                         </div>
+//                     </div>
+
+//                     {/* Sélecteur de catégorie */}
+//                     {categoriesDisponibles.length > 0 ? (
+//                         <div className="mb-6">
+//                             <h3 className="mb-2 font-medium text-gray-700">Catégorie:</h3>
+//                             <div className="flex flex-wrap gap-2">
+//                                 {categoriesDisponibles.map((categorie) => (
+//                                     <button
+//                                         key={categorie}
+//                                         className={`rounded-md px-3 py-2 text-sm ${
+//                                             activeCategorie === categorie ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+//                                         }`}
+//                                         onClick={() => setActiveCategorie(categorie)}
+//                                     >
+//                                         {categorie.length > 30 ? categorie.substring(0, 30) + '...' : categorie}
+//                                     </button>
+//                                 ))}
+//                             </div>
+//                         </div>
+//                     ) : (
+//                         <NoDataMessage />
+//                     )}
+
+//                     {/* Contenu principal */}
+//                     {!isLoading && !error && activeCategorie && indicateursActifs.length > 0 ? (
+//                         <div>
+//                             <div className="mb-4 flex items-center justify-between">
+//                                 <h2 className="border-l-4 border-blue-500 pl-3 text-lg font-semibold text-gray-800">{activeCategorie}</h2>
+//                                 <button
+//                                     className="flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm text-white transition-colors hover:bg-green-700"
+//                                     onClick={() => exportToExcel(activeCategorie)}
+//                                 >
+//                                     <Download size={16} />
+//                                     <span>Exporter Excel</span>
+//                                 </button>
+//                             </div>
+
+//                             <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+//                                 {indicateursActifs.map((indicateur) => (
+//                                     <div
+//                                         key={indicateur.id}
+//                                         className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+//                                     >
+//                                         <div className="mb-3 flex items-center justify-between">
+//                                             <h3 className="font-medium text-gray-700" title={indicateur.label}>
+//                                                 {indicateur.label.length > 25 ? indicateur.label.substring(0, 25) + '...' : indicateur.label}
+//                                             </h3>
+//                                             <span
+//                                                 className={`rounded-full px-2 py-1 text-xs font-semibold ${
+//                                                     getEvolutionClass(indicateur.evolution) === 'positive'
+//                                                         ? 'bg-green-100 text-green-800'
+//                                                         : getEvolutionClass(indicateur.evolution) === 'negative'
+//                                                           ? 'bg-red-100 text-red-800'
+//                                                           : 'bg-blue-100 text-blue-800'
+//                                                 }`}
+//                                             >
+//                                                 {indicateur.evolution}
+//                                             </span>
+//                                         </div>
+
+//                                         <div className="mb-2">
+//                                             <span className="text-lg font-bold text-gray-800">{formatNumber(indicateur.value)}</span>
+//                                             {indicateur.unite && <span className="ml-1 text-sm text-gray-500">{indicateur.unite}</span>}
+//                                         </div>
+
+//                                         <div className="mb-3 text-sm text-gray-600">
+//                                             Cible: {formatNumber(indicateur.target)} {indicateur.unite}
+//                                         </div>
+
+//                                         <div className="mb-3 h-16">
+//                                             <ResponsiveContainer width="100%" height="100%">
+//                                                 <LineChart data={generateChartData(indicateur)}>
+//                                                     <Line
+//                                                         type="monotone"
+//                                                         dataKey="value"
+//                                                         stroke={COLORS.primary}
+//                                                         strokeWidth={2}
+//                                                         dot={false}
+//                                                         isAnimationActive={false}
+//                                                     />
+//                                                 </LineChart>
+//                                             </ResponsiveContainer>
+//                                         </div>
+
+//                                         <div className="mt-2 flex items-center justify-between">
+//                                             <div className="group relative flex items-center text-xs text-gray-500">
+//                                                 <Info size={14} className="mr-1" />
+//                                                 <span className="max-w-[180px] truncate">{indicateur.definition.substring(0, 60)}</span>
+//                                                 <div className="absolute bottom-full left-0 z-10 hidden w-64 rounded bg-gray-800 p-2 text-xs text-white shadow-lg group-hover:block">
+//                                                     {indicateur.definition}
+//                                                 </div>
+//                                             </div>
+
+//                                             <button
+//                                                 onClick={() => viewIndicateurDetails(indicateur.id)}
+//                                                 className="flex items-center text-xs text-blue-600 hover:text-blue-800"
+//                                             >
+//                                                 <Eye size={14} className="mr-1" />
+//                                                 <span>Détails</span>
+//                                             </button>
+//                                         </div>
+
+//                                         {indicateur.is_calculated && (
+//                                             <div className="absolute top-2 right-2">
+//                                                 <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800">Calculé</span>
+//                                             </div>
+//                                         )}
+//                                     </div>
+//                                 ))}
+//                             </div>
+
+//                             {indicateursActifs.length > 1 && (
+//                                 <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+//                                     <h3 className="mb-4 font-medium text-gray-700">Synthèse des indicateurs</h3>
+//                                     <div className="h-80">
+//                                         <ResponsiveContainer width="100%" height="100%">
+//                                             <BarChart data={generateSummaryChartData()} layout="vertical">
+//                                                 <CartesianGrid strokeDasharray="3 3" />
+//                                                 <XAxis type="number" />
+//                                                 <YAxis dataKey="name" type="category" width={150} />
+//                                                 <Tooltip
+//                                                     formatter={(value) => formatNumber(value as number)}
+//                                                     labelFormatter={(label) => `Indicateur: ${label}`}
+//                                                 />
+//                                                 <Legend />
+//                                                 <Bar dataKey="valeur" name="Valeur" fill={COLORS.primary} barSize={20} />
+//                                                 <Bar dataKey="cible" name="Cible" fill={COLORS.secondary} barSize={20} />
+//                                             </BarChart>
+//                                         </ResponsiveContainer>
+//                                     </div>
+//                                 </div>
+//                             )}
+//                         </div>
+//                     ) : (
+//                         !isLoading && !error && categoriesDisponibles.length === 0 && <NoDataMessage />
+//                     )}
+//                 </div>
+//             )}
+
+//             {/* Contenu de l'onglet détail */}
+//             {activeTab === 'calculations' && !isLoading && !error && (
+//                 <div className="p-4 md:p-6">
+//                     <div className="mb-6 flex items-center justify-between">
+//                         <h2 className="text-lg font-semibold text-gray-800">Détail des Indicateurs</h2>
+//                         <div className="text-sm text-gray-600">
+//                             Dernière mise à jour: <span>{lastUpdate.toLocaleString()}</span>
+//                         </div>
+//                     </div>
+
+//                     {/* Sélecteur de période */}
+//                     <div className="mb-6">
+//                         <h3 className="mb-2 font-medium text-gray-700">Période:</h3>
+//                         <div className="flex flex-wrap gap-2">
+//                             {periodes.map((periode) => (
+//                                 <button
+//                                     key={periode}
+//                                     className={`rounded-md px-3 py-2 text-sm ${
+//                                         activePeriode === periode ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+//                                     }`}
+//                                     onClick={() => setActivePeriode(periode)}
+//                                 >
+//                                     {periode}
+//                                 </button>
+//                             ))}
+//                         </div>
+//                     </div>
+
+//                     {/* Contrôles d'affichage */}
+//                     <div className="mb-6 flex flex-wrap items-center gap-4">
+//                         <div className="flex items-center gap-2">
+//                             <span className="text-sm font-medium text-gray-700">Colonnes:</span>
+//                             <label className="flex items-center gap-1">
+//                                 <input
+//                                     type="checkbox"
+//                                     checked={visibleColumns.valeur}
+//                                     onChange={() => setVisibleColumns({ ...visibleColumns, valeur: !visibleColumns.valeur })}
+//                                     className="rounded text-blue-600 focus:ring-blue-500"
+//                                 />
+//                                 <span className="text-sm text-gray-600">Valeur</span>
+//                             </label>
+//                             <label className="flex items-center gap-1">
+//                                 <input
+//                                     type="checkbox"
+//                                     checked={visibleColumns.cible}
+//                                     onChange={() => setVisibleColumns({ ...visibleColumns, cible: !visibleColumns.cible })}
+//                                     className="rounded text-blue-600 focus:ring-blue-500"
+//                                 />
+//                                 <span className="text-sm text-gray-600">Cible</span>
+//                             </label>
+//                             <label className="flex items-center gap-1">
+//                                 <input
+//                                     type="checkbox"
+//                                     checked={visibleColumns.evolution}
+//                                     onChange={() => setVisibleColumns({ ...visibleColumns, evolution: !visibleColumns.evolution })}
+//                                     className="rounded text-blue-600 focus:ring-blue-500"
+//                                 />
+//                                 <span className="text-sm text-gray-600">Évolution</span>
+//                             </label>
+//                             <label className="flex items-center gap-1">
+//                                 <input
+//                                     type="checkbox"
+//                                     checked={visibleColumns.definition}
+//                                     onChange={() => setVisibleColumns({ ...visibleColumns, definition: !visibleColumns.definition })}
+//                                     className="rounded text-blue-600 focus:ring-blue-500"
+//                                 />
+//                                 <span className="text-sm text-gray-600">Définition</span>
+//                             </label>
+//                         </div>
+
+//                         <button
+//                             className="ml-auto flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm text-white transition-colors hover:bg-green-700"
+//                             onClick={exportAllToExcel}
+//                         >
+//                             <Download size={16} />
+//                             <span>Exporter tout en Excel</span>
+//                         </button>
+//                     </div>
+
+//                     {/* Tableau détaillé des indicateurs */}
+//                     {categoriesDisponibles.length > 0 ? (
+//                         <div className="space-y-6">
+//                             {categoriesDisponibles.map((categorie) => (
+//                                 <div key={categorie} className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+//                                     <div
+//                                         className="flex cursor-pointer items-center justify-between bg-gray-50 px-4 py-3"
+//                                         onClick={() => toggleCategoryExpand(categorie)}
+//                                     >
+//                                         <h3 className="flex items-center gap-2 font-medium text-gray-800">
+//                                             {expandedCategories[categorie] === false ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+//                                             {categorie}
+//                                         </h3>
+//                                         <button
+//                                             className="flex items-center gap-2 text-sm text-green-700 hover:text-green-800"
+//                                             onClick={(e) => {
+//                                                 e.stopPropagation();
+//                                                 exportToExcel(categorie);
+//                                             }}
+//                                         >
+//                                             <FileSpreadsheet size={16} />
+//                                             <span>Exporter</span>
+//                                         </button>
+//                                     </div>
+
+//                                     {expandedCategories[categorie] !== false && (
+//                                         <div className="overflow-x-auto">
+//                                             <table className="min-w-full divide-y divide-gray-200">
+//                                                 <thead className="bg-gray-50">
+//                                                     <tr>
+//                                                         <th
+//                                                             scope="col"
+//                                                             className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+//                                                         >
+//                                                             Indicateur
+//                                                         </th>
+//                                                         {visibleColumns.valeur && (
+//                                                             <th
+//                                                                 scope="col"
+//                                                                 className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+//                                                             >
+//                                                                 Valeur
+//                                                             </th>
+//                                                         )}
+//                                                         {visibleColumns.cible && (
+//                                                             <th
+//                                                                 scope="col"
+//                                                                 className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+//                                                             >
+//                                                                 Cible
+//                                                             </th>
+//                                                         )}
+//                                                         {visibleColumns.evolution && (
+//                                                             <th
+//                                                                 scope="col"
+//                                                                 className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+//                                                             >
+//                                                                 Évolution
+//                                                             </th>
+//                                                         )}
+//                                                         {visibleColumns.definition && (
+//                                                             <th
+//                                                                 scope="col"
+//                                                                 className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+//                                                             >
+//                                                                 Définition
+//                                                             </th>
+//                                                         )}
+//                                                         <th
+//                                                             scope="col"
+//                                                             className="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase"
+//                                                         >
+//                                                             Actions
+//                                                         </th>
+//                                                     </tr>
+//                                                 </thead>
+//                                                 <tbody className="divide-y divide-gray-200 bg-white">
+//                                                     {indicateursData[categorie].map((indicateur) => (
+//                                                         <tr key={indicateur.id} className="hover:bg-gray-50">
+//                                                             <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
+//                                                                 {indicateur.label}
+//                                                                 {indicateur.is_calculated && (
+//                                                                     <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+//                                                                         Calculé
+//                                                                     </span>
+//                                                                 )}
+//                                                                 {indicateur.metadata?.demo && (
+//                                                                     <span className="ml-2 inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+//                                                                         Démo
+//                                                                     </span>
+//                                                                 )}
+//                                                             </td>
+//                                                             {visibleColumns.valeur && (
+//                                                                 <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
+//                                                                     <span className="font-medium">{formatNumber(indicateur.value)}</span>
+//                                                                     {indicateur.unite && (
+//                                                                         <span className="ml-1 text-gray-500">{indicateur.unite}</span>
+//                                                                     )}
+//                                                                 </td>
+//                                                             )}
+//                                                             {visibleColumns.cible && (
+//                                                                 <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
+//                                                                     <span className="font-medium">{formatNumber(indicateur.target)}</span>
+//                                                                     {indicateur.unite && (
+//                                                                         <span className="ml-1 text-gray-500">{indicateur.unite}</span>
+//                                                                     )}
+//                                                                 </td>
+//                                                             )}
+//                                                             {visibleColumns.evolution && (
+//                                                                 <td className="px-6 py-4 whitespace-nowrap">
+//                                                                     <span
+//                                                                         className={`inline-flex rounded-full px-2 py-1 text-xs leading-5 font-semibold ${
+//                                                                             getEvolutionClass(indicateur.evolution) === 'positive'
+//                                                                                 ? 'bg-green-100 text-green-800'
+//                                                                                 : getEvolutionClass(indicateur.evolution) === 'negative'
+//                                                                                   ? 'bg-red-100 text-red-800'
+//                                                                                   : 'bg-blue-100 text-blue-800'
+//                                                                         }`}
+//                                                                     >
+//                                                                         {indicateur.evolution}
+//                                                                     </span>
+//                                                                 </td>
+//                                                             )}
+//                                                             {visibleColumns.definition && (
+//                                                                 <td className="max-w-md px-6 py-4 text-sm text-gray-500">
+//                                                                     <div className="group relative">
+//                                                                         <div className="flex cursor-help items-center gap-1">
+//                                                                             <Info size={14} />
+//                                                                             <span className="max-w-[250px] truncate underline decoration-dotted">
+//                                                                                 {indicateur.definition.length > 50
+//                                                                                     ? indicateur.definition.substring(0, 50) + '...'
+//                                                                                     : indicateur.definition}
+//                                                                             </span>
+//                                                                         </div>
+//                                                                         <div className="absolute z-10 hidden w-72 rounded bg-gray-800 p-2 text-xs text-white shadow-lg group-hover:block">
+//                                                                             {indicateur.definition}
+//                                                                         </div>
+//                                                                     </div>
+//                                                                 </td>
+//                                                             )}
+//                                                             <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
+//                                                                 <button
+//                                                                     onClick={() => viewIndicateurDetails(indicateur.id)}
+//                                                                     className="text-blue-600 hover:text-blue-800"
+//                                                                 >
+//                                                                     <Eye size={16} />
+//                                                                 </button>
+//                                                             </td>
+//                                                         </tr>
+//                                                     ))}
+//                                                 </tbody>
+//                                             </table>
+//                                         </div>
+//                                     )}
+//                                 </div>
+//                             ))}
+//                         </div>
+//                     ) : (
+//                         <NoDataMessage />
+//                     )}
+//                 </div>
+//             )}
+//         </AppLayout>
+//     );
+// };
+
+// export default Analyse;
 // resources/js/Pages/Indicateurs/Analyse.tsx
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
@@ -1655,10 +2483,14 @@ import { PageProps } from '@/types';
 
 // Icônes pour l'interface (utilise Lucide React)
 import AppLayout from '@/layouts/app-layout';
-import { AlertCircle, ChevronDown, ChevronUp, Download, Eye, FileSpreadsheet, Info, RefreshCw as Refresh, X } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, Download, Eye, FileSpreadsheet, Info, Moon, RefreshCw as Refresh, Sun, X } from 'lucide-react';
+
+// Import des utilitaires pour le mode sombre
+import { initDarkMode, listenForThemeChanges, toggleDarkMode } from '@/Utils/darkMode';
 
 // Types pour les données d'indicateurs
 interface Indicateur {
+    [x: string]: string;
     id: string;
     label: string;
     value: number;
@@ -1716,10 +2548,16 @@ const COLORS = {
 
 const NoDataMessage: React.FC = () => {
     return (
-        <div className="mb-6 rounded-lg border-l-4 border-yellow-400 bg-yellow-50 p-6 shadow-sm">
-            <div className="flex">
-                <div className="flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="mb-6 rounded-lg border-l-4 border-yellow-400 bg-yellow-50 p-6 shadow-sm dark:border-yellow-600 dark:bg-yellow-900/20">
+            <div className="flex flex-col sm:flex-row">
+                <div className="mb-4 flex-shrink-0 sm:mr-4 sm:mb-0">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-yellow-400 dark:text-yellow-300"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
                         <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -1728,9 +2566,9 @@ const NoDataMessage: React.FC = () => {
                         />
                     </svg>
                 </div>
-                <div className="ml-3">
-                    <h3 className="text-lg font-medium text-yellow-800">Aucune donnée disponible</h3>
-                    <div className="mt-2 text-yellow-700">
+                <div>
+                    <h3 className="text-lg font-medium text-yellow-800 dark:text-yellow-300">Aucune donnée disponible</h3>
+                    <div className="mt-2 text-yellow-700 dark:text-yellow-400">
                         <p>Aucune donnée n'a été trouvée pour les critères sélectionnés. Veuillez vérifier que:</p>
                         <ul className="mt-1 ml-5 list-disc">
                             <li>Des collectes de données ont été effectuées pour cette période</li>
@@ -1746,6 +2584,9 @@ const NoDataMessage: React.FC = () => {
 };
 
 const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, defaultExerciceId, defaultPeriodeType, periodes }) => {
+    // État pour le thème - initialisation avec la fonction importée
+    const [isDarkMode, setIsDarkMode] = useState<boolean>(() => initDarkMode());
+
     // États
     const [activeTab, setActiveTab] = useState<'analysis' | 'calculations'>('analysis');
     const [activePeriode, setActivePeriode] = useState<string>(defaultPeriodeType);
@@ -1764,6 +2605,21 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
         definition: true,
     });
     const [isDemoData, setIsDemoData] = useState<boolean>(false);
+
+    // Écouter les changements de préférence système pour le mode sombre
+    useEffect(() => {
+        // Écouter les changements de préférence système
+        listenForThemeChanges((isDark) => {
+            setIsDarkMode(isDark);
+        });
+    }, []);
+
+    // Fonction pour basculer le mode sombre - utilise la fonction importée
+    const handleToggleDarkMode = () => {
+        const newDarkMode = !isDarkMode;
+        toggleDarkMode(newDarkMode);
+        setIsDarkMode(newDarkMode);
+    };
 
     const formatNumber = (num: number): string => {
         if (typeof num !== 'number') return String(num);
@@ -1920,11 +2776,22 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
         <AppLayout
             title="Tableau de Bord des Indicateurs"
             user={auth.user}
-            header={<h2 className="text-xl leading-tight font-semibold text-gray-800">Tableau de Bord des Indicateurs</h2>}
+            header={
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl leading-tight font-semibold text-gray-800 dark:text-gray-100">Tableau de Bord des Indicateurs</h2>
+                    <button
+                        onClick={handleToggleDarkMode}
+                        className="rounded-full bg-gray-200 p-2 text-gray-800 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                        aria-label={isDarkMode ? 'Passer au mode clair' : 'Passer au mode sombre'}
+                    >
+                        {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+                </div>
+            }
         >
             <Head title="Analyse des Indicateurs" />
 
-            <div className="bg-gradient-to-r from-blue-800 to-blue-600 p-4 text-white md:p-6">
+            <div className="bg-gradient-to-r from-blue-800 to-blue-600 p-4 text-white md:p-6 dark:from-blue-900 dark:to-blue-700">
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-xl font-bold md:text-2xl">Tableau de Bord des Indicateurs</h1>
@@ -1948,7 +2815,7 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                             onClick={() => fetchIndicateursData()}
                             className="flex items-center gap-2 rounded-md bg-white/20 px-3 py-2 text-sm text-white transition-colors hover:bg-white/30"
                         >
-                            <Refresh size={16} />
+                            <Refresh size={16} className={isLoading ? 'animate-spin' : ''} />
                             <span className="hidden md:inline">Actualiser</span>
                         </button>
                     </div>
@@ -1957,13 +2824,13 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
 
             {/* Alerte pour les données de démo */}
             {isDemoData && (
-                <div className="border-l-4 border-yellow-400 bg-yellow-50 p-4">
+                <div className="border-l-4 border-yellow-400 bg-yellow-50 p-4 dark:border-yellow-600 dark:bg-yellow-900/20">
                     <div className="flex">
                         <div className="flex-shrink-0">
-                            <AlertCircle className="h-5 w-5 text-yellow-400" />
+                            <AlertCircle className="h-5 w-5 text-yellow-400 dark:text-yellow-300" />
                         </div>
                         <div className="ml-3">
-                            <p className="text-sm text-yellow-700">
+                            <p className="text-sm text-yellow-700 dark:text-yellow-400">
                                 <span className="font-medium">Attention:</span> Aucune donnée réelle n'a été trouvée pour les critères sélectionnés.
                                 Des données de démonstration sont affichées à titre d'exemple.
                             </p>
@@ -1973,15 +2840,15 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
             )}
 
             {/* Filtres */}
-            <div className="border-b border-gray-200 bg-gray-50 p-4">
+            <div className="border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
                 <div className="flex flex-wrap items-center gap-4">
                     {/* Sélecteur d'exercice */}
                     <div className="w-full md:w-auto">
-                        <label className="mb-1 block text-sm font-medium text-gray-700">Exercice</label>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Exercice</label>
                         <select
                             value={selectedExerciceId || ''}
                             onChange={(e) => setSelectedExerciceId(e.target.value ? parseInt(e.target.value) : null)}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            className="block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                         >
                             <option value="">Tous les exercices</option>
                             {exercices.map((exercice) => (
@@ -1994,11 +2861,11 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
 
                     {/* Sélecteur d'entreprise */}
                     <div className="w-full md:w-auto">
-                        <label className="mb-1 block text-sm font-medium text-gray-700">Entreprise</label>
+                        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Entreprise</label>
                         <select
                             value={selectedEntrepriseId || ''}
                             onChange={(e) => setSelectedEntrepriseId(e.target.value ? parseInt(e.target.value) : null)}
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            className="block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                         >
                             <option value="">Toutes les entreprises</option>
                             {entreprises.map((entreprise) => (
@@ -2017,7 +2884,7 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                                     setSelectedExerciceId(null);
                                     setSelectedEntrepriseId(null);
                                 }}
-                                className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800"
+                                className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                             >
                                 <X size={14} />
                                 <span>Réinitialiser les filtres</span>
@@ -2028,15 +2895,15 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
             </div>
 
             {/* Onglets */}
-            <div className="flex border-b border-gray-200 bg-gray-100">
+            <div className="flex border-b border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
                 <button
-                    className={`px-4 py-3 font-medium ${activeTab === 'analysis' ? 'border-b-2 border-blue-600 bg-white text-blue-600' : 'text-gray-600'}`}
+                    className={`px-4 py-3 font-medium transition-colors ${activeTab === 'analysis' ? 'border-b-2 border-blue-600 bg-white text-blue-600 dark:border-blue-500 dark:bg-gray-900 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}`}
                     onClick={() => setActiveTab('analysis')}
                 >
                     Analyse & Visualisation
                 </button>
                 <button
-                    className={`px-4 py-3 font-medium ${activeTab === 'calculations' ? 'border-b-2 border-blue-600 bg-white text-blue-600' : 'text-gray-600'}`}
+                    className={`px-4 py-3 font-medium transition-colors ${activeTab === 'calculations' ? 'border-b-2 border-blue-600 bg-white text-blue-600 dark:border-blue-500 dark:bg-gray-900 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}`}
                     onClick={() => setActiveTab('calculations')}
                 >
                     Détail des Indicateurs
@@ -2046,16 +2913,19 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
             {/* État de chargement */}
             {isLoading && (
                 <div className="flex h-64 items-center justify-center">
-                    <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="h-12 w-12 animate-spin rounded-full border-t-2 border-b-2 border-blue-500 dark:border-blue-400"></div>
                 </div>
             )}
 
             {/* Affichage des erreurs */}
             {error && !isLoading && (
-                <div className="mx-4 my-4 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700">
+                <div className="mx-4 my-4 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400">
                     <p className="font-medium">Erreur</p>
                     <p>{error}</p>
-                    <button onClick={fetchIndicateursData} className="mt-2 rounded bg-red-200 px-3 py-1 text-sm text-red-800 hover:bg-red-300">
+                    <button
+                        onClick={fetchIndicateursData}
+                        className="mt-2 rounded bg-red-200 px-3 py-1 text-sm text-red-800 hover:bg-red-300 dark:bg-red-800 dark:text-red-200 dark:hover:bg-red-700"
+                    >
                         Réessayer
                     </button>
                 </div>
@@ -2066,13 +2936,15 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                 <div className="p-4 md:p-6">
                     {/* Sélecteur de période */}
                     <div className="mb-6">
-                        <h3 className="mb-2 font-medium text-gray-700">Période:</h3>
+                        <h3 className="mb-2 font-medium text-gray-700 dark:text-gray-300">Période:</h3>
                         <div className="flex flex-wrap gap-2">
                             {periodes.map((periode) => (
                                 <button
                                     key={periode}
-                                    className={`rounded-md px-3 py-2 text-sm ${
-                                        activePeriode === periode ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    className={`rounded-md px-3 py-2 text-sm transition-colors ${
+                                        activePeriode === periode
+                                            ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                                     }`}
                                     onClick={() => {
                                         setActivePeriode(periode);
@@ -2091,13 +2963,15 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                     {/* Sélecteur de catégorie */}
                     {categoriesDisponibles.length > 0 ? (
                         <div className="mb-6">
-                            <h3 className="mb-2 font-medium text-gray-700">Catégorie:</h3>
+                            <h3 className="mb-2 font-medium text-gray-700 dark:text-gray-300">Catégorie:</h3>
                             <div className="flex flex-wrap gap-2">
                                 {categoriesDisponibles.map((categorie) => (
                                     <button
                                         key={categorie}
-                                        className={`rounded-md px-3 py-2 text-sm ${
-                                            activeCategorie === categorie ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        className={`rounded-md px-3 py-2 text-sm transition-colors ${
+                                            activeCategorie === categorie
+                                                ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                                         }`}
                                         onClick={() => setActiveCategorie(categorie)}
                                     >
@@ -2114,9 +2988,11 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                     {!isLoading && !error && activeCategorie && indicateursActifs.length > 0 ? (
                         <div>
                             <div className="mb-4 flex items-center justify-between">
-                                <h2 className="border-l-4 border-blue-500 pl-3 text-lg font-semibold text-gray-800">{activeCategorie}</h2>
+                                <h2 className="border-l-4 border-blue-500 pl-3 text-lg font-semibold text-gray-800 dark:text-gray-200">
+                                    {activeCategorie}
+                                </h2>
                                 <button
-                                    className="flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm text-white transition-colors hover:bg-green-700"
+                                    className="flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm text-white transition-colors hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
                                     onClick={() => exportToExcel(activeCategorie)}
                                 >
                                     <Download size={16} />
@@ -2125,22 +3001,32 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                             </div>
 
                             <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {indicateursActifs.map((indicateur) => (
+                                {indicateursActifs.length > 8 && (
+                                    <button
+                                        className="col-span-1 mb-4 flex items-center justify-center rounded-md bg-gray-200 px-3 py-2 text-sm text-gray-800 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                                        onClick={() => exportAllToExcel()}
+                                    >
+                                        <FileSpreadsheet size={16} />
+                                        <span className="ml-2">Exporter tous les indicateurs</span>
+                                    </button>
+                                )}
+                                {/* {indicateursActifs.map((indicateur) => (
+
                                     <div
                                         key={indicateur.id}
-                                        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+                                        className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm transition-shadow hover:shadow-md"
                                     >
                                         <div className="mb-3 flex items-center justify-between">
-                                            <h3 className="font-medium text-gray-700" title={indicateur.label}>
+                                            <h3 className="font-medium text-gray-700 dark:text-gray-300" title={indicateur.label}>
                                                 {indicateur.label.length > 25 ? indicateur.label.substring(0, 25) + '...' : indicateur.label}
                                             </h3>
                                             <span
                                                 className={`rounded-full px-2 py-1 text-xs font-semibold ${
                                                     getEvolutionClass(indicateur.evolution) === 'positive'
-                                                        ? 'bg-green-100 text-green-800'
+                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                                                         : getEvolutionClass(indicateur.evolution) === 'negative'
-                                                          ? 'bg-red-100 text-red-800'
-                                                          : 'bg-blue-100 text-blue-800'
+                                                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
                                                 }`}
                                             >
                                                 {indicateur.evolution}
@@ -2148,11 +3034,11 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                                         </div>
 
                                         <div className="mb-2">
-                                            <span className="text-lg font-bold text-gray-800">{formatNumber(indicateur.value)}</span>
-                                            {indicateur.unite && <span className="ml-1 text-sm text-gray-500">{indicateur.unite}</span>}
+                                            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">{formatNumber(indicateur.value)}</span>
+                                            {indicateur.unite && <span className="ml-1 text-sm text-gray-500 dark:text-gray-400">{indicateur.unite}</span>}
                                         </div>
 
-                                        <div className="mb-3 text-sm text-gray-600">
+                                        <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
                                             Cible: {formatNumber(indicateur.target)} {indicateur.unite}
                                         </div>
 
@@ -2162,7 +3048,7 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                                                     <Line
                                                         type="monotone"
                                                         dataKey="value"
-                                                        stroke={COLORS.primary}
+                                                        stroke={isDarkMode ? '#60a5fa' : COLORS.primary}
                                                         strokeWidth={2}
                                                         dot={false}
                                                         isAnimationActive={false}
@@ -2172,17 +3058,17 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                                         </div>
 
                                         <div className="mt-2 flex items-center justify-between">
-                                            <div className="group relative flex items-center text-xs text-gray-500">
+                                            <div className="group relative flex items-center text-xs text-gray-500 dark:text-gray-400">
                                                 <Info size={14} className="mr-1" />
                                                 <span className="max-w-[180px] truncate">{indicateur.definition.substring(0, 60)}</span>
-                                                <div className="absolute bottom-full left-0 z-10 hidden w-64 rounded bg-gray-800 p-2 text-xs text-white shadow-lg group-hover:block">
+                                                <div className="absolute bottom-full left-0 z-10 hidden w-64 rounded bg-gray-800 dark:bg-gray-700 p-2 text-xs text-white dark:text-gray-100 shadow-lg group-hover:block">
                                                     {indicateur.definition}
                                                 </div>
                                             </div>
 
                                             <button
                                                 onClick={() => viewIndicateurDetails(indicateur.id)}
-                                                className="flex items-center text-xs text-blue-600 hover:text-blue-800"
+                                                className="flex items-center text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                                             >
                                                 <Eye size={14} className="mr-1" />
                                                 <span>Détails</span>
@@ -2191,7 +3077,155 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
 
                                         {indicateur.is_calculated && (
                                             <div className="absolute top-2 right-2">
-                                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800">Calculé</span>
+                                                <span className="rounded-full bg-blue-100 dark:bg-blue-800 px-2 py-0.5 text-xs text-blue-800 dark:text-blue-200">Calculé</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))} */}
+                                {/* {indicateursActifs.map((indicateur) => (
+    <div
+        key={`${indicateur.id}-${indicateur.label}`} // Ajout d'un attribut supplémentaire pour garantir l'unicité
+        className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm transition-shadow hover:shadow-md"
+    >
+        <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-medium text-gray-700 dark:text-gray-300" title={indicateur.label}>
+                {indicateur.label.length > 25 ? indicateur.label.substring(0, 25) + '...' : indicateur.label}
+            </h3>
+            <span
+                className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                    getEvolutionClass(indicateur.evolution) === 'positive'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        : getEvolutionClass(indicateur.evolution) === 'negative'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                        : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                }`}
+            >
+                {indicateur.evolution}
+            </span>
+        </div>
+
+        <div className="mb-2">
+            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">{formatNumber(indicateur.value)}</span>
+            {indicateur.unite && <span className="ml-1 text-sm text-gray-500 dark:text-gray-400">{indicateur.unite}</span>}
+        </div>
+
+        <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+            Cible: {formatNumber(indicateur.target)} {indicateur.unite}
+        </div>
+
+        <div className="mb-3 h-16">
+            <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={generateChartData(indicateur)}>
+                    <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke={isDarkMode ? '#60a5fa' : COLORS.primary}
+                        strokeWidth={2}
+                        dot={false}
+                        isAnimationActive={false}
+                    />
+                </LineChart>
+            </ResponsiveContainer>
+        </div>
+
+        <div className="mt-2 flex items-center justify-between">
+            <div className="group relative flex items-center text-xs text-gray-500 dark:text-gray-400">
+                <Info size={14} className="mr-1" />
+                <span className="max-w-[180px] truncate">{indicateur.definition.substring(0, 60)}</span>
+                <div className="absolute bottom-full left-0 z-10 hidden w-64 rounded bg-gray-800 dark:bg-gray-700 p-2 text-xs text-white dark:text-gray-100 shadow-lg group-hover:block">
+                    {indicateur.definition}
+                </div>
+            </div>
+
+            <button
+                onClick={() => viewIndicateurDetails(indicateur.id)}
+                className="flex items-center text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+                <Eye size={14} className="mr-1" />
+                <span>Détails</span>
+            </button>
+        </div>
+
+        {indicateur.is_calculated && (
+            <div className="absolute top-2 right-2">
+                <span className="rounded-full bg-blue-100 dark:bg-blue-800 px-2 py-0.5 text-xs text-blue-800 dark:text-blue-200">Calculé</span>
+            </div>
+        )}
+    </div>
+))} */}
+                                {indicateursActifs.map((indicateur, index) => (
+                                    <div
+                                        key={`${indicateur.id}-${indicateur.label}-${index}`} // 🔒 Correction pour assurer unicité
+                                        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800"
+                                    >
+                                        <div className="mb-3 flex items-center justify-between">
+                                            <h3 className="font-medium text-gray-700 dark:text-gray-300" title={indicateur.label}>
+                                                {indicateur.label.length > 25 ? indicateur.label.substring(0, 25) + '...' : indicateur.label}
+                                            </h3>
+                                            <span
+                                                className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                                                    getEvolutionClass(indicateur.evolution) === 'positive'
+                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                        : getEvolutionClass(indicateur.evolution) === 'negative'
+                                                          ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                                }`}
+                                            >
+                                                {indicateur.evolution}
+                                            </span>
+                                        </div>
+
+                                        <div className="mb-2">
+                                            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                                                {formatNumber(indicateur.value)}
+                                            </span>
+                                            {indicateur.unite && (
+                                                <span className="ml-1 text-sm text-gray-500 dark:text-gray-400">{indicateur.unite}</span>
+                                            )}
+                                        </div>
+
+                                        <div className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+                                            Cible: {formatNumber(indicateur.target)} {indicateur.unite}
+                                        </div>
+
+                                        <div className="mb-3 h-16">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart data={generateChartData(indicateur)}>
+                                                    <Line
+                                                        type="monotone"
+                                                        dataKey="value"
+                                                        stroke={isDarkMode ? '#60a5fa' : COLORS.primary}
+                                                        strokeWidth={2}
+                                                        dot={false}
+                                                        isAnimationActive={false}
+                                                    />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </div>
+
+                                        <div className="mt-2 flex items-center justify-between">
+                                            <div className="group relative flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                                <Info size={14} className="mr-1" />
+                                                <span className="max-w-[180px] truncate">{indicateur.definition.substring(0, 60)}</span>
+                                                <div className="absolute bottom-full left-0 z-10 hidden w-64 rounded bg-gray-800 p-2 text-xs text-white shadow-lg group-hover:block dark:bg-gray-700 dark:text-gray-100">
+                                                    {indicateur.definition}
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={() => viewIndicateurDetails(indicateur.id)}
+                                                className="flex items-center text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                            >
+                                                <Eye size={14} className="mr-1" />
+                                                <span>Détails</span>
+                                            </button>
+                                        </div>
+
+                                        {indicateur.is_calculated && (
+                                            <div className="absolute top-2 right-2">
+                                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-800 dark:bg-blue-800 dark:text-blue-200">
+                                                    Calculé
+                                                </span>
                                             </div>
                                         )}
                                     </div>
@@ -2199,21 +3233,34 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                             </div>
 
                             {indicateursActifs.length > 1 && (
-                                <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                                    <h3 className="mb-4 font-medium text-gray-700">Synthèse des indicateurs</h3>
+                                <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                                    <h3 className="mb-4 font-medium text-gray-700 dark:text-gray-300">Synthèse des indicateurs</h3>
                                     <div className="h-80">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={generateSummaryChartData()} layout="vertical">
-                                                <CartesianGrid strokeDasharray="3 3" />
-                                                <XAxis type="number" />
-                                                <YAxis dataKey="name" type="category" width={150} />
+                                                <CartesianGrid
+                                                    strokeDasharray="3 3"
+                                                    stroke={isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}
+                                                />
+                                                <XAxis type="number" stroke={isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)'} />
+                                                <YAxis
+                                                    dataKey="name"
+                                                    type="category"
+                                                    width={150}
+                                                    stroke={isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)'}
+                                                />
                                                 <Tooltip
                                                     formatter={(value) => formatNumber(value as number)}
                                                     labelFormatter={(label) => `Indicateur: ${label}`}
+                                                    contentStyle={{
+                                                        backgroundColor: isDarkMode ? '#1f2937' : '#fff',
+                                                        color: isDarkMode ? '#f3f4f6' : '#333',
+                                                        border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
+                                                    }}
                                                 />
-                                                <Legend />
-                                                <Bar dataKey="valeur" name="Valeur" fill={COLORS.primary} barSize={20} />
-                                                <Bar dataKey="cible" name="Cible" fill={COLORS.secondary} barSize={20} />
+                                                <Legend wrapperStyle={{ color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' }} />
+                                                <Bar dataKey="valeur" name="Valeur" fill={isDarkMode ? '#60a5fa' : COLORS.primary} barSize={20} />
+                                                <Bar dataKey="cible" name="Cible" fill={isDarkMode ? '#34d399' : COLORS.secondary} barSize={20} />
                                             </BarChart>
                                         </ResponsiveContainer>
                                     </div>
@@ -2230,21 +3277,23 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
             {activeTab === 'calculations' && !isLoading && !error && (
                 <div className="p-4 md:p-6">
                     <div className="mb-6 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-gray-800">Détail des Indicateurs</h2>
-                        <div className="text-sm text-gray-600">
+                        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Détail des Indicateurs</h2>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
                             Dernière mise à jour: <span>{lastUpdate.toLocaleString()}</span>
                         </div>
                     </div>
 
                     {/* Sélecteur de période */}
                     <div className="mb-6">
-                        <h3 className="mb-2 font-medium text-gray-700">Période:</h3>
+                        <h3 className="mb-2 font-medium text-gray-700 dark:text-gray-300">Période:</h3>
                         <div className="flex flex-wrap gap-2">
                             {periodes.map((periode) => (
                                 <button
                                     key={periode}
-                                    className={`rounded-md px-3 py-2 text-sm ${
-                                        activePeriode === periode ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    className={`rounded-md px-3 py-2 text-sm transition-colors ${
+                                        activePeriode === periode
+                                            ? 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                                     }`}
                                     onClick={() => setActivePeriode(periode)}
                                 >
@@ -2257,47 +3306,47 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                     {/* Contrôles d'affichage */}
                     <div className="mb-6 flex flex-wrap items-center gap-4">
                         <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-gray-700">Colonnes:</span>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Colonnes:</span>
                             <label className="flex items-center gap-1">
                                 <input
                                     type="checkbox"
                                     checked={visibleColumns.valeur}
                                     onChange={() => setVisibleColumns({ ...visibleColumns, valeur: !visibleColumns.valeur })}
-                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                                 />
-                                <span className="text-sm text-gray-600">Valeur</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Valeur</span>
                             </label>
                             <label className="flex items-center gap-1">
                                 <input
                                     type="checkbox"
                                     checked={visibleColumns.cible}
                                     onChange={() => setVisibleColumns({ ...visibleColumns, cible: !visibleColumns.cible })}
-                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                                 />
-                                <span className="text-sm text-gray-600">Cible</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Cible</span>
                             </label>
                             <label className="flex items-center gap-1">
                                 <input
                                     type="checkbox"
                                     checked={visibleColumns.evolution}
                                     onChange={() => setVisibleColumns({ ...visibleColumns, evolution: !visibleColumns.evolution })}
-                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                                 />
-                                <span className="text-sm text-gray-600">Évolution</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Évolution</span>
                             </label>
                             <label className="flex items-center gap-1">
                                 <input
                                     type="checkbox"
                                     checked={visibleColumns.definition}
                                     onChange={() => setVisibleColumns({ ...visibleColumns, definition: !visibleColumns.definition })}
-                                    className="rounded text-blue-600 focus:ring-blue-500"
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                                 />
-                                <span className="text-sm text-gray-600">Définition</span>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">Définition</span>
                             </label>
                         </div>
 
                         <button
-                            className="ml-auto flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm text-white transition-colors hover:bg-green-700"
+                            className="ml-auto flex items-center gap-2 rounded-md bg-green-600 px-3 py-2 text-sm text-white transition-colors hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
                             onClick={exportAllToExcel}
                         >
                             <Download size={16} />
@@ -2309,17 +3358,20 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                     {categoriesDisponibles.length > 0 ? (
                         <div className="space-y-6">
                             {categoriesDisponibles.map((categorie) => (
-                                <div key={categorie} className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+                                <div
+                                    key={categorie}
+                                    className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                                >
                                     <div
-                                        className="flex cursor-pointer items-center justify-between bg-gray-50 px-4 py-3"
+                                        className="flex cursor-pointer items-center justify-between bg-gray-50 px-4 py-3 dark:bg-gray-700"
                                         onClick={() => toggleCategoryExpand(categorie)}
                                     >
-                                        <h3 className="flex items-center gap-2 font-medium text-gray-800">
+                                        <h3 className="flex items-center gap-2 font-medium text-gray-800 dark:text-gray-200">
                                             {expandedCategories[categorie] === false ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
                                             {categorie}
                                         </h3>
                                         <button
-                                            className="flex items-center gap-2 text-sm text-green-700 hover:text-green-800"
+                                            className="flex items-center gap-2 text-sm text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 exportToExcel(categorie);
@@ -2332,19 +3384,19 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
 
                                     {expandedCategories[categorie] !== false && (
                                         <div className="overflow-x-auto">
-                                            <table className="min-w-full divide-y divide-gray-200">
-                                                <thead className="bg-gray-50">
+                                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                                <thead className="bg-gray-50 dark:bg-gray-700">
                                                     <tr>
                                                         <th
                                                             scope="col"
-                                                            className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+                                                            className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300"
                                                         >
                                                             Indicateur
                                                         </th>
                                                         {visibleColumns.valeur && (
                                                             <th
                                                                 scope="col"
-                                                                className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+                                                                className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300"
                                                             >
                                                                 Valeur
                                                             </th>
@@ -2352,7 +3404,7 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                                                         {visibleColumns.cible && (
                                                             <th
                                                                 scope="col"
-                                                                className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+                                                                className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300"
                                                             >
                                                                 Cible
                                                             </th>
@@ -2360,7 +3412,7 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                                                         {visibleColumns.evolution && (
                                                             <th
                                                                 scope="col"
-                                                                className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+                                                                className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300"
                                                             >
                                                                 Évolution
                                                             </th>
@@ -2368,60 +3420,61 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                                                         {visibleColumns.definition && (
                                                             <th
                                                                 scope="col"
-                                                                className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
+                                                                className="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300"
                                                             >
                                                                 Définition
                                                             </th>
                                                         )}
                                                         <th
                                                             scope="col"
-                                                            className="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase"
+                                                            className="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300"
                                                         >
                                                             Actions
                                                         </th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-gray-200 bg-white">
-                                                    {indicateursData[categorie].map((indicateur) => (
-                                                        <tr key={indicateur.id} className="hover:bg-gray-50">
-                                                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900">
+                                                <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                                                    {/* {indicateursData[categorie].map((indicateur) => (
+
+                                                       <tr key={indicateur.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-white" data-label="Indicateur">
                                                                 {indicateur.label}
                                                                 {indicateur.is_calculated && (
-                                                                    <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                                                                    <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-800 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
                                                                         Calculé
                                                                     </span>
                                                                 )}
                                                                 {indicateur.metadata?.demo && (
-                                                                    <span className="ml-2 inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                                                                    <span className="ml-2 inline-flex items-center rounded-full bg-yellow-100 dark:bg-yellow-800 px-2.5 py-0.5 text-xs font-medium text-yellow-800 dark:text-yellow-200">
                                                                         Démo
                                                                     </span>
                                                                 )}
                                                             </td>
                                                             {visibleColumns.valeur && (
-                                                                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
+                                                                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white" data-label="Valeur">
                                                                     <span className="font-medium">{formatNumber(indicateur.value)}</span>
                                                                     {indicateur.unite && (
-                                                                        <span className="ml-1 text-gray-500">{indicateur.unite}</span>
+                                                                        <span className="ml-1 text-gray-500 dark:text-gray-400">{indicateur.unite}</span>
                                                                     )}
                                                                 </td>
                                                             )}
                                                             {visibleColumns.cible && (
-                                                                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900">
+                                                                <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white" data-label="Cible">
                                                                     <span className="font-medium">{formatNumber(indicateur.target)}</span>
                                                                     {indicateur.unite && (
-                                                                        <span className="ml-1 text-gray-500">{indicateur.unite}</span>
+                                                                        <span className="ml-1 text-gray-500 dark:text-gray-400">{indicateur.unite}</span>
                                                                     )}
                                                                 </td>
                                                             )}
                                                             {visibleColumns.evolution && (
-                                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                                <td className="px-6 py-4 whitespace-nowrap" data-label="Évolution">
                                                                     <span
                                                                         className={`inline-flex rounded-full px-2 py-1 text-xs leading-5 font-semibold ${
                                                                             getEvolutionClass(indicateur.evolution) === 'positive'
-                                                                                ? 'bg-green-100 text-green-800'
+                                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                                                                                 : getEvolutionClass(indicateur.evolution) === 'negative'
-                                                                                  ? 'bg-red-100 text-red-800'
-                                                                                  : 'bg-blue-100 text-blue-800'
+                                                                                  ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                                                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
                                                                         }`}
                                                                     >
                                                                         {indicateur.evolution}
@@ -2429,7 +3482,7 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                                                                 </td>
                                                             )}
                                                             {visibleColumns.definition && (
-                                                                <td className="max-w-md px-6 py-4 text-sm text-gray-500">
+                                                                <td className="max-w-md px-6 py-4 text-sm text-gray-500 dark:text-gray-400" data-label="Définition">
                                                                     <div className="group relative">
                                                                         <div className="flex cursor-help items-center gap-1">
                                                                             <Info size={14} />
@@ -2439,22 +3492,214 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                                                                                     : indicateur.definition}
                                                                             </span>
                                                                         </div>
-                                                                        <div className="absolute z-10 hidden w-72 rounded bg-gray-800 p-2 text-xs text-white shadow-lg group-hover:block">
+                                                                        <div className="absolute z-10 hidden w-72 rounded bg-gray-800 dark:bg-gray-700 p-2 text-xs text-white dark:text-gray-100 shadow-lg group-hover:block">
                                                                             {indicateur.definition}
                                                                         </div>
                                                                     </div>
                                                                 </td>
                                                             )}
-                                                            <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap">
+                                                            <td className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap" data-label="Actions">
                                                                 <button
                                                                     onClick={() => viewIndicateurDetails(indicateur.id)}
-                                                                    className="text-blue-600 hover:text-blue-800"
+                                                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                                                                 >
                                                                     <Eye size={16} />
                                                                 </button>
                                                             </td>
                                                         </tr>
-                                                    ))}
+                                                    ))} */}
+                                                    {indicateursData[categorie].map((indicateur) => {
+                                                        const key = `${categorie}-${indicateur.id}`;
+                                                        console.log('Rendering indicateur with key:', key);
+
+                                                        // return (
+                                                        //     <tr key={key} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                        //         <td
+                                                        //             className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-white"
+                                                        //             data-label="Indicateur"
+                                                        //         >
+                                                        //             {indicateur.label}
+                                                        //             {indicateur.is_calculated && (
+                                                        //                 <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-800 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
+                                                        //                     Calculé
+                                                        //                 </span>
+                                                        //             )}
+                                                        //             {indicateur.metadata?.demo && (
+                                                        //                 <span className="ml-2 inline-flex items-center rounded-full bg-yellow-100 dark:bg-yellow-800 px-2.5 py-0.5 text-xs font-medium text-yellow-800 dark:text-yellow-200">
+                                                        //                     Démo
+                                                        //                 </span>
+                                                        //             )}
+                                                        //         </td>
+
+                                                        //         {visibleColumns.valeur && (
+                                                        //             <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white" data-label="Valeur">
+                                                        //                 <span className="font-medium">{formatNumber(indicateur.value)}</span>
+                                                        //                 {indicateur.unite && (
+                                                        //                     <span className="ml-1 text-gray-500 dark:text-gray-400">{indicateur.unite}</span>
+                                                        //                 )}
+                                                        //             </td>
+                                                        //         )}
+
+                                                        //         {visibleColumns.cible && (
+                                                        //             <td className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white" data-label="Cible">
+                                                        //                 <span className="font-medium">{formatNumber(indicateur.target)}</span>
+                                                        //                 {indicateur.unite && (
+                                                        //                     <span className="ml-1 text-gray-500 dark:text-gray-400">{indicateur.unite}</span>
+                                                        //                 )}
+                                                        //             </td>
+                                                        //         )}
+
+                                                        //         {visibleColumns.evolution && (
+                                                        //             <td className="px-6 py-4 whitespace-nowrap" data-label="Évolution">
+                                                        //                 <span
+                                                        //                     className={`inline-flex rounded-full px-2 py-1 text-xs leading-5 font-semibold ${
+                                                        //                         getEvolutionClass(indicateur.evolution) === 'positive'
+                                                        //                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                        //                             : getEvolutionClass(indicateur.evolution) === 'negative'
+                                                        //                               ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                        //                               : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                                        //                     }`}
+                                                        //                 >
+                                                        //                     {indicateur.evolution}
+                                                        //                 </span>
+                                                        //             </td>
+                                                        //         )}
+
+                                                        //         {visibleColumns.definition && (
+                                                        //             <td
+                                                        //                 className="max-w-md px-6 py-4 text-sm text-gray-500 dark:text-gray-400"
+                                                        //                 data-label="Définition"
+                                                        //             >
+                                                        //                 <div className="group relative">
+                                                        //                     <div className="flex cursor-help items-center gap-1">
+                                                        //                         <Info size={14} />
+                                                        //                         <span className="max-w-[250px] truncate underline decoration-dotted">
+                                                        //                             {indicateur.definition.length > 50
+                                                        //                                 ? indicateur.definition.substring(0, 50) + '...'
+                                                        //                                 : indicateur.definition}
+                                                        //                         </span>
+                                                        //                     </div>
+                                                        //                     <div className="absolute z-10 hidden w-72 rounded bg-gray-800 dark:bg-gray-700 p-2 text-xs text-white dark:text-gray-100 shadow-lg group-hover:block">
+                                                        //                         {indicateur.definition}
+                                                        //                     </div>
+                                                        //                 </div>
+                                                        //             </td>
+                                                        //         )}
+
+                                                        //         <td
+                                                        //             className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap"
+                                                        //             data-label="Actions"
+                                                        //         >
+                                                        //             <button
+                                                        //                 onClick={() => viewIndicateurDetails(indicateur.id)}
+                                                        //                 className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                                        //             >
+                                                        //                 <Eye size={16} />
+                                                        //             </button>
+                                                        //         </td>
+                                                        //     </tr>
+                                                        // );
+                                                        return (
+                                                            <tr
+                                                                key={`${indicateur.categorie || 'undefined'}-${indicateur.id || 'unknown'}`}
+                                                                className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                                                            >
+                                                                <td
+                                                                    className="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-white"
+                                                                    data-label="Indicateur"
+                                                                >
+                                                                    {indicateur.label}
+                                                                    {indicateur.is_calculated && (
+                                                                        <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-800 dark:text-blue-200">
+                                                                            Calculé
+                                                                        </span>
+                                                                    )}
+                                                                    {indicateur.metadata?.demo && (
+                                                                        <span className="ml-2 inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200">
+                                                                            Démo
+                                                                        </span>
+                                                                    )}
+                                                                </td>
+
+                                                                {visibleColumns.valeur && (
+                                                                    <td
+                                                                        className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white"
+                                                                        data-label="Valeur"
+                                                                    >
+                                                                        <span className="font-medium">{formatNumber(indicateur.value)}</span>
+                                                                        {indicateur.unite && (
+                                                                            <span className="ml-1 text-gray-500 dark:text-gray-400">
+                                                                                {indicateur.unite}
+                                                                            </span>
+                                                                        )}
+                                                                    </td>
+                                                                )}
+
+                                                                {visibleColumns.cible && (
+                                                                    <td
+                                                                        className="px-6 py-4 text-sm whitespace-nowrap text-gray-900 dark:text-white"
+                                                                        data-label="Cible"
+                                                                    >
+                                                                        <span className="font-medium">{formatNumber(indicateur.target)}</span>
+                                                                        {indicateur.unite && (
+                                                                            <span className="ml-1 text-gray-500 dark:text-gray-400">
+                                                                                {indicateur.unite}
+                                                                            </span>
+                                                                        )}
+                                                                    </td>
+                                                                )}
+
+                                                                {visibleColumns.evolution && (
+                                                                    <td className="px-6 py-4 whitespace-nowrap" data-label="Évolution">
+                                                                        <span
+                                                                            className={`inline-flex rounded-full px-2 py-1 text-xs leading-5 font-semibold ${
+                                                                                getEvolutionClass(indicateur.evolution) === 'positive'
+                                                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                                                    : getEvolutionClass(indicateur.evolution) === 'negative'
+                                                                                      ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                                                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                                                                            }`}
+                                                                        >
+                                                                            {indicateur.evolution}
+                                                                        </span>
+                                                                    </td>
+                                                                )}
+
+                                                                {visibleColumns.definition && (
+                                                                    <td
+                                                                        className="max-w-md px-6 py-4 text-sm text-gray-500 dark:text-gray-400"
+                                                                        data-label="Définition"
+                                                                    >
+                                                                        <div className="group relative">
+                                                                            <div className="flex cursor-help items-center gap-1">
+                                                                                <Info size={14} />
+                                                                                <span className="max-w-[250px] truncate underline decoration-dotted">
+                                                                                    {indicateur.definition.length > 50
+                                                                                        ? indicateur.definition.substring(0, 50) + '...'
+                                                                                        : indicateur.definition}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="absolute z-10 hidden w-72 rounded bg-gray-800 p-2 text-xs text-white shadow-lg group-hover:block dark:bg-gray-700 dark:text-gray-100">
+                                                                                {indicateur.definition}
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                )}
+
+                                                                <td
+                                                                    className="px-6 py-4 text-right text-sm font-medium whitespace-nowrap"
+                                                                    data-label="Actions"
+                                                                >
+                                                                    <button
+                                                                        onClick={() => viewIndicateurDetails(indicateur.id)}
+                                                                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                                                    >
+                                                                        <Eye size={16} />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -2467,6 +3712,31 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
                     )}
                 </div>
             )}
+
+            {/* Pied de page avec information sur la version et les indicateurs de réactivité */}
+            <div className="mt-8 border-t border-gray-200 pt-4 dark:border-gray-700">
+                <div className="flex flex-col items-center justify-between sm:flex-row">
+                    <div className="mb-4 text-sm text-gray-600 sm:mb-0 dark:text-gray-400">
+                        <p>© {new Date().getFullYear()} - Plateforme de Suivi des Indicateurs</p>
+                        <p className="text-xs">Version 1.0.0 - Interface adaptative</p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <span className="hidden text-xs text-gray-500 sm:inline-block dark:text-gray-400">Affichage:</span>
+                        <span className="inline-block rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-800 sm:hidden dark:bg-blue-900 dark:text-blue-200">
+                            Mobile
+                        </span>
+                        <span className="hidden rounded-full bg-green-100 px-2 py-1 text-xs text-green-800 sm:inline-block md:hidden dark:bg-green-900 dark:text-green-200">
+                            Tablette
+                        </span>
+                        <span className="hidden rounded-full bg-purple-100 px-2 py-1 text-xs text-purple-800 md:inline-block lg:hidden dark:bg-purple-900 dark:text-purple-200">
+                            Portable
+                        </span>
+                        <span className="hidden rounded-full bg-indigo-100 px-2 py-1 text-xs text-indigo-800 lg:inline-block dark:bg-indigo-900 dark:text-indigo-200">
+                            Grand écran
+                        </span>
+                    </div>
+                </div>
+            </div>
         </AppLayout>
     );
 };

@@ -86,14 +86,16 @@ const Entreprises = () => {
     setShowDetailView(true);
   };
 
-  const filteredEntreprises = entreprises.filter(
-    (entreprise) =>
-      entreprise.nom_entreprise.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entreprise.secteur_activite.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entreprise.ville.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (entreprise.beneficiaire?.nom.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (entreprise.beneficiaire?.prenom.toLowerCase().includes(searchTerm.toLowerCase()) || false)
+  const search = searchTerm.toLowerCase();
+
+  const filteredEntreprises = entreprises.filter((entreprise) =>
+      (entreprise.nom_entreprise?.toLowerCase() || '').includes(search) ||
+      (entreprise.secteur_activite?.toLowerCase() || '').includes(search) ||
+      (entreprise.ville?.toLowerCase() || '').includes(search) ||
+      (entreprise.beneficiaire?.nom?.toLowerCase() || '').includes(search) ||
+      (entreprise.beneficiaire?.prenom?.toLowerCase() || '').includes(search)
   );
+
 
   // Impression
   const handlePrint = () => {
