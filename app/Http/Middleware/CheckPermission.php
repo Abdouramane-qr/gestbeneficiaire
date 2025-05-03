@@ -1,25 +1,27 @@
 <?php
 
+// app/Http/Middleware/CheckPermission.php
 namespace App\Http\Middleware;
+
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class CheckPermission
 {
-    /**
-     * Handle an incoming request.
-     */
     public function handle(Request $request, Closure $next, string $module, string $action = 'view')
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
-        // Log pour le débogage
+        // Journalisation améliorée
         Log::info('Vérification des permissions', [
             'user_id' => $user ? $user->id : null,
+            'user_type' => $user ? $user->type : null,
             'module' => $module,
             'action' => $action,
-            'has_permission' => $user ? $user->hasPermission($module, $action) : false
+            'route' => $request->route()->getName(),
         ]);
 
         if (!$user || !$user->hasPermission($module, $action)) {
@@ -27,8 +29,21 @@ class CheckPermission
                 return response()->json(['message' => 'Accès non autorisé.'], 403);
             }
 
-            // Utilisation de flash() au lieu de with() pour s'assurer que le message persiste après la redirection
-            return redirect()->route('dashboard')->with('error', 'Vous n\'avez pas les permissions nécessaires pour accéder à cette ressource.');
+            // Flash message avec différents niveaux de sévérité selon le contexte
+            $message = "Vous n'avez pas les permissions nécessaires pour cette action.";
+
+            // Si c'est une tentative d'accès à un module complet
+            if ($action === 'view') {
+                return redirect()->route('dashboard')
+                    ->with('error', "Vous n'avez pas accès au module '$module'.");
+            }
+
+            // Si c'est une action sur un module auquel l'utilisateur a accès partiel
+            if ($user && $user->hasModuleAccess($module)) {
+                return back()->with('warning', "Action non autorisée: vous ne pouvez pas '$action' dans '$module'.");
+            }
+
+            return redirect()->route('dashboard')->with('error', $message);
         }
 
         return $next($request);

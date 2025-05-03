@@ -24,17 +24,17 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Afficher le formulaire de modification du profil.
-     */
-    // public function edit()
-    // {
-    //     $user = Auth::user();
+    // /**
+    //  * Afficher le formulaire de modification du profil.
+    //  */
+    // // public function edit()
+    // // {
+    // //     $user = Auth::user();
 
-    //     return Inertia::render('profile/Edit', [
-    //         'user' => $user
-    //     ]);
-    // }
+    // //     return Inertia::render('profile/Edit', [
+    // //         'user' => $user
+    // //     ]);
+    // // }
 
     /**
      * Mettre à jour les informations du profil utilisateur.

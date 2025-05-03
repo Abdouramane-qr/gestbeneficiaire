@@ -22,25 +22,19 @@ class RegisteredUserController extends Controller
     public function create(): Response
     {
         // Liste des types d'utilisateurs disponibles pour l'inscription
+        $userTypes = [
+            ['id' => 'promoteur', 'name' => 'Promoteur'],
+            ['id' => 'coach', 'name' => 'Coach'],
+            ['id' => 'ong', 'name' => 'ONG'],
+            ['id' => 'institution', 'name' => 'Institution financière'],
+            ['id' => 'admin', 'name' => 'Administrateur'],
+            ['id' => 'me', 'name' => 'Suivi Evaluation (M&E)'],
+        ];
 
-{
-    // Liste des types d'utilisateurs disponibles pour l'inscription
-    $userTypes = [
-        ['id' => 'promoteur', 'name' => 'Promoteur'],
-        ['id' => 'coach', 'name' => 'Coach'],
-        ['id' => 'ong', 'name' => 'ONG'],
-        ['id' => 'institution', 'name' => 'Institution financière'],
-        ['id' => 'admin', 'name' => 'Administrateur'],
-        ['id' => 'me', 'name' => 'Suivi Evaluation (M&E)'],
-    ];
-
-    return Inertia::render('auth/register', [
-        'userTypes' => $userTypes,
-    ]);
-}
-}
-
-
+        return Inertia::render('auth/register', [
+            'userTypes' => $userTypes,
+        ]);
+    }
 
     /**
      * Handle an incoming registration request.
@@ -52,10 +46,14 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'prenom' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'telephone' => 'required|string|unique:'.User::class,
+            'email' => 'nullable|string|lowercase|email|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'type' => 'required|string|in:promoteur,coach,ong,institution,admin,me',
         ]);
+
+        // Normaliser le numéro de téléphone
+        $telephone = preg_replace('/\D/', '', $request->telephone);
 
         // Récupérer le rôle correspondant au type d'utilisateur
         $roleName = $this->getRoleNameForUserType($request->type);
@@ -71,6 +69,7 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'name' => $fullName,
             'email' => $request->email,
+            'telephone' => $telephone,
             'password' => Hash::make($request->password),
             'type' => $request->type,
             'role_id' => $role->id,
@@ -87,18 +86,18 @@ class RegisteredUserController extends Controller
      * Obtenir le nom du rôle correspondant au type d'utilisateur.
      */
     private function getRoleNameForUserType(string $type): string
-{
-    return match ($type) {
-        'promoteur' => 'Promoteur',
-        'coach' => 'Coach',
-        'ong' => 'ONG',
-        'institution' => 'Institution financière',
-        'admin' => 'Administrateur',
-        'me' => 'Suivi Evaluation (M&E)',
-        default => 'Promoteur', // Rôle par défaut
-    };
-    \Log::info("Type utilisateur: $type -> Nom du rôle: $roleName");
-    return $roleName;
+    {
+        $roleName = match ($type) {
+            'promoteur' => 'Promoteur',
+            'coach' => 'Coach',
+            'ong' => 'ONG',
+            'institution' => 'Institution financière',
+            'admin' => 'Administrateur',
+            'me' => 'Suivi Evaluation (M&E)',
+            default => 'Promoteur', // Rôle par défaut
+        };
 
-}
+       // Log::info("Type utilisateur: $type -> Nom du rôle: $roleName");
+        return $roleName;
+    }
 }

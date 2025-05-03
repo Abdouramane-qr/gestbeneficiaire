@@ -659,14 +659,14 @@ export class IndicateurCalculator {
                     unite: 'FCFA',
                     definition: "Montant cumulé des ventes réalisées par l'entreprise sur une période donnée",
                 },
-                {
-                    id: 'taux_croissance_ca',
-                    label: "Taux de croissance du Chiffre d'affaires",
-                    type: 'number',
-                    required: true,
-                    unite: '%',
-                    definition: "(Chiffre d'affaires de l'exercice N – le chiffre d'affaires de l'exercice N-1) X 100",
-                },
+                // {
+                //     id: 'taux_croissance_ca',
+                //     label: "Taux de croissance du Chiffre d'affaires",
+                //     type: 'number',
+                //     required: true,
+                //     unite: '%',
+                //     definition: "(Chiffre d'affaires de l'exercice N – le chiffre d'affaires de l'exercice N-1) X 100",
+                // },
             ],
             'Indicateurs de Rentabilité et de solvabilité': [
                 {

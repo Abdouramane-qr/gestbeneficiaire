@@ -1,8 +1,8 @@
-// resources/js/Components/Coaches/AffectationPromoteursModal.jsx
+// resources/js/Components/AffectationPromoteursModal.jsx
 import React, { useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
@@ -23,7 +23,7 @@ export default function AffectationPromoteursModal({ isOpen, closeModal, coach }
   const [beneficiaires, setPromoteurs] = useState<Beneficiaire[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { data, setData, post, processing, errors, reset } = useForm({
+  const { data, setData, processing, errors, reset } = useForm({
     beneficiaires_id: [],
     date_affectation: new Date().toISOString().split('T')[0],
   });
@@ -61,27 +61,15 @@ export default function AffectationPromoteursModal({ isOpen, closeModal, coach }
       return;
     }
 
-    post(route('coaches.affecter-promoteurs', coach.id), {
-      preserveState: true,  // Empêche le rechargement complet
-      preserveScroll: true, // Conserve la position de défilement
-      only: [],             // N'actualise aucune propriété de la page
+    // Utiliser router.post au lieu de post pour faciliter le rechargement complet
+    router.post(route('coaches.affecter-promoteurs', coach.id), data, {
       onSuccess: () => {
         toast.success('Promoteurs affectés avec succès');
         closeModal();
-
-        // Au lieu de recharger la page, vous pouvez faire une requête AJAX
-        // pour obtenir les données mises à jour
-        axios.get(route('coaches.show', coach.id))
-          .then(response => {
-            // Mettez à jour votre état local avec les nouvelles données
-            if (response.data.coach) {
-              setCoach(response.data.coach);
-            }
-          });
       },
       onError: () => {
         toast.error('Erreur lors de l\'affectation des promoteurs');
-      },
+      }
     });
   };
 
@@ -147,7 +135,7 @@ export default function AffectationPromoteursModal({ isOpen, closeModal, coach }
                                 }}
                                 className="h-4 w-4 text-blue-600 border-gray-300 rounded mr-2"
                               />
-                              <label htmlFor={`promoteur-${beneficiaire.id}`} className="text-sm text-gray-700">
+                              <label htmlFor={`beneficiaire-${beneficiaire.id}`} className="text-sm text-gray-700">
                                 {beneficiaire.nom} {beneficiaire.prenom}
                                 {beneficiaire.contact && ` - ${beneficiaire.contact}`}
                               </label>

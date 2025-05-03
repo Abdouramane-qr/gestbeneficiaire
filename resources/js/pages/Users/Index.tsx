@@ -1,15 +1,16 @@
 
 import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
 import { Edit, Eye, Key, Search, Trash2, UserPlus } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
+import AppLayout from '@/layouts/app-layout';
 
 interface User {
   id: number;
   name: string;
   email: string;
+  telephone: string;
   type?: string;
   role?: {
     id: number;
@@ -24,6 +25,7 @@ interface IndexProps {
       id: number;
       name: string;
       email: string;
+      telephone: string;
       role?: {
         permissions?: Record<string, string[]>;
       };
@@ -42,7 +44,8 @@ export default function Index({ auth, users, flash={} }: IndexProps) {
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user?.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.telephone.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.role?.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -69,7 +72,7 @@ export default function Index({ auth, users, flash={} }: IndexProps) {
   };
 
   return (
-    <AuthenticatedLayout
+    <AppLayout
       user={auth.user}
       title="Gestion des Utilisateurs"
       header={
@@ -132,6 +135,9 @@ export default function Index({ auth, users, flash={} }: IndexProps) {
                         Email
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Telephone
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Type
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -152,6 +158,11 @@ export default function Index({ auth, users, flash={} }: IndexProps) {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-500">{user.email}</div>
                           </td>
+
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-500">{user.telephone}</div>
+                          </td>
+
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-500">
                               {user.type ? (
@@ -231,6 +242,6 @@ export default function Index({ auth, users, flash={} }: IndexProps) {
           </div>
         </div>
       </div>
-    </AuthenticatedLayout>
+    </AppLayout>
   );
 }

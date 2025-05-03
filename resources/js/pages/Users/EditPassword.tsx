@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
 import { Eye, EyeOff, Save, X } from 'lucide-react';
 import { Link } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
 
 interface User {
   id: number;
@@ -61,7 +61,7 @@ export default function EditPassword({ auth, user }: EditPasswordProps) {
   };
 
   return (
-    <AuthenticatedLayout
+    <AppLayout
       user={auth.user}
       title={`Changer le mot de passe - ${user.name}`}
       header={
@@ -177,6 +177,6 @@ export default function EditPassword({ auth, user }: EditPasswordProps) {
           </div>
         </div>
       </div>
-    </AuthenticatedLayout>
+    </AppLayout>
   );
 }

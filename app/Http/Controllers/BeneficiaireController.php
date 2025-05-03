@@ -16,23 +16,43 @@ class BeneficiaireController extends Controller
 {
     // 📌 Liste des bénéficiaires avec leurs ONG et institutions financières
     public function index()
-    {
-        $beneficiaires = Beneficiaire::with(['entreprises'])
-            ->orderBy('nom')
-            ->get();
+{
+    $user = auth()->user();
 
-        return Inertia::render('Beneficiaires/beneficiaires', [
-            'beneficiaires' => $beneficiaires,
-            'ongs' => ONG::select('id', 'nom')->get(),
-            'institutions' => InstitutionFinanciere::select('id', 'nom')->get(),
-            'entreprises' => Entreprise::select('id', 'nom_entreprise', 'secteur_activite')->get(),
-        ]);
+    // Base query
+    $query = Beneficiaire::with(['entreprises']);
+
+    // Filtrer selon le type d'utilisateur
+    if ($user->type === 'coach' && $user->coach_id) {
+        $query->whereHas('coaches', function($q) use ($user) {
+            $q->where('coach_id', $user->coach_id)
+              ->where('est_actif', true);
+        });
+    } elseif ($user->type === 'ong' && $user->ong_id) {
+        $query->where('ong_id', $user->ong_id);
+    } elseif ($user->type === 'institution' && $user->institution_id) {
+        $query->where('institution_id', $user->institution_id);
+    } elseif ($user->type === 'promoteur' && $user->beneficiaire_id) {
+        $query->where('id', $user->beneficiaire_id);
     }
+
+    $beneficiaires = $query->orderBy('nom')->get();
+
+    return Inertia::render('Beneficiaires/beneficiaires', [
+        'beneficiaires' => $beneficiaires,
+        'ongs' => ONG::select('id', 'nom')->get(),
+        'institutions' => InstitutionFinanciere::select('id', 'nom')->get(),
+        'entreprises' => Entreprise::select('id', 'nom_entreprise', 'secteur_activite')->get(),
+        'canCreate' => $user->hasPermission('promoteurs', 'create'),
+        'canEdit' => $user->hasPermission('promoteurs', 'edit'),
+        'canDelete' => $user->hasPermission('promoteurs', 'delete'),
+    ]);
+}
 
     // 📌 Voir les détails d'un bénéficiaire avec toutes ses relations
     public function show(Beneficiaire $beneficiaire)
     {
-        $beneficiaire->load(['ong', 'institutionFinanciere', 'entreprise']);
+        $beneficiaire->load(['ong', 'institutionFinanciere', 'entreprises']);
 
         // dd($beneficiaire); // 🔎 Vérifie le contenu de l'objet
 
