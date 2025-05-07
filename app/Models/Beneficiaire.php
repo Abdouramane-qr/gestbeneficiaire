@@ -29,8 +29,7 @@ class Beneficiaire extends Model
         'date_de_naissance' => 'date',
         'handicap' => 'boolean',
     ];
-// app/Models/Promoteur.php
-// Ajouter cette méthode à la classe Promoteur
+
 
 /**
  * Relation avec les coachs qui suivent ce promoteur
@@ -60,4 +59,9 @@ public function coaches(): BelongsToMany
     {
         return $this->nom . ' ' . $this->prenom;
     }
+
+    public function formations()
+{
+    return $this->hasMany(Formation::class, 'beneficiaires_id');
+}
 }

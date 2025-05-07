@@ -831,7 +831,7 @@ import axios from 'axios';
 import { route } from 'ziggy-js';
 
 const DB_NAME = 'suivi_pme_offline';
-const DB_VERSION = 5;  // Incrémenté pour forcer la mise à jour de la structure
+const DB_VERSION = 10;  // Incrémenté pour forcer la mise à jour de la structure
 const COLLECTE_STORE = 'collectes';
 const SYNC_QUEUE_STORE = 'sync_queue';
 const FAILED_SYNC_STORE = 'failed_sync';
@@ -981,7 +981,7 @@ const countPendingUploads = (database = db) => {
         return;
       }
 
-    
+
       const getAllRequest = store.getAll();
 
       getAllRequest.onsuccess = () => {
@@ -1308,43 +1308,32 @@ const countPendingUploads = (database = db) => {
   /**
    * Récupérer les éléments à synchroniser
    */
-  const getSyncQueueItems = async () => {
+// Remplacer la fonction getSyncQueueItems par celle-ci
+const getSyncQueueItems = async () => {
     if (!db) return [];
 
     return new Promise((resolve, reject) => {
       try {
-        const transaction = db.transaction([SYNC_QUEUE_STORE, COLLECTE_STORE], 'readonly');
-        const syncStore = transaction.objectStore(SYNC_QUEUE_STORE);
+        // Modification majeure : aller directement chercher les collectes non synchronisées
+        // au lieu de passer par la table SYNC_QUEUE_STORE
+        const transaction = db.transaction([COLLECTE_STORE], 'readonly');
         const collecteStore = transaction.objectStore(COLLECTE_STORE);
 
-        const request = syncStore.getAll();
+        const request = collecteStore.getAll();
 
-        request.onsuccess = async () => {
-          const items = request.result || [];
-          const syncItems = [];
+        request.onsuccess = () => {
+          const allCollectes = request.result || [];
 
-          // Pour chaque élément de la file, récupérer les données complètes de la collecte
-          for (const item of items) {
-            const collecteRequest = collecteStore.get(item.collecteId);
+          // Filtrer exactement comme dans countPendingUploads
+          const pendingCollectes = allCollectes.filter(item => item.synced === false);
 
-            // Utiliser une promesse pour gérer l'asynchronicité
-            try {
-              const collecte = await new Promise((resolveCollecte, rejectCollecte) => {
-                collecteRequest.onsuccess = () => resolveCollecte(collecteRequest.result);
-                collecteRequest.onerror = (e) => rejectCollecte(e.target.error);
-              });
-
-              if (collecte) {
-                syncItems.push({
-                  ...item,
-                  collecte
-                });
-              }
-            } catch (error) {
-              console.error('Erreur lors de la récupération d\'une collecte:', error);
-              // Continuer avec les autres items
-            }
-          }
+          // Transformer en format attendu par processSyncBatch
+          const syncItems = pendingCollectes.map(collecte => ({
+            collecteId: collecte.id,
+            id: collecte.id,  // Utiliser le même ID pour cohérence
+            route: collecte.is_draft ? 'collectes.draft' : 'collectes.store',
+            collecte: collecte
+          }));
 
           resolve(syncItems);
         };

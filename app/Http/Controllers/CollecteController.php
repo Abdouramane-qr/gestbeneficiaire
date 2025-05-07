@@ -186,95 +186,8 @@ public function getAvailablePeriodes(Request $request)
         ]);
     }
 
-    /**
-     * Stocke une nouvelle collecte
-     */
-    /* public function store(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'entreprise_id' => 'required|exists:entreprises,id',
-                'exercice_id' => 'required|exists:exercices,id',
-                'periode_id' => 'required|exists:periodes,id',
-                'date_collecte' => 'required|date',
-                'donnees' => 'required|array',
-                'type_collecte' => 'required|in:standard,brouillon'
-            ]);
 
-            $periode = Periode::findOrFail($validated['periode_id']);
-            if ($periode->exercice_id != $validated['exercice_id']) {
-                if ($request->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'La période ne correspond pas à l\'exercice sélectionné'
-                    ], 422);
-                }
-                return back()->withErrors([
-                    'periode_id' => 'La période ne correspond pas à l\'exercice sélectionné.'
-                ]);
-            }
 
-            $existing = Collecte::where('entreprise_id', $validated['entreprise_id'])
-                ->where('periode_id', $validated['periode_id'])
-                ->where('type_collecte', 'standard')
-                ->exists();
-
-            if ($existing && $validated['type_collecte'] === 'standard') {
-                if ($request->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Une collecte standard existe déjà pour cette entreprise et période.'
-                    ], 422);
-                }
-                return back()->withErrors([
-                    'general' => 'Une collecte existe déjà pour cette entreprise et période.'
-                ]);
-            }
-
-            // Avant de sauvegarder, recalculer les indicateurs calculés automatiquement
-            $validatedDonnees = $this->recalculateIndicateurs(
-                $validated['donnees'],
-                $validated['entreprise_id'],
-                $periode->type_periode
-            );
-
-            $collecte = Collecte::create([
-                'entreprise_id' => $validated['entreprise_id'],
-                'exercice_id' => $validated['exercice_id'],
-                'periode_id' => $validated['periode_id'],
-                'user_id' => Auth::id(),
-                'date_collecte' => $validated['date_collecte'],
-                'type_collecte' => $validated['type_collecte'],
-                'donnees' => $validatedDonnees,
-                'periode' => $periode->type_periode ?? 'Non spécifié',
-            ]);
-
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Collecte enregistrée avec succès',
-                    'collecte_id' => $collecte->id
-                ]);
-            }
-
-            return redirect()->route('collectes.index')
-                ->with('success', 'Collecte enregistrée avec succès');
-
-        } catch (\Exception $e) {
-            Log::error('Erreur création collecte: '.$e->getMessage());
-
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Une erreur est survenue: ' . $e->getMessage()
-                ], 500);
-            }
-
-            return back()->withErrors([
-                'general' => 'Une erreur est survenue: '.$e->getMessage()
-            ]);
-        }
-    } */
     public function store(Request $request)
     {
         try {
@@ -1254,7 +1167,6 @@ private function mathEval(string $expr): float
             return response()->json(['error' => 'Format non supporté'], 400);
 
         } catch (\Exception $e) {
-            \Log::error('Erreur lors de l\'export: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

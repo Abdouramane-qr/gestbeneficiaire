@@ -980,7 +980,7 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         entreprise_id: isEditing && collecte ? collecte.entreprise_id.toString() : '',
-        exercice_id: isEditing && collecte ? collecte.exercice_id.toString() : '',
+        exercice_id: isEditing && collecte && collecte.exercice_id != null ? collecte.exercice_id.toString() : '',
         periode_id: isEditing && collecte ? collecte.periode_id.toString() : preselectedPeriode ? preselectedPeriode.toString() : '',
         date_collecte: isEditing && collecte ? collecte.date_collecte : new Date().toISOString().split('T')[0],
         donnees: initialDonnees,

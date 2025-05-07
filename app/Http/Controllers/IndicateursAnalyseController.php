@@ -45,7 +45,7 @@ class IndicateursAnalyseController extends Controller
         $periodeType = $request->input('periode_type', 'Trimestrielle');
 
         // S'assurer que exceptionnel est inclus dans les périodes
-        $periodes = ['Trimestrielle', 'Semestrielle', 'Annuelle', 'Occasionnelle'];
+        $periodes = ['Trimestrielle', 'Semestrielle', 'Annuelle', 'Exceptionnelle'];
 
         return Inertia::render('Indicateurs/Analyse', [
             'exercices' => $exercices,

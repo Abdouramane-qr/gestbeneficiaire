@@ -17,6 +17,7 @@ class Collecte extends Model
         'user_id',
         'date_collecte',
         'type_collecte',
+        'is_exceptionnel',
         'periode',
         'donnees',
     ];
@@ -24,6 +25,8 @@ class Collecte extends Model
     protected $casts = [
         'date_collecte' => 'datetime',
         'donnees' => 'array',
+        'is_exceptionnel' => 'boolean',
+
     ];
 
     // Relations

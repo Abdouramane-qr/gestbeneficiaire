@@ -15,14 +15,13 @@ use App\Http\Controllers\{
     CoachController,
     EntrepriseController,
     ExerciceController,
+    FormationController,
     InstitutionFinanciereController,
     ONGController,
     PeriodeController,
     DashboardController,
- OfflineSyncController,
- IndicateursAnalyseController,
-
-
+    OfflineSyncController,
+    IndicateursAnalyseController,
 };
 
 // Accueil
@@ -168,7 +167,7 @@ Route::get('/data-dashboard', [UserController::class, 'getDashboard'])->name('us
  // Routes pour la synchronisation offline
  Route::post('/collectes/sync-offline-data', [OfflineSyncController::class, 'syncOfflineData'])->name('collectes.sync-offline-data');
 
-
+ Route::get('/collectes/verify/{id}', [OfflineSyncController::class, 'verify'])->name('collectes.verify');
 
 
 
@@ -200,7 +199,22 @@ Route::prefix('api')->group(function () {
 Route::get('/api/beneficiaires', [IndicateursAnalyseController::class, 'getBeneficiaires'])
     ->name('api.beneficiaires');
 
-//Route Temporaires:
+
+
+
+
+
+// Groupe de routes pour les formations avec middleware d'authentification approprié// routes/web.php
+// routes/web.php// routes/api.php
+// routes/api.php
+Route::middleware(['auth'])->group(function () {
+    // Routes pour les formations
+    Route::get('/formations', [FormationController::class, 'index'])->name('formations.index');
+    Route::get('/formations/type/{type}', [FormationController::class, 'getByType'])->name('formations.byType');
+    Route::post('/formations', [FormationController::class, 'store'])->name('formations.store');
+    Route::put('/formations/{id}', [FormationController::class, 'update'])->name('formations.update');
+    Route::delete('/formations/{id}', [FormationController::class, 'destroy'])->name('formations.destroy');
+});
 
 
 require __DIR__ . '/settings.php';

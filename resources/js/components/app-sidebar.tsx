@@ -228,7 +228,8 @@ type NavItemWithPermission = NavItem & {
 
 export function AppSidebar() {
   const { hasPermission, isUserType } = usePermissions();
-  const { url } = usePage();
+  // eslint-disable-next-line no-empty-pattern
+  const { } = usePage();
 
   // Définir le menu principal avec informations de permission
   const mainNavItems: NavItemWithPermission[] = [
@@ -370,6 +371,14 @@ export function AppSidebar() {
           module: 'parametres',
           action: 'edit',
         },
+
+        {
+            title: 'Gestion des Formations',
+            href: route('formations.index'),
+            icon: ShieldCheck,
+            module: 'parametres',
+            action: 'edit',
+          },
       ]
     },
   ];

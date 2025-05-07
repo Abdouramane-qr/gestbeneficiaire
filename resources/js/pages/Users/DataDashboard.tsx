@@ -1,7 +1,7 @@
 import React from 'react';
 import { Head } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
-import { Building, Users, FileText, Database, Briefcase, UserCheck, AlertTriangle } from 'lucide-react';
+import { Building, Users, FileText, Database, Briefcase, UserCheck, AlertTriangle, GraduationCap } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 
 interface User {
@@ -26,6 +26,7 @@ interface Stats {
   institutions?: number;
   collectes?: number;
   rapports?: number;
+  formations?: number;
   users?: number;
 }
 
@@ -95,6 +96,18 @@ export default function Dashboard({ auth, stats = {} }: { auth: Auth; stats?: St
       permission: 'rapports',
       action: 'view'
     },
+
+    {
+        name: 'Formations',
+        description: 'Gestion des formations',
+        icon: GraduationCap,
+        color: 'bg-green-600',
+        count: stats.formations || 0,
+        route: 'formations.index',
+        permission: 'formations',
+        action: 'view'
+      },
+
     {
       name: 'Utilisateurs',
       description: 'Gestion des utilisateurs du système',
