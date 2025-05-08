@@ -874,16 +874,15 @@
 //     );
 // };
 
-// export default CollecteForm;
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, {  useEffect,  useCallback } from 'react';
 import { Link, router, useForm } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
-
 import { IndicateurCalculator, PeriodeName } from '@/Utils/IndicateurCalculator';
 import { ArrowLeftIcon, SaveIcon, WifiOffIcon, RefreshCcw, MoonIcon, SunIcon, CalculatorIcon, LockIcon, AlertCircleIcon, CheckCircleIcon } from 'lucide-react';
 import { PeriodeNameGenerator } from '@/Utils/PeriodeNameGenerator';
 import { Periode } from '@/Utils/periodeTypes';
+import { useMemo, useRef, useState } from 'react';
 
 interface Entreprise {
     id: number;
@@ -948,7 +947,6 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
     preselectedPeriode,
     dependenciesData = {},
 }) => {
-    // State initialization
     const [isDraft, setIsDraft] = useState(isEditing && collecte?.type_collecte === 'brouillon');
     const [step, setStep] = useState(1);
     const [activeCategory, setActiveCategory] = useState('');
@@ -969,7 +967,6 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
         return IndicateurCalculator.checkDependenciesAvailability(indicator, allData);
     };
 
-    // Form initialization
     const initialDonnees = useMemo(() => {
         return isEditing && collecte?.donnees
             ? typeof collecte.donnees === 'string'
@@ -978,7 +975,16 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
             : {};
     }, [collecte, isEditing]);
 
-    const { data, setData, post, put, processing, errors, reset } = useForm({
+    const { data, setData, post, put, processing, errors, reset } = useForm<{
+        entreprise_id: string;
+        exercice_id: string;
+        periode_id: string;
+        date_collecte: string;
+        donnees: Record<string, any>;
+        type_collecte: 'standard' | 'brouillon';
+        promoteur_id: string;
+        ong_id: string;
+    }>({
         entreprise_id: isEditing && collecte ? collecte.entreprise_id.toString() : '',
         exercice_id: isEditing && collecte && collecte.exercice_id != null ? collecte.exercice_id.toString() : '',
         periode_id: isEditing && collecte ? collecte.periode_id.toString() : preselectedPeriode ? preselectedPeriode.toString() : '',
@@ -989,7 +995,6 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
         ong_id: ong ? ong.id.toString() : (isEditing && collecte && collecte.ong_id ? collecte.ong_id.toString() : ''),
     });
 
-    // Memoized derived state
     const availablePeriodes = useMemo(() => {
         return PeriodeNameGenerator.filterAvailablePeriodes(periodes, collectes);
     }, [periodes, collectes]);
@@ -1005,10 +1010,9 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
     }, [data.exercice_id, availablePeriodes]);
 
     const entreprisesFiltrees = useMemo(() => {
-        return entreprises; // Add filtering logic if needed
+        return entreprises;
     }, [entreprises]);
 
-    // Effects
     useEffect(() => {
         localStorage.setItem('darkMode', JSON.stringify(darkMode));
         document.documentElement.classList.toggle('dark', darkMode);
@@ -1046,7 +1050,6 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
         }
     }, [data.periode_id, periodes]);
 
-    // Callbacks
     const updateAvailableCategories = useCallback((periodeType: string) => {
         if (!periodeType) {
             setAvailableCategories([]);
@@ -1204,7 +1207,6 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
         if (canProceedToStep2()) {
             setStep(2);
         } else {
-            // Highlight validation errors
             if (!data.entreprise_id) toast.error('Veuillez sélectionner une entreprise');
             if (!data.exercice_id) toast.error('Veuillez sélectionner un exercice');
             if (!data.periode_id) toast.error('Veuillez sélectionner une période');
@@ -1213,91 +1215,6 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
         }
     };
 
-    // const handleSubmit = async (e: React.FormEvent) => {
-    //     e.preventDefault();
-    //     setIsSubmitting(true);
-
-    //     const typeCollecte = isEditing && collecte?.type_collecte === 'brouillon'
-    //         ? 'standard'
-    //         : (isDraft ? 'brouillon' : 'standard');
-
-    //     const dataToSubmit = {
-    //         entreprise_id: data.entreprise_id,
-    //         exercice_id: data.exercice_id,
-    //         periode_id: data.periode_id,
-    //         date_collecte: data.date_collecte,
-    //         donnees: data.donnees,
-    //         type_collecte: typeCollecte,
-    //         promoteur_id: data.promoteur_id || null,
-    //         ong_id: data.ong_id || null,
-    //         convertToStandard: isEditing && collecte?.type_collecte === 'brouillon'
-    //     };
-
-    //     if (isOnline) {
-    //         if (isEditing && collecte) {
-    //             if (collecte.type_collecte === 'brouillon' && typeCollecte === 'standard') {
-    //                 router.put(route('collectes.convert-to-standard', collecte.id), {}, {
-    //                     onSuccess: () => {
-    //                         toast.success('Brouillon converti en collecte standard');
-    //                         setTimeout(() => window.location.href = route('collectes.index'), 1000);
-    //                     },
-    //                     onError: (errors) => {
-    //                         console.error('Erreurs de conversion:', errors);
-    //                         toast.error(errors.message || Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(', '));
-    //                         setIsSubmitting(false);
-    //                     }
-    //                 });
-    //             } else {
-    //                 put(route('collectes.update', collecte.id), dataToSubmit, {
-    //                     onSuccess: () => {
-    //                         toast.success('Collecte mise à jour avec succès');
-    //                         setTimeout(() => window.location.href = route('collectes.index'), 1000);
-    //                     },
-    //                     onError: (errors) => {
-    //                         console.error('Erreurs de mise à jour:', errors);
-    //                         toast.error(errors.message || Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(', '));
-    //                         setIsSubmitting(false);
-    //                     }
-    //                 });
-    //             }
-    //         } else {
-    //             post(route('collectes.store'), dataToSubmit, {
-    //                 onSuccess: () => {
-    //                     toast.success('Collecte enregistrée avec succès');
-    //                     setTimeout(() => window.location.href = route('collectes.index'), 1000);
-    //                 },
-    //                 onError: (errors) => {
-    //                     toast.error(errors.message || Object.entries(errors).map(([field, message]) => `${field}: ${message}`).join(', '));
-    //                     setIsSubmitting(false);
-    //                 }
-    //             });
-    //         }
-    //     } else {
-    //         try {
-    //             if (!isInitialized) {
-    //                 toast.error('Le mode hors ligne n\'est pas encore initialisé. Veuillez patienter...');
-    //                 setIsSubmitting(false);
-    //                 return;
-    //             }
-
-    //             await saveOffline(
-    //                 parseInt(data.entreprise_id),
-    //                 parseInt(data.exercice_id),
-    //                 data.periode_id,
-    //                 data.donnees,
-    //                 isDraft
-    //             );
-    //             toast.success('Données sauvegardées localement en attente de synchronisation');
-    //             reset();
-    //             setStep(1);
-    //             setIsSubmitting(false);
-    //         } catch (error) {
-    //             console.error('Erreur lors de la sauvegarde offline:', error);
-    //             toast.error('Erreur lors de la sauvegarde locale');
-    //             setIsSubmitting(false);
-    //         }
-    //     }
-    // };
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -1313,12 +1230,11 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
             date_collecte: data.date_collecte,
             donnees: data.donnees,
             type_collecte: typeCollecte,
-            promoteur_id: data.promoteur_id || null,
+            promote胶_id: data.promoteur_id || null,
             ong_id: data.ong_id || null,
             convertToStandard: isEditing && collecte?.type_collecte === 'brouillon'
         };
 
-        // Définir les messages en fonction du contexte
         const successMessages = {
             update: 'Collecte mise à jour avec succès',
             create: 'Collecte enregistrée avec succès',
@@ -1326,7 +1242,6 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
             offline: 'Données sauvegardées localement en attente de synchronisation'
         };
 
-        // Gestionnaire de succès général
         const handleSuccess = (message: string) => {
             toast.success(message);
             if (message !== successMessages.offline) {
@@ -1338,7 +1253,6 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
             setIsSubmitting(false);
         };
 
-        // Gestionnaire d'erreur général
         const handleError = (errors: any) => {
             console.error('Erreurs:', errors);
             const errorMessage = errors.message ||
@@ -1397,12 +1311,12 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
 
     const getInputFields = () => {
         if (!selectedPeriodeType || !activeCategory) return [];
-        return IndicateurCalculator.getInputIndicateursByPeriodeAndCategorie(selectedPeriodeType  as PeriodeName, activeCategory);
+        return IndicateurCalculator.getInputIndicateursByPeriodeAndCategorie(selectedPeriodeType as PeriodeName, activeCategory);
     };
 
     const getCalculatedFields = () => {
         if (!selectedPeriodeType || !activeCategory) return [];
-        return IndicateurCalculator.getCalculatedIndicateursByPeriodeAndCategorie(selectedPeriodeType  as PeriodeName, activeCategory);
+        return IndicateurCalculator.getCalculatedIndicateursByPeriodeAndCategorie(selectedPeriodeType as PeriodeName, activeCategory);
     };
 
     const renderIndicateurField = (field: any) => {
@@ -1411,14 +1325,14 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
         const isManualInput = !isCalculatedField || (isCalculatedField && !isAutoCalculated);
 
         return (
-            <div key={field.id} className="space-y-1">
-                <label htmlFor={`${activeCategory}_${field.id}`} className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+            <div key={field.id} className="space-y-2">
+                <label htmlFor={`${activeCategory}_${field.id}`} className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
                     <span className="flex-grow">{field.label}</span>
-                    {field.required && <span className="text-red-500 dark:text-red-400 ml-1">*</span>}
+                    {field.required && <span className="ml-1 text-red-500 dark:text-red-400">*</span>}
                     {isCalculatedField && (
                         <span className={`ml-2 px-2 py-0.5 text-xs rounded-full flex items-center ${
                             isAutoCalculated
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                ? 'bg-green-100 text-green-800Prototype dark:bg-green-900 dark:text-green-200'
                                 : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                         }`}>
                             {isAutoCalculated ? (
@@ -1444,12 +1358,13 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
                         value={data.donnees[activeCategory]?.[field.id] || ''}
                         onChange={e => isManualInput && handleIndicateurChange(field.id, e.target.value)}
                         readOnly={!isManualInput}
-                        className={`block w-full rounded-lg border-2 py-3 px-4 sm:text-sm ${
+                        className={`block w-full rounded-lg border-2 py-3 px-4 text-sm transition-colors ${
                             isCalculatedField && isAutoCalculated
                                 ? 'bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600'
                                 : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
                         }`}
                         placeholder={isManualInput ? `Saisir ${field.label.toLowerCase()}` : 'Calculé automatiquement'}
+                        aria-describedby={field.definition ? `definition-${field.id}` : undefined}
                     />
                     {isCalculatedField && isAutoCalculated && (
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -1458,13 +1373,13 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
                     )}
                     {field.unite && (
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                            <span className="text-gray-500 dark:text-gray-400 sm:text-sm">{field.unite}</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-sm">{field.unite}</span>
                         </div>
                     )}
                 </div>
 
                 {field.definition && (
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    <p id={`definition-${field.id}`} className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         Définition: {field.definition}
                     </p>
                 )}
@@ -1492,419 +1407,421 @@ const CollecteForm: React.FC<CollecteFormProps> = ({
     };
 
     return (
-        <div className={`${darkMode ? 'dark' : ''} transition-colors duration-200`}>
-            <div className="bg-white dark:bg-gray-800 shadow-lg sm:rounded-xl overflow-hidden">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700 relative">
-                    <button
-                        onClick={toggleDarkMode}
-                        className="absolute right-6 top-6 p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                        aria-label={darkMode ? "Activer le mode clair" : "Activer le mode sombre"}
-                    >
-                        {darkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
-                    </button>
+        <div className={`min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200 ${darkMode ? 'dark' : ''}`}>
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+                <div className="bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden">
+                    <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 relative">
+                        <button
+                            onClick={toggleDarkMode}
+                            className="absolute right-4 top-4 sm:right-6 sm:top-6 p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            aria-label={darkMode ? "Activer le mode clair" : "Activer le mode sombre"}
+                        >
+                            {darkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+                        </button>
 
-                    <h1 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">
-                        {isEditing ? "Modifier la collecte" : isDraft ? "Brouillon de collecte" : "Nouvelle collecte d'indicateurs"}
-                    </h1>
+                        <h1 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-gray-900 dark:text-white">
+                            {isEditing ? "Modifier la collecte" : isDraft ? "Brouillon de collecte" : "Nouvelle collecte d'indicateurs"}
+                        </h1>
 
-                    <div className="flex items-center gap-2 mb-4">
-                        {isOnline ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">
-                                <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
-                                En ligne
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-100">
-                                <WifiOffIcon className="w-3 h-3 mr-1" />
-                                Hors ligne
-                            </span>
-                        )}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+                            {isOnline ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-100">
+                                    <span className="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                                    En ligne
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-100">
+                                    <WifiOffIcon className="w-3 h-3 mr-1" />
+                                    Hors ligne
+                                </span>
+                            )}
 
-                        {pendingUploads > 0 && (
-                            <button
-                                type="button"
-                                onClick={handleSync}
-                                disabled={!isOnline || isSubmitting}
-                                className="ml-2 inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <RefreshCcw className={`w-4 h-4 mr-1 ${isSubmitting ? 'animate-spin' : ''}`} />
-                                Sync ({pendingUploads})
-                            </button>
-                        )}
-                    </div>
-
-                    {isEditing && collecte?.type_collecte === 'brouillon' && (
-                        <div className="bg-amber-100 dark:bg-amber-900 p-3 rounded-md mb-4 flex items-center justify-between">
-                            <p className="text-amber-800 dark:text-amber-100">
-                                Cette collecte est en mode brouillon et ne sera pas comptabilisée dans les analyses.
-                            </p>
-                            <button
-                                type="button"
-                                onClick={convertToStandard}
-                                className="inline-flex items-center px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-400"
-                            >
-                                Convertir en collecte standard
-                            </button>
+                            {pendingUploads > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={handleSync}
+                                    disabled={!isOnline || isSubmitting}
+                                    className="mt-2 sm:mt-0 sm:ml-2 inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <RefreshCcw className={`w-4 h-4 mr-1 ${isSubmitting ? 'animate-spin' : ''}`} />
+                                    Sync ({pendingUploads})
+                                </button>
+                            )}
                         </div>
-                    )}
 
-                    <form ref={formRef} onSubmit={handleSubmit}>
-                        {step === 1 && (
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {userType === 'coach' && promoteurs.length > 0 && (
-                                        <div className="md:col-span-2">
-                                            <label htmlFor="promoteur_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                Promoteur
-                                            </label>
-                                            <select
-                                                id="promoteur_id"
-                                                name="promoteur_id"
-                                                value={data.promoteur_id}
-                                                onChange={e => setData('promoteur_id', e.target.value)}
-                                                className={`mt-1 block w-full rounded-lg border-2 shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
-                                                    errors.promoteur_id
-                                                    ? 'border-red-500 dark:border-red-400'
-                                                    : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
-                                                } py-3 px-4`}
-                                            >
-                                                <option value="">Sélectionner un promoteur</option>
-                                                {promoteurs.map(promoteur => (
-                                                    <option key={promoteur.id} value={promoteur.id.toString()}>
-                                                        {promoteur.prenom} {promoteur.nom} - {promoteur.contact}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            {errors.promoteur_id && (
-                                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.promoteur_id}</p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <label htmlFor="entreprise_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Entreprise
-                                        </label>
-                                        <select
-                                            id="entreprise_id"
-                                            name="entreprise_id"
-                                            value={data.entreprise_id}
-                                            onChange={e => setData('entreprise_id', e.target.value)}
-                                            className={`mt-1 block w-full rounded-lg border-2 shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
-                                                errors.entreprise_id
-                                                ? 'border-red-500 dark:border-red-400'
-                                                : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
-                                            } py-3 px-4`}
-                                            disabled={userType === 'coach' && !data.promoteur_id}
-                                        >
-                                            <option value="">Sélectionner une entreprise</option>
-                                            {entreprisesFiltrees.map(entreprise => (
-                                                <option key={entreprise.id} value={entreprise.id.toString()}>
-                                                    {entreprise.nom_entreprise}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.entreprise_id && (
-                                            <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.entreprise_id}</p>
-                                        )}
-                                        {userType === 'coach' && !data.promoteur_id && (
-                                            <p className="mt-1 text-sm text-amber-500 dark:text-amber-400">Veuillez d'abord sélectionner un promoteur</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="exercice_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Exercice
-                                        </label>
-                                        <select
-                                            id="exercice_id"
-                                            name="exercice_id"
-                                            value={data.exercice_id}
-                                            onChange={e => setData('exercice_id', e.target.value)}
-                                            className={`mt-1 block w-full rounded-lg border-2 shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
-                                                errors.exercice_id
-                                                ? 'border-red-500 dark:border-red-400'
-                                                : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
-                                            } py-3 px-4`}
-                                        >
-                                            <option value="">Sélectionner un exercice</option>
-                                            {exercices.map(exercice => (
-                                                <option key={exercice.id} value={exercice.id.toString()}>
-                                                    {exercice.annee} {exercice.actif ? '(Actif)' : ''}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.exercice_id && (
-                                            <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.exercice_id}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="periode_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Période
-                                        </label>
-                                        <select
-                                            id="periode_id"
-                                            name="periode_id"
-                                            value={data.periode_id}
-                                            onChange={e => setData('periode_id', e.target.value)}
-                                            className={`mt-1 block w-full rounded-lg border-2 shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
-                                                errors.periode_id
-                                                ? 'border-red-500 dark:border-red-400'
-                                                : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
-                                            } py-3 px-4`}
-                                            disabled={periodeFiltrees.length === 0 || !!preselectedPeriode}
-                                        >
-                                            <option value="">Sélectionner une période</option>
-                                            {periodeFiltrees.map(periode => (
-                                                <option key={periode.id} value={periode.id.toString()}>
-                                                    {periodeNames.get(periode.id) || periode.type_periode}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.periode_id && (
-                                            <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.periode_id}</p>
-                                        )}
-                                        {periodeFiltrees.length === 0 && data.exercice_id && (
-                                            <p className="mt-1 text-sm text-amber-500 dark:text-amber-400">
-                                                Toutes les périodes ont été utilisées pour cet exercice.
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="date_collecte" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Date de collecte
-                                        </label>
-                                        <input
-                                            type="date"
-                                            id="date_collecte"
-                                            name="date_collecte"
-                                            value={data.date_collecte}
-                                            onChange={e => setData('date_collecte', e.target.value)}
-                                            className={`mt-1 block w-full rounded-lg border-2 shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
-                                                errors.date_collecte
-                                                ? 'border-red-500 dark:border-red-400'
-                                                : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
-                                            } py-3 px-4`}
-                                        />
-                                        {errors.date_collecte && (
-                                            <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.date_collecte}</p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {data.entreprise_id && data.exercice_id && periodeFiltrees.length > 0 && (
-                                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mt-4">
-                                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Périodes disponibles
-                                        </h3>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                            {periodeFiltrees.map(periode => (
-                                                <div
-                                                    key={periode.id}
-                                                    className="flex items-center p-2 rounded-lg bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300"
-                                                >
-                                                    <CheckCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
-                                                    <span className="text-sm">
-                                                        {periodeNames.get(periode.id) || periode.type_periode}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="flex justify-end mt-6">
-                                    <button
-                                        type="button"
-                                        onClick={handleNextStep}
-                                        disabled={!canProceedToStep2() || isSubmitting}
-                                        className="inline-flex justify-center rounded-lg border-2 border-transparent bg-indigo-600 dark:bg-indigo-500 py-3 px-6 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 dark:hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 disabled:opacity-50"
-                                    >
-                                        {isSubmitting ? 'Chargement...' : 'Continuer'}
-                                    </button>
-                                </div>
+                        {isEditing && collecte?.type_collecte === 'brouillon' && (
+                            <div className="bg-amber-100 dark:bg-amber-900 p-3 rounded-md mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-amber-800 dark:text-amber-100 mb-2 sm:mb-0">
+                                    Cette collecte est en mode brouillon et ne sera pas comptabilisée dans les analyses.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={convertToStandard}
+                                    className="inline-flex items-center px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-400"
+                                >
+                                    Convertir en collecte standard
+                                </button>
                             </div>
                         )}
 
-                        {step === 2 && (
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex space-x-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setStep(1)}
-                                            disabled={isSubmitting}
-                                            className="inline-flex items-center rounded-lg border-2 border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 disabled:opacity-50"
-                                        >
-                                            <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                                            Retour
-                                        </button>
-
-                                        <Link
-                                            href={userType === 'coach' ? route('coach.collectes.index') : route('collectes.index')}
-                                            className="inline-flex items-center rounded-lg border-2 border-gray-800 dark:border-gray-300 bg-gray-800 dark:bg-gray-700 py-3 px-4 text-sm font-medium text-white dark:text-gray-300 shadow-sm hover:bg-gray-700 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 focus:ring-offset-2"
-                                        >
-                                            <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                                            Retour à la liste
-                                        </Link>
-                                    </div>
-
-                                    <div>
-                                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                            {isEditing ? "Modifier la collecte" : "Nouvelle collecte"} -
-                                            Entreprise: {entreprisesFiltrees.find(e => e.id.toString() === data.entreprise_id)?.nom_entreprise || ''} -
-                                            Période: {periodeNames.get(parseInt(data.periode_id)) || periodeFiltrees.find(p => p.id.toString() === data.periode_id)?.type_periode || ''}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {availableCategories.length > 0 ? (
-                                    <>
-                                        <div>
-                                            <div className="sm:hidden">
-                                                <label htmlFor="tabs" className="sr-only">
-                                                    Sélectionner une catégorie
+                        <form ref={formRef} onSubmit={handleSubmit}>
+                            {step === 1 && (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                        {userType === 'coach' && promoteurs.length > 0 && (
+                                            <div className="sm:col-span-2">
+                                                <label htmlFor="promoteur_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Promoteur
                                                 </label>
                                                 <select
-                                                    id="tabs"
-                                                    name="tabs"
-                                                    className="block w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 py-3 px-4"
-                                                    value={activeCategory}
-                                                    onChange={e => setActiveCategory(e.target.value)}
+                                                    id="promoteur_id"
+                                                    name="promoteur_id"
+                                                    value={data.promoteur_id}
+                                                    onChange={e => setData('promoteur_id', e.target.value)}
+                                                    className={`mt-1 block w-full rounded-lg border-2 shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm py-3 px-4 ${
+                                                        errors.promoteur_id
+                                                        ? 'border-red-500 dark:border-red-400'
+                                                        : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
+                                                    }`}
                                                 >
-                                                    {availableCategories.map(category => (
-                                                        <option key={category.id} value={category.id}>
-                                                            {category.label}
+                                                    <option value="">Sélectionner un promoteur</option>
+                                                    {promoteurs.map(promoteur => (
+                                                        <option key={promoteur.id} value={promoteur.id.toString()}>
+                                                            {promoteur.prenom} {promoteur.nom} - {promoteur.contact}
                                                         </option>
                                                     ))}
                                                 </select>
+                                                {errors.promoteur_id && (
+                                                    <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.promoteur_id}</p>
+                                                )}
                                             </div>
-                                            <div className="hidden sm:block">
-                                                <nav className="flex space-x-4 flex-wrap" aria-label="Tabs">
-                                                    {availableCategories.map(category => (
-                                                        <button
-                                                            key={category.id}
-                                                            type="button"
-                                                            onClick={() => setActiveCategory(category.id)}
-                                                            className={`px-4 py-3 text-sm font-medium rounded-lg border-2 my-1 ${
-                                                                activeCategory === category.id
-                                                                    ? 'bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-900 dark:text-indigo-300 dark:border-indigo-700'
-                                                                    : 'text-gray-500 border-gray-200 hover:text-gray-700 dark:text-gray-400 dark:border-gray-700 dark:hover:text-gray-300'
-                                                            }`}
-                                                        >
-                                                            {category.label}
-                                                        </button>
-                                                    ))}
-                                                </nav>
-                                            </div>
-                                        </div>
+                                        )}
 
-                                        <div className="mt-4 bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-inner">
-                                            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                                                {availableCategories.find(category => category.id === activeCategory)?.label}
-                                            </h3>
-
-                                            <div className="space-y-4 mb-4">
-                                                <p className="text-sm text-gray-600 dark:text-gray-300">
-                                                    Période: <span className="font-medium">{periodeNames.get(parseInt(data.periode_id)) || selectedPeriodeType}</span>
-                                                </p>
-                                                <p className="text-sm text-gray-600 dark:text-gray-300">
-                                                    Nombre d'indicateurs: <span className="font-medium">{getFilteredFields().length}</span>
-                                                </p>
-
-                                                <div className="flex flex-wrap gap-4 mt-2">
-                                                    <div className="flex items-center">
-                                                        <span className="w-3 h-3 bg-green-100 dark:bg-green-900 rounded-full mr-2"></span>
-                                                        <span className="text-xs text-gray-600 dark:text-gray-300">Auto-calculé</span>
-                                                    </div>
-                                                    <div className="flex items-center">
-                                                        <span className="w-3 h-3 bg-yellow-100 dark:bg-yellow-900 rounded-full mr-2"></span>
-                                                        <span className="text-xs text-gray-600 dark:text-gray-300">En attente de données</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {getFilteredFields().length > 0 ? (
-                                                <>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                                        {getInputFields().map(field => renderIndicateurField(field))}
-                                                    </div>
-
-                                                    {getCalculatedFields().length > 0 && (
-                                                        <div className="border-t border-gray-200 dark:border-gray-600 pt-6">
-                                                            <h4 className="text-base font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-                                                                <CalculatorIcon className="w-4 h-4 mr-2" />
-                                                                Indicateurs calculés
-                                                            </h4>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                                {getCalculatedFields().map(field => renderIndicateurField(field))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <div className="text-center py-10">
-                                                    <p className="text-gray-500 dark:text-gray-400">
-                                                        Aucun indicateur disponible pour cette catégorie et cette période.
-                                                    </p>
-                                                </div>
+                                        <div>
+                                            <label htmlFor="entreprise_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Entreprise
+                                            </label>
+                                            <select
+                                                id="entreprise_id"
+                                                name="entreprise_id"
+                                                value={data.entreprise_id}
+                                                onChange={e => setData('entreprise_id', e.target.value)}
+                                                className={`mt-1 block w-full rounded-lg border-2 shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm py-3 px-4 ${
+                                                    errors.entreprise_id
+                                                    ? 'border-red-500 dark:border-red-400'
+                                                    : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
+                                                }`}
+                                                disabled={userType === 'coach' && !data.promoteur_id}
+                                            >
+                                                <option value="">Sélectionner une entreprise</option>
+                                                {entreprisesFiltrees.map(entreprise => (
+                                                    <option key={entreprise.id} value={entreprise.id.toString()}>
+                                                        {entreprise.nom_entreprise}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {errors.entreprise_id && (
+                                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.entreprise_id}</p>
+                                            )}
+                                            {userType === 'coach' && !data.promoteur_id && (
+                                                <p className="mt-1 text-sm text-amber-500 dark:text-amber-400">Veuillez d'abord sélectionner un promoteur</p>
                                             )}
                                         </div>
 
-                                        <div className="flex justify-end space-x-4 mt-6">
-                                            <button
-                                                type="button"
-                                                onClick={handleSaveAsDraft}
-                                                disabled={isSubmitting}
-                                                className="inline-flex items-center px-6 py-3 border-2 border-gray-300 dark:border-gray-600 shadow-lg text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50"
+                                        <div>
+                                            <label htmlFor="exercice_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Exercice
+                                            </label>
+                                            <select
+                                                id="exercice_id"
+                                                name="exercice_id"
+                                                value={data.exercice_id}
+                                                onChange={e => setData('exercice_id', e.target.value)}
+                                                className={`mt-1 block w-full rounded-lg border-2 shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm py-3 px-4 ${
+                                                    errors.exercice_id
+                                                    ? 'border-red-500 dark:border-red-400'
+                                                    : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
+                                                }`}
                                             >
-                                                <SaveIcon className="w-5 h-5 mr-2" />
-                                                {isSubmitting ? 'Enregistrement...' : 'Enregistrer comme brouillon'}
-                                                {!isOnline && <WifiOffIcon className="w-4 h-4 ml-2 text-amber-500" />}
-                                            </button>
-
-                                            <button
-                                                type="submit"
-                                                disabled={processing || isSubmitting}
-                                                className="inline-flex justify-center py-3 px-6 border-2 border-transparent shadow-lg text-sm font-medium rounded-lg text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50"
-                                            >
-                                                {(processing || isSubmitting) ? (
-                                                    <>
-                                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                        </svg>
-                                                        Traitement...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        {isEditing ? 'Mettre à jour' : 'Enregistrer'}
-                                                        {!isOnline && <WifiOffIcon className="w-4 h-4 ml-2 text-amber-500" />}
-                                                    </>
-                                                )}
-                                            </button>
+                                                <option value="">Sélectionner un exercice</option>
+                                                {exercices.map(exercice => (
+                                                    <option key={exercice.id} value={exercice.id.toString()}>
+                                                        {exercice.annee} {exercice.actif ? '(Actif)' : ''}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {errors.exercice_id && (
+                                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.exercice_id}</p>
+                                            )}
                                         </div>
-                                    </>
-                                ) : (
-                                    <div className="text-center py-10 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                        <p className="text-gray-500 dark:text-gray-400">
-                                            Aucune catégorie disponible pour cette période. Veuillez sélectionner une autre période.
-                                        </p>
+
+                                        <div>
+                                            <label htmlFor="periode_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Période
+                                            </label>
+                                            <select
+                                                id="periode_id"
+                                                name="periode_id"
+                                                value={data.periode_id}
+                                                onChange={e => setData('periode_id', e.target.value)}
+                                                className={`mt-1 block w-full rounded-lg border-2 shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm py-3 px-4 ${
+                                                    errors.periode_id
+                                                    ? 'border-red-500 dark:border-red-400'
+                                                    : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
+                                                }`}
+                                                disabled={periodeFiltrees.length === 0 || !!preselectedPeriode}
+                                            >
+                                                <option value="">Sélectionner une période</option>
+                                                {periodeFiltrees.map(periode => (
+                                                    <option key={periode.id} value={periode.id.toString()}>
+                                                        {periodeNames.get(periode.id) || periode.type_periode}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {errors.periode_id && (
+                                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.periode_id}</p>
+                                            )}
+                                            {periodeFiltrees.length === 0 && data.exercice_id && (
+                                                <p className="mt-1 text-sm text-amber-500 dark:text-amber-400">
+                                                    Toutes les périodes ont été utilisées pour cet exercice.
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="date_collecte" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Date de collecte
+                                            </label>
+                                            <input
+                                                type="date"
+                                                id="date_collecte"
+                                                name="date_collecte"
+                                                value={data.date_collecte}
+                                                onChange={e => setData('date_collecte', e.target.value)}
+                                                className={`mt-1 block w-full rounded-lg border-2 shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-600 text-sm py-3 px-4 ${
+                                                    errors.date_collecte
+                                                    ? 'border-red-500 dark:border-red-400'
+                                                    : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400'
+                                                }`}
+                                            />
+                                            {errors.date_collecte && (
+                                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">{errors.date_collecte}</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {data.entreprise_id && data.exercice_id && periodeFiltrees.length > 0 && (
+                                        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mt-4">
+                                            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Périodes disponibles
+                                            </h3>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                                {periodeFiltrees.map(periode => (
+                                                    <div
+                                                        key={periode.id}
+                                                        className="flex items-center p-2 rounded-lg bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300 text-sm"
+                                                    >
+                                                        <CheckCircleIcon className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                        <span>
+                                                            {periodeNames.get(periode.id) || periode.type_periode}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-end mt-4 sm:mt-6">
                                         <button
                                             type="button"
-                                            onClick={() => setStep(1)}
-                                            className="mt-4 inline-flex items-center px-6 py-3 border-2 border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                                            onClick={handleNextStep}
+                                            disabled={!canProceedToStep2() || isSubmitting}
+                                            className="inline-flex justify-center rounded-lg border-2 border-transparent bg-indigo-600 dark:bg-indigo-500 py-2 sm:py-3 px-4 sm:px-6 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 dark:hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 disabled:opacity-50"
                                         >
-                                            <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                                            Retour à la sélection
+                                            {isSubmitting ? 'Chargement...' : 'Continuer'}
                                         </button>
                                     </div>
-                                )}
-                            </div>
-                        )}
-                    </form>
+                                </div>
+                            )}
+
+                            {step === 2 && (
+                                <div className="space-y-4 sm:space-y-6">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                                        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setStep(1)}
+                                                disabled={isSubmitting}
+                                                className="inline-flex items-center rounded-lg border-2 border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 py-2 sm:py-3 px-3 sm:px-4 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:ring-offset-2 disabled:opacity-50"
+                                            >
+                                                <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                                                Retour
+                                            </button>
+
+                                            <Link
+                                                href={userType === 'coach' ? route('coach.collectes.index') : route('collectes.index')}
+                                                className="inline-flex items-center rounded-lg border-2 border-gray-800 dark:border-gray-300 bg-gray-800 dark:bg-gray-700 py-2 sm:py-3 px-3 sm:px-4 text-sm font-medium text-white dark:text-gray-300 shadow-sm hover:bg-gray-700 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 focus:ring-offset-2"
+                                            >
+                                                <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                                                Retour à la liste
+                                            </Link>
+                                        </div>
+
+                                        <div className="mt-2 sm:mt-0">
+                                            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 break-words">
+                                                {isEditing ? "Modifier la collecte" : "Nouvelle collecte"} -
+                                                Entreprise: {entreprisesFiltrees.find(e => e.id.toString() === data.entreprise_id)?.nom_entreprise || ''} -
+                                                Période: {periodeNames.get(parseInt(data.periode_id)) || periodeFiltrees.find(p => p.id.toString() === data.periode_id)?.type_periode || ''}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {availableCategories.length > 0 ? (
+                                        <>
+                                            <div>
+                                                <div className="sm:hidden">
+                                                    <label htmlFor="tabs" className="sr-only">
+                                                        Sélectionner une catégorie
+                                                    </label>
+                                                    <select
+                                                        id="tabs"
+                                                        name="tabs"
+                                                        className="block w-full rounded-lg border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 py-3 px-4 text-sm"
+                                                        value={activeCategory}
+                                                        onChange={e => setActiveCategory(e.target.value)}
+                                                    >
+                                                        {availableCategories.map(category => (
+                                                            <option key={category.id} value={category.id}>
+                                                                {category.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div className="hidden sm:block">
+                                                    <nav className="flex flex-wrap gap-2 sm:gap-4" aria-label="Tabs">
+                                                        {availableCategories.map(category => (
+                                                            <button
+                                                                key={category.id}
+                                                                type="button"
+                                                                onClick={() => setActiveCategory(category.id)}
+                                                                className={`px-3 sm:px-4 py-2 sm:py-3 text-sm font-medium rounded-lg border-2 my-1 whitespace-nowrap ${
+                                                                    activeCategory === category.id
+                                                                        ? 'bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-900 dark:text-indigo-300 dark:border-indigo-700'
+                                                                        : 'text-gray-500 border-gray-200 hover:text-gray-700 dark:text-gray-400 dark:border-gray-700 dark:hover:text-gray-300'
+                                                                }`}
+                                                            >
+                                                                {category.label}
+                                                            </button>
+                                                        ))}
+                                                    </nav>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-4 bg-gray-50 dark:bg-gray-700 p-4 sm:p-6 rounded-lg shadow-inner">
+                                                <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-4">
+                                                    {availableCategories.find(category => category.id === activeCategory)?.label}
+                                                </h3>
+
+                                                <div className="space-y-4 mb-4">
+                                                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                        Période: <span className="font-medium">{periodeNames.get(parseInt(data.periode_id)) || selectedPeriodeType}</span>
+                                                    </p>
+                                                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                        Nombre d'indicateurs: <span className="font-medium">{getFilteredFields().length}</span>
+                                                    </p>
+
+                                                    <div className="flex flex-wrap gap-4">
+                                                        <div className="flex items-center">
+                                                            <span className="w-3 h-3 bg-green-100 dark:bg-green-900 rounded-full mr-2"></span>
+                                                            <span className="text-xs text-gray-600 dark:text-gray-300">Auto-calculé</span>
+                                                        </div>
+                                                        <div className="flex items-center">
+                                                            <span className="w-3 h-3 bg-yellow-100 dark:bg-yellow-900 rounded-full mr-2"></span>
+                                                            <span className="text-xs text-gray-600 dark:text-gray-300">En attente de données</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {getFilteredFields().length > 0 ? (
+                                                    <>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                                                            {getInputFields().map(field => renderIndicateurField(field))}
+                                                        </div>
+
+                                                        {getCalculatedFields().length > 0 && (
+                                                            <div className="border-t border-gray-200 dark:border-gray-600 pt-4 sm:pt-6">
+                                                                <h4 className="text-base font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                                                                    <CalculatorIcon className="w-4 h-4 mr-2" />
+                                                                    Indicateurs calculés
+                                                                </h4>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                                                    {getCalculatedFields().map(field => renderIndicateurField(field))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <div className="text-center py-8 sm:py-10">
+                                                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                                            Aucun indicateur disponible pour cette catégorie et cette période.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-6">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSaveAsDraft}
+                                                    disabled={isSubmitting}
+                                                    className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 border-2 border-gray-300 dark:border-gray-600 shadow-lg text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50"
+                                                >
+                                                    <SaveIcon className="w-5 h-5 mr-2" />
+                                                    {isSubmitting ? 'Enregistrement...' : 'Enregistrer comme brouillon'}
+                                                    {!isOnline && <WifiOffIcon className="w-4 h-4 ml-2 text-amber-500" />}
+                                                </button>
+
+                                                <button
+                                                    type="submit"
+                                                    disabled={processing || isSubmitting}
+                                                    className="inline-flex justify-center py-2 sm:py-3 px-4 sm:px-6 border-2 border-transparent shadow-lg text-sm font-medium rounded-lg text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 disabled:opacity-50"
+                                                >
+                                                    {(processing || isSubmitting) ? (
+                                                        <>
+                                                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            Traitement...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            {isEditing ? 'Mettre à jour' : 'Enregistrer'}
+                                                            {!isOnline && <WifiOffIcon className="w-4 h-4 ml-2 text-amber-500" />}
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-center py-8 sm:py-10 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                            <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                                Aucune catégorie disponible pour cette période. Veuillez sélectionner une autre période.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => setStep(1)}
+                                                className="mt-4 inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 border-2 border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-indigo-400"
+                                            >
+                                                <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                                                Retour à la sélection
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

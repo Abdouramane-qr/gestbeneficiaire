@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class OfflineSyncController extends Controller
@@ -49,7 +50,7 @@ class OfflineSyncController extends Controller
         Log::info('Préparation des données pour la collecte #' . $data['id']);
 
         // Définir les tailles maximales en fonction de votre schéma de BD
-        $maxJsonSize = 65000; // Taille réelle de votre colonne en BD
+        $maxJsonSize = 60000; // Légèrement inférieur à la taille maximale pour avoir une marge
 
         // S'assurer que donnees est un tableau
         if (!is_array($data['donnees'])) {
@@ -119,6 +120,11 @@ class OfflineSyncController extends Controller
             }
         }
 
+        // Vérification du type de formulaire pour les données
+        if (isset($data['donnees']['formType']) && $data['donnees']['formType'] === 'exceptionnel') {
+            $data['is_exceptionnel'] = true;
+        }
+
         return true;
     }
 
@@ -128,7 +134,17 @@ class OfflineSyncController extends Controller
     public function syncOfflineData(Request $request)
     {
         try {
-            Log::info('Début de la synchronisation des données hors ligne');
+            // Générer un identifiant unique pour cette session de synchronisation
+            $syncId = uniqid('sync_');
+            Log::info("[SYNC:{$syncId}] Début de la synchronisation des données hors ligne");
+
+            // Vérification de la structure de la table
+            try {
+                $columns = Schema::getColumnListing('collectes');
+                Log::info("[SYNC:{$syncId}] Colonnes de la table collectes: " . implode(', ', $columns));
+            } catch (\Exception $e) {
+                Log::warning("[SYNC:{$syncId}] Impossible de vérifier la structure: " . $e->getMessage());
+            }
 
             // Validation plus flexible pour gérer différents types de données
             $validated = $request->validate([
@@ -146,26 +162,42 @@ class OfflineSyncController extends Controller
             $results = [];
             $errors = [];
 
-            Log::info('Début de la transaction avec ' . count($syncedData) . ' éléments');
-            DB::beginTransaction();
+            Log::info("[SYNC:{$syncId}] Début de la transaction avec " . count($syncedData) . " éléments");
 
+            // Traiter chaque élément dans sa propre transaction pour éviter de tout perdre en cas d'erreur
             foreach ($syncedData as $index => $data) {
+                $itemId = $data['id'];
+
+                // Commencer une transaction pour cet élément uniquement
+                DB::beginTransaction();
+
                 try {
+                    //Log::info("[SYNC:{$syncId}] Traitement de l'élément #{$itemId} ({$index+1}/{count($syncedData)})");
+
                     // Préparer et valider les données
                     $this->prepareData($data);
 
                     // Vérifier s'il s'agit d'une collecte exceptionnelle
                     $isExceptionnel = is_string($data['periode_id']) &&
                         (strtolower($data['periode_id']) === 'exceptionnel' ||
-                         strtolower($data['periode_id']) === 'occasionnel');
+                         strtolower($data['periode_id']) === 'occasionnel') ||
+                        (isset($data['is_exceptionnel']) && $data['is_exceptionnel'] === true) ||
+                        (isset($data['donnees']['formType']) && $data['donnees']['formType'] === 'exceptionnel');
 
                     // Vérifier si nous devons créer ou mettre à jour
                     $existingCollecte = null;
 
                     if (!$isExceptionnel && $data['type_collecte'] === 'standard') {
                         // Vérifier si une collecte standard existe déjà pour cette entreprise/période
+
+                        // Traiter periode_id pour la recherche
+                        $periodeIdForSearch = $data['periode_id'];
+                        if (is_string($periodeIdForSearch) && is_numeric($periodeIdForSearch)) {
+                            $periodeIdForSearch = (int)$periodeIdForSearch;
+                        }
+
                         $existingCollecte = Collecte::where('entreprise_id', $data['entreprise_id'])
-                            ->where('periode_id', $data['periode_id'])
+                            ->where('periode_id', $periodeIdForSearch)
                             ->where('type_collecte', 'standard')
                             ->first();
                     }
@@ -173,24 +205,41 @@ class OfflineSyncController extends Controller
                     // Traitement des collectes exceptionnelles
                     if ($isExceptionnel) {
                         // Pour les collectes exceptionnelles, toujours créer une nouvelle
-                        Log::info("Création d'une collecte exceptionnelle pour #{$data['id']}");
-                        $collecte = new Collecte([
+                        Log::info("[SYNC:{$syncId}] Création d'une collecte exceptionnelle pour #{$itemId}");
+
+                        $collecteData = [
                             'entreprise_id' => $data['entreprise_id'],
                             'exercice_id' => $data['exercice_id'],
-                            // Pour la periode_id, utiliser null ou un code spécial selon votre modèle
-                            'periode_id' => null, // ou une valeur spéciale comme -1
+                            // Pour la periode_id, utiliser null pour les collectes exceptionnelles
+                            'periode_id' => null,
+                            // Définir la période comme "Occasionnelle"
+                            'periode' => 'Occasionnelle',
                             'date_collecte' => Carbon::parse($data['date_collecte']),
                             'donnees' => $data['donnees'],
                             'type_collecte' => $data['type_collecte'],
-                            'is_exceptionnel' => true, // Marquer comme exceptionnelle
                             'user_id' => Auth::id(),
-                        ]);
+                        ];
 
+                        // Ajouter is_exceptionnel seulement si la colonne existe
+                        if (in_array('is_exceptionnel', $columns)) {
+                            $collecteData['is_exceptionnel'] = true;
+                        } else {
+                            // Si la colonne n'existe pas, stocker cette info dans les données
+                            if (is_array($collecteData['donnees'])) {
+                                $collecteData['donnees']['_is_exceptionnel'] = true;
+                            }
+                        }
+
+                        // Log complet pour débogage
+                        Log::debug("[SYNC:{$syncId}] Données complètes pour la collecte exceptionnelle:", $collecteData);
+
+                        $collecte = new Collecte($collecteData);
                         $collecte->save();
-                        Log::info("Collecte exceptionnelle #{$data['id']} sauvegardée avec ID: {$collecte->id}");
+
+                        Log::info("[SYNC:{$syncId}] Collecte exceptionnelle #{$itemId} sauvegardée avec ID: {$collecte->id}");
 
                         $results[] = [
-                            'local_id' => $data['id'],
+                            'local_id' => $itemId,
                             'remote_id' => $collecte->id,
                             'status' => 'created',
                             'type' => 'exceptionnel'
@@ -199,84 +248,164 @@ class OfflineSyncController extends Controller
                     // Si une collecte existe, la mettre à jour, sinon en créer une nouvelle
                     else if ($existingCollecte) {
                         // Mettre à jour la collecte existante
-                        Log::info("Mise à jour de la collecte existante #{$existingCollecte->id} pour collecte locale #{$data['id']}");
+                        Log::info("[SYNC:{$syncId}] Mise à jour de la collecte existante #{$existingCollecte->id} pour collecte locale #{$itemId}");
                         $existingCollecte->update([
                             'exercice_id' => $data['exercice_id'],
                             'date_collecte' => Carbon::parse($data['date_collecte']),
                             'donnees' => $data['donnees'],
                             'user_id' => Auth::id(),
                         ]);
-                        Log::info("Collecte #{$existingCollecte->id} mise à jour");
+                        Log::info("[SYNC:{$syncId}] Collecte #{$existingCollecte->id} mise à jour");
 
                         $results[] = [
-                            'local_id' => $data['id'],
+                            'local_id' => $itemId,
                             'remote_id' => $existingCollecte->id,
                             'status' => 'updated'
                         ];
                     } else {
-                        // Créer une nouvelle collecte
-                        Log::info("Création d'une nouvelle collecte standard pour #{$data['id']}");
-                        $collecte = Collecte::create([
-                            'entreprise_id' => $data['entreprise_id'],
-                            'exercice_id' => $data['exercice_id'],
-                            'periode_id' => $data['periode_id'],
-                            'date_collecte' => Carbon::parse($data['date_collecte']),
-                            'donnees' => $data['donnees'],
-                            'type_collecte' => $data['type_collecte'],
-                            'user_id' => Auth::id(),
+                        // Créer une nouvelle collecte standard
+                        Log::info("[SYNC:{$syncId}] Création d'une nouvelle collecte standard pour #{$itemId}");
+
+                        // Log détaillé des données avant création
+                        Log::debug("[SYNC:{$syncId}] Données pour collecte standard:", [
+                            'periode_id_original' => $data['periode_id'],
+                            'type' => gettype($data['periode_id']),
+                            'taille_donnees' => strlen(json_encode($data['donnees']))
                         ]);
-                        Log::info("Collecte standard #{$data['id']} créée avec ID: {$collecte->id}");
 
-                        $results[] = [
-                            'local_id' => $data['id'],
-                            'remote_id' => $collecte->id,
-                            'status' => 'created'
-                        ];
+                        // Traitement du periode_id
+                        $periodeId = null;
+                        if (isset($data['periode_id'])) {
+                            if (is_numeric($data['periode_id'])) {
+                                // Conversion en entier
+                                $periodeId = (int)$data['periode_id'];
+                                Log::debug("[SYNC:{$syncId}] periode_id converti en entier: $periodeId");
+                            } elseif (is_string($data['periode_id']) && !in_array(strtolower($data['periode_id']), ['exceptionnel', 'occasionnel'])) {
+                                try {
+                                    // Recherche par nom si c'est une chaîne non numérique
+                                    $periode = DB::table('periodes')
+                                        ->where('id', $data['periode_id'])
+                                        ->orWhere('nom', 'like', '%' . $data['periode_id'] . '%')
+                                        ->orWhere('type_periode', 'like', '%' . $data['periode_id'] . '%')
+                                        ->first();
+
+                                    if ($periode) {
+                                        $periodeId = $periode->id;
+                                        Log::debug("[SYNC:{$syncId}] periode_id trouvé par recherche: $periodeId");
+                                    } else {
+                                        Log::warning("[SYNC:{$syncId}] Période non trouvée, utilisation de null");
+                                    }
+                                } catch (\Exception $e) {
+                                    Log::warning("[SYNC:{$syncId}] Erreur recherche période: " . $e->getMessage());
+                                }
+                            }
+                        }
+
+                        // Compression des données si nécessaire
+                        $donnees = $data['donnees'];
+                        $jsonData = json_encode($donnees);
+                        $jsonSize = strlen($jsonData);
+
+                        if ($jsonSize > 60000) {
+                            Log::warning("[SYNC:{$syncId}] Données trop volumineuses ({$jsonSize} octets), compression automatique");
+                            $compressed = gzcompress($jsonData, 9);
+                            $donnees = [
+                                'compressed' => true,
+                                'data' => base64_encode($compressed)
+                            ];
+                            Log::info("[SYNC:{$syncId}] Taille après compression: " . strlen(json_encode($donnees)) . " octets");
+                        }
+
+                        // Création de la collecte
+                        try {
+                            $collecteData = [
+                                'entreprise_id' => $data['entreprise_id'],
+                                'exercice_id' => $data['exercice_id'],
+                                'periode_id' => $periodeId,
+                                'date_collecte' => Carbon::parse($data['date_collecte']),
+                                'donnees' => $donnees,
+                                'type_collecte' => $data['type_collecte'],
+                                'user_id' => Auth::id(),
+                            ];
+
+                            // Ajouter periode seulement si nécessaire et si la colonne existe
+                            if (in_array('periode', $columns)) {
+                                $collecteData['periode'] = null; // Standard n'a pas besoin de periode
+                            }
+
+                            // Ajouter is_exceptionnel=false si la colonne existe
+                            if (in_array('is_exceptionnel', $columns)) {
+                                $collecteData['is_exceptionnel'] = false;
+                            }
+
+                            $collecte = Collecte::create($collecteData);
+
+                            Log::info("[SYNC:{$syncId}] Collecte standard #{$itemId} créée avec ID: {$collecte->id}");
+
+                            $results[] = [
+                                'local_id' => $itemId,
+                                'remote_id' => $collecte->id,
+                                'status' => 'created'
+                            ];
+                        } catch (\Exception $e) {
+                            Log::error("[SYNC:{$syncId}] Erreur création collecte standard: " . $e->getMessage());
+                            Log::error("[SYNC:{$syncId}] Trace: " . $e->getTraceAsString());
+                            throw $e;
+                        }
                     }
-                } catch (\Exception $e) {
-                    // Capturer l'erreur pour cet élément spécifique
-                    $errorMsg = 'Erreur lors de la synchronisation de la collecte #' . ($index + 1) . ': ' . $e->getMessage();
-                    Log::error($errorMsg);
-                    Log::error('Trace: ' . $e->getTraceAsString());
 
-                    $errors[$data['id']] = $e->getMessage();
+                    // Si tout s'est bien passé, on commit cette transaction individuelle
+                    DB::commit();
+                    Log::info("[SYNC:{$syncId}] Élément #{$itemId} traité avec succès");
+
+                } catch (\Exception $e) {
+                    // Rollback uniquement pour cet élément
+                    DB::rollBack();
+
+                    // Capturer l'erreur pour cet élément spécifique
+                    $errorMsg = "[SYNC:{$syncId}] Erreur lors de la synchronisation de l'élément #{$itemId}: " . $e->getMessage();
+                    Log::error($errorMsg);
+                    Log::error("[SYNC:{$syncId}] Trace: " . $e->getTraceAsString());
+
+                    $errors[$itemId] = $e->getMessage();
 
                     // Si c'est une erreur de validation, ajouter plus de détails
                     if ($e instanceof ValidationException) {
-                        Log::error('Erreurs de validation: ' . json_encode($e->errors()));
+                        Log::error("[SYNC:{$syncId}] Erreurs de validation: " . json_encode($e->errors()));
                     }
                 }
             }
 
-            Log::info('Commit de la transaction');
-            DB::commit();
-            Log::info('Transaction validée avec succès');
+            Log::info("[SYNC:{$syncId}] Synchronisation terminée: " . count($results) . " succès, " . count($errors) . " échecs");
 
             return response()->json([
                 'success' => count($results) > 0,
                 'message' => count($results) . ' collecte(s) synchronisée(s) avec succès',
                 'results' => $results,
-                'errors' => $errors
+                'errors' => $errors,
+                'sync_id' => $syncId
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Erreur globale de synchronisation: ' . $e->getMessage());
-            Log::error('Trace: ' . $e->getTraceAsString());
+            $syncId = $syncId ?? uniqid('sync_error_');
+            Log::error("[SYNC:{$syncId}] Erreur globale de synchronisation: " . $e->getMessage());
+            Log::error("[SYNC:{$syncId}] Trace: " . $e->getTraceAsString());
 
             if ($e instanceof ValidationException) {
-                Log::error('Erreurs de validation: ' . json_encode($e->errors()));
+                Log::error("[SYNC:{$syncId}] Erreurs de validation: " . json_encode($e->errors()));
                 return response()->json([
                     'success' => false,
                     'message' => 'Erreur de validation lors de la synchronisation',
-                    'errors' => $e->errors()
+                    'errors' => $e->errors(),
+                    'sync_id' => $syncId
                 ], 422);
             }
 
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la synchronisation: ' . $e->getMessage(),
-                'errors' => ['general' => $e->getMessage()]
+                'errors' => ['general' => $e->getMessage()],
+                'sync_id' => $syncId
             ], 500);
         }
     }
@@ -286,7 +415,47 @@ class OfflineSyncController extends Controller
      */
     public function verify($id)
     {
-        $exists = Collecte::where('id', $id)->exists();
-        return response()->json(['exists' => $exists]);
+        try {
+            $exists = Collecte::where('id', $id)->exists();
+            return response()->json(['exists' => $exists, 'status' => 'success']);
+        } catch (\Exception $e) {
+            Log::error("Erreur lors de la vérification de la collecte #{$id}: " . $e->getMessage());
+            return response()->json([
+                'exists' => false,
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Méthode helper pour récupérer les informations sur la table collectes
+     */
+    public function getTableInfo()
+    {
+        try {
+            // Récupérer les noms des colonnes
+            $columns = Schema::getColumnListing('collectes');
+
+            // Récupérer les détails des colonnes via une requête directe
+            $columnDetails = DB::select('SHOW COLUMNS FROM collectes');
+
+            // Formater les informations
+            $tableInfo = [
+                'columns' => $columns,
+                'details' => $columnDetails
+            ];
+
+            return response()->json([
+                'status' => 'success',
+                'table_info' => $tableInfo
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Erreur lors de la récupération des informations de la table collectes: " . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

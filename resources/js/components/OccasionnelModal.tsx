@@ -159,73 +159,148 @@ const FormulaireExceptionnelModal = ({
         return true;
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    // const handleSubmit = async (e: React.FormEvent) => {
+    //     e.preventDefault();
 
-        if (submitting || isSubmitting) return;
-        if (!validateForm()) return;
+    //     if (submitting || isSubmitting) return;
+    //     if (!validateForm()) return;
 
-        setSubmitting(true);
+    //     setSubmitting(true);
 
-        try {
-            if (isOnline) {
-                // Mode en ligne - Soumettre au serveur
-                const url = isEdit ? route('formulaires.exceptionnels.update', collecte.id) : route('formulaires.exceptionnels.store');
+    //     try {
+    //         if (isOnline) {
+    //             // Mode en ligne - Soumettre au serveur
+    //             const url = isEdit ? route('formulaires.exceptionnels.update', collecte.id) : route('formulaires.exceptionnels.store');
 
-                const successMessage = isEdit ? 'Formulaire exceptionnel mis à jour avec succès' : 'Formulaire exceptionnel ajouté avec succès';
+    //             const successMessage = isEdit ? 'Formulaire exceptionnel mis à jour avec succès' : 'Formulaire exceptionnel ajouté avec succès';
 
-                const errorMessage = isEdit ? 'Échec de la mise à jour du formulaire exceptionnel' : "Échec de l'ajout du formulaire exceptionnel";
+    //             const errorMessage = isEdit ? 'Échec de la mise à jour du formulaire exceptionnel' : "Échec de l'ajout du formulaire exceptionnel";
 
-                if (isEdit) {
-                    put(url, {
-                        onSuccess: () => {
-                            toast.success(successMessage);
-                            setSubmitting(false);
-                            closeModal();
-                        },
-                        onError: (errors) => {
-                            console.error('Erreurs de validation:', errors);
-                            toast.error(errorMessage);
-                            setSubmitting(false);
-                        },
-                    });
-                } else {
-                    post(url, {
-                        onSuccess: () => {
-                            toast.success(successMessage);
-                            setSubmitting(false);
-                            closeModal();
-                        },
-                        onError: (errors) => {
-                            console.error('Erreurs de validation:', errors);
-                            toast.error(errorMessage);
-                            setSubmitting(false);
-                        },
-                    });
-                }
-            } else {
-                // Mode hors ligne - Sauvegarder dans IndexedDB
-                if (handleOfflineSave) {
-                    const result = await handleOfflineSave(data, 'exceptionnel');
+    //             if (isEdit) {
+    //                 put(url, {
+    //                     onSuccess: () => {
+    //                         toast.success(successMessage);
+    //                         setSubmitting(false);
+    //                         closeModal();
+    //                     },
+    //                     onError: (errors) => {
+    //                         console.error('Erreurs de validation:', errors);
+    //                         toast.error(errorMessage);
+    //                         setSubmitting(false);
+    //                     },
+    //                 });
+    //             } else {
+    //                 post(url, {
+    //                     onSuccess: () => {
+    //                         toast.success(successMessage);
+    //                         setSubmitting(false);
+    //                         closeModal();
+    //                     },
+    //                     onError: (errors) => {
+    //                         console.error('Erreurs de validation:', errors);
+    //                         toast.error(errorMessage);
+    //                         setSubmitting(false);
+    //                     },
+    //                 });
+    //             }
+    //         } else {
+    //             // Mode hors ligne - Sauvegarder dans IndexedDB
+    //             if (handleOfflineSave) {
+    //                 const result = await handleOfflineSave(data, 'exceptionnel');
 
-                    if (result) {
-                        toast.success('Formulaire exceptionnel sauvegardé localement. Il sera synchronisé une fois en ligne.');
-                        closeModal();
-                    } else {
-                        toast.error('Échec de la sauvegarde locale. Veuillez réessayer.');
-                    }
-                } else {
-                    toast.error("Le mode hors ligne n'est pas disponible. Veuillez vous reconnecter.");
-                }
-            }
-        } catch (error) {
-            console.error('Erreur lors de la soumission:', error);
-            toast.error('Une erreur est survenue lors de la soumission du formulaire');
-        } finally {
-            setSubmitting(false);
+    //                 if (result) {
+    //                     toast.success('Formulaire exceptionnel sauvegardé localement. Il sera synchronisé une fois en ligne.');
+    //                     closeModal();
+    //                 } else {
+    //                     toast.error('Échec de la sauvegarde locale. Veuillez réessayer.');
+    //                 }
+    //             } else {
+    //                 toast.error("Le mode hors ligne n'est pas disponible. Veuillez vous reconnecter.");
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.error('Erreur lors de la soumission:', error);
+    //         toast.error('Une erreur est survenue lors de la soumission du formulaire');
+    //     } finally {
+    //         setSubmitting(false);
+    //     }
+    // };
+// Modification dans FormulaireExceptionnelModal.jsx
+// Seulement la fonction handleSubmit a besoin d'être modifiée:
+
+const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (submitting || isSubmitting) return;
+    if (!validateForm()) return;
+
+    setSubmitting(true);
+
+    try {
+      if (isOnline) {
+        // Mode en ligne - Soumettre au serveur
+        const url = isEdit
+          ? route('formulaires.exceptionnels.update', collecte.id)
+          : route('formulaires.exceptionnels.store');
+
+        const successMessage = isEdit
+          ? 'Formulaire exceptionnel mis à jour avec succès'
+          : 'Formulaire exceptionnel ajouté avec succès';
+
+        const errorMessage = isEdit
+          ? 'Échec de la mise à jour du formulaire exceptionnel'
+          : "Échec de l'ajout du formulaire exceptionnel";
+
+        if (isEdit) {
+          put(url, {
+            onSuccess: () => {
+              toast.success(successMessage);
+              setSubmitting(false);
+              closeModal();
+            },
+            onError: (errors) => {
+              console.error('Erreurs de validation:', errors);
+              toast.error(errorMessage);
+              setSubmitting(false);
+            },
+          });
+        } else {
+          post(url, {
+            onSuccess: () => {
+              toast.success(successMessage);
+              setSubmitting(false);
+              closeModal();
+            },
+            onError: (errors) => {
+              console.error('Erreurs de validation:', errors);
+              toast.error(errorMessage);
+              setSubmitting(false);
+            },
+          });
         }
-    };
+      } else {
+        // Mode hors ligne - Sauvegarder dans IndexedDB
+        if (handleOfflineSave) {
+          // Passer explicitement "exceptionnel" comme type de formulaire
+          const result = await handleOfflineSave(data, 'exceptionnel');
 
+          if (result) {
+            toast.success('Formulaire exceptionnel sauvegardé localement. Il sera synchronisé une fois en ligne.');
+            closeModal();
+          } else {
+            toast.error('Échec de la sauvegarde locale. Veuillez réessayer.');
+          }
+        } else {
+          toast.error("Le mode hors ligne n'est pas disponible. Veuillez vous reconnecter.");
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la soumission:', error);
+      toast.error('Une erreur est survenue lors de la soumission du formulaire');
+    } finally {
+      setSubmitting(false);
+    }
+  };
     return (
         <Transition appear show={isOpen} as={Fragment}>
             <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={closeModal}>
@@ -305,7 +380,7 @@ const FormulaireExceptionnelModal = ({
                                     </div>
 
                                     <div>
-                                       
+
                                     </div>
                                 </div>
 
