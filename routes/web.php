@@ -215,7 +215,5 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/formations/{id}', [FormationController::class, 'update'])->name('formations.update');
     Route::delete('/formations/{id}', [FormationController::class, 'destroy'])->name('formations.destroy');
 });
-
-
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

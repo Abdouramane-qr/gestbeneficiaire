@@ -206,7 +206,7 @@ export function NavMain({ items = [] }: { items: NavItemWithPermission[] }) {
 
   // Filtrer les items selon les permissions
   useEffect(() => {
-    const filterItems = (items: NavItemWithPermission[]) => {
+    const filterItems = (items: NavItemWithPermission[]): NavItemWithPermission[] => {
       return items.filter(item => {
         // Vérifier les permissions du module
         if (item.module && !hasPermission(item.module, item.action || 'view')) {

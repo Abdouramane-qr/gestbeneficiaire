@@ -1078,14 +1078,7 @@ export class IndicateurCalculator {
                     unite: 'FCFA',
                     definition: "Montant des revenus du promoteur en dehors de l'entreprise principale",
                 },
-                {
-                    id: 'chiffre_affaire',
-                    label: "Chiffre d'affaires",
-                    type: 'number',
-                    required: true,
-                    unite: '',
-                    definition: "Montant cumulé des ventes réalisées par l'entreprise sur une période donnée",
-                },
+               
             ],
         },
 

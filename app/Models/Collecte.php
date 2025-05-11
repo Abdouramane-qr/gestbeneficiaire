@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Collecte extends Model
 {
     use HasFactory;
-
     protected $fillable = [
         'entreprise_id',
         'exercice_id',

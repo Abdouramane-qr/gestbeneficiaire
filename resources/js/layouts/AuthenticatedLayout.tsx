@@ -1,7 +1,6 @@
 // resources/js/Layouts/AnalyseLayout.tsx
 import React, { ReactNode } from 'react';
 import { Head } from '@inertiajs/react';
-import { AppSidebar } from '@/components/app-sidebar';
 
 export interface AnalyseLayoutProps {
   children: ReactNode;

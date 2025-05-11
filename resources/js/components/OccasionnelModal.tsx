@@ -1,5 +1,5 @@
 
-import { withOfflineSupport } from '@/components/withOfflineSupport';
+import withOfflineSupport from '@/components/withOfflineSupport';
 import { Dialog, Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
 import { SaveIcon, WifiIcon, WifiOffIcon } from 'lucide-react';
@@ -145,7 +145,7 @@ const FormulaireExceptionnelModal = ({
             setSelectedFormationsTechniques([]);
             setSelectedFormationsEntrepreneuriat([]);
         }
-    }, [formulaireData, isOpen]);
+    }, [formulaireData, isOpen, reset, setData]);
     // Validation côté client avant soumission
     const validateForm = () => {
         // Validation de base côté client
@@ -513,9 +513,9 @@ const handleSubmit = async (e) => {
                                                         className="w-full rounded-md border border-gray-300 bg-white p-2 text-gray-900 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                                                     >
                                                         <option value="">-- Sélectionnez une appréciation --</option>
-                                                        <option value="1">1 - Faible</option>
-                                                        <option value="2">2 - Moyen</option>
-                                                        <option value="3">3 - Bon</option>
+                                                        <option value="Faible">1 - Faible</option>
+                                                        <option value="Moyen">2 - Moyen</option>
+                                                        <option value="Bon">3 - Bon</option>
                                                     </select>
                                                     {errors.appreciation_organisation_interne_demarrage && (
                                                         <p className="text-sm text-red-600 dark:text-red-400">

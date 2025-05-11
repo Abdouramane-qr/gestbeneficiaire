@@ -23,7 +23,7 @@ class FormulaireExceptionnelController extends Controller
         $beneficiaires = Beneficiaire::all();
         $exercices = Exercice::orderBy('annee', direction: 'desc')->get();
 
-        return Inertia::render('/collectes/Exception/create', [
+        return Inertia::render('collectes/Exception/create', [
             'beneficiaires' => $beneficiaires,
             'exercices' => $exercices
         ]);

@@ -200,6 +200,36 @@ class IndicateursAnalyseService
         }
     }
 
+
+
+    /**
+     * Get the calculator instance for the given period type
+     *
+     * @param string $periodeType
+     * @return mixed
+     */
+    public function getCalculateurPourPeriode(string $periodeType)
+    {
+        switch (strtolower($periodeType)) {
+            case 'trimestrielle':
+            case 'trimestre':
+                return app(IndicateurTrimestrielCalculateur::class);
+            case 'semestrielle':
+            case 'semestre':
+                return app(IndicateurSemestrielCalculateur::class);
+            case 'annuelle':
+            case 'annuel':
+                return app(IndicateurAnnuelCalculateur::class);
+            case 'occasionnelle':
+            case 'occasion':
+                return app(IndicateurOccasionnelCalculateur::class);
+            default:
+                return null;
+        }
+    }
+
+
+ 
     /**
      * Récupérer les indicateurs agrégés par période et catégorie
      *

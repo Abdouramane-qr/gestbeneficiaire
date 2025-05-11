@@ -1134,9 +1134,7 @@ private function mathEval(string $expr): float
                     }
                 }
 
-                if ($request->input('format') === 'word') {
-                    return $this->exportDetailToWord($collecte);
-                } else if ($request->input('format') === 'pdf') {
+                 if ($request->input('format') === 'pdf') {
                     $categoriesDisponibles = array_keys(is_array($collecte->donnees) ? $collecte->donnees : []);
                     $filename = 'collecte_' . $collecte->id . '_' . date('Y-m-d_H-i-s');
                     return $this->exportDetailToPdf($collecte, $categoriesDisponibles, $filename);
@@ -1144,9 +1142,7 @@ private function mathEval(string $expr): float
             }
 
             // Export de liste
-            if ($request->input('format') === 'word') {
-                return $this->exportToWord($request);
-            } else if ($request->input('format') === 'pdf') {
+         if ($request->input('format') === 'pdf') {
                 $query = Collecte::query()->with(['entreprise', 'exercice', 'periode', 'user']);
                 if ($request->has('collecte_ids')) {
                     $query->whereIn('id', $request->input('collecte_ids'));
@@ -1171,144 +1167,10 @@ private function mathEval(string $expr): float
         }
     }
 
-    /**
-     * Export détaillé d'une collecte en Word
-     */
-    private function exportDetailToWord($collecte)
-    {
-        try {
-            // Créer une nouvelle instance de PhpWord
-            $phpWord = new PhpWord();
 
-            // Charger le template
-            $templatePath = storage_path('app/templates/collecte_template.docx');
-            $templateProcessor = new TemplateProcessor($templatePath);
 
-            // Préparer les données pour le template
-            $donnees = is_string($collecte->donnees) ? json_decode($collecte->donnees, true) : $collecte->donnees;
 
-            // Remplacer les variables dans le template
-            $templateProcessor->setValue('entreprise_nom', $collecte->entreprise->nom_entreprise);
-            $templateProcessor->setValue('exercice_annee', $collecte->exercice?->annee ?? 'Non spécifié');
-            $templateProcessor->setValue('periode_type', $collecte->periode ? $collecte->periode->type_periode : 'Non spécifié');
-            $templateProcessor->setValue('date_collecte', $collecte->date_collecte);
-            $templateProcessor->setValue('user_name', $collecte->user->name);
 
-            // Traiter les données par catégorie
-            foreach ($donnees as $categorie => $indicateurs) {
-                if (is_array($indicateurs)) {
-                    foreach ($indicateurs as $key => $value) {
-                        $templateProcessor->setValue($categorie . '_' . $key, $value);
-                    }
-                }
-            }
-
-            // Sauvegarder le document
-            $fileName = 'collecte_' . $collecte->id . '_' . date('Y-m-d_H-i-s') . '.docx';
-            $filePath = storage_path('app/temp/' . $fileName);
-            $templateProcessor->saveAs($filePath);
-
-            // Retourner le fichier
-            return response()->download($filePath, $fileName, [
-                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            ])->deleteFileAfterSend(true);
-
-        } catch (\Exception $e) {
-            \Log::error('Erreur lors de l\'export Word: ' . $e->getMessage());
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Export de liste en Word
-     */
-    private function exportToWord(Request $request)
-    {
-        try {
-            // Construire la requête
-            $query = Collecte::query()
-                ->with(['entreprise', 'exercice', 'periode', 'user']);
-
-            // Appliquer les filtres
-            if ($request->has('exercice_id')) {
-                $query->where('exercice_id', $request->input('exercice_id'));
-            }
-            if ($request->has('entreprise_id')) {
-                $query->where('entreprise_id', $request->input('entreprise_id'));
-            }
-            if ($request->has('periode_id')) {
-                $query->where('periode_id', $request->input('periode_id'));
-            }
-            if ($request->has('type_collecte')) {
-                $query->where('type_collecte', $request->input('type_collecte'));
-            }
-
-            $collectes = $query->get();
-
-            // Créer une nouvelle instance de PhpWord
-            $phpWord = new PhpWord();
-
-            // Charger le template
-            $templatePath = storage_path('app/templates/collectes_list_template.docx');
-            $templateProcessor = new TemplateProcessor($templatePath);
-
-            // Préparer les données pour le template
-            $collectesData = [];
-            foreach ($collectes as $collecte) {
-                $donnees = is_string($collecte->donnees) ? json_decode($collecte->donnees, true) : $collecte->donnees;
-
-                $collectesData[] = [
-                    'entreprise_nom' => $collecte->entreprise->nom_entreprise,
-                    'exercice_annee' => $collecte->exercice?->annee,
-                    'periode_type' => (is_object($collecte->periode) && $collecte->periode !== null) ? $collecte->periode->type_periode : (is_string($collecte->periode) ? $collecte->periode : 'Non spécifié'),
-                    'date_collecte' => $collecte->date_collecte,
-                    'user_name' => $collecte->user->name,
-                    'donnees' => $donnees
-                ];
-            }
-
-            // Remplacer les variables dans le template
-            $templateProcessor->setValue('date_export', now()->format('d/m/Y H:i'));
-            $templateProcessor->setValue('user_name', auth()->user()->name);
-
-            // Cloner la section pour chaque collecte
-            $templateProcessor->cloneRow('entreprise_nom', count($collectesData));
-
-            // Remplir les données
-            foreach ($collectesData as $index => $data) {
-                $rowNumber = $index + 1;
-                $templateProcessor->setValue('entreprise_nom#' . $rowNumber, $data['entreprise_nom']);
-                $templateProcessor->setValue('exercice_annee#' . $rowNumber, $data['exercice_annee']);
-                $templateProcessor->setValue('periode_type#' . $rowNumber, $data['periode_type']);
-                $templateProcessor->setValue('date_collecte#' . $rowNumber, $data['date_collecte']);
-                $templateProcessor->setValue('user_name#' . $rowNumber, $data['user_name']);
-            }
-
-            // Sauvegarder le document
-            $fileName = 'collectes_list_' . date('Y-m-d_H-i-s') . '.docx';
-            $filePath = storage_path('app/temp/' . $fileName);
-            $templateProcessor->saveAs($filePath);
-
-            // Retourner le fichier
-            return response()->download($filePath, $fileName, [
-                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            ])->deleteFileAfterSend(true);
-
-        } catch (\Exception $e) {
-            \Log::error('Erreur lors de l\'export Word: ' . $e->getMessage());
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Exporter une collecte détaillée vers Excel
-     */
-    private function exportDetailToExcel($collecte, $categoriesDisponibles, $filename)
-    {
-        // Vous pouvez créer une classe spécifique pour l'export Excel détaillé
-        // Pour l'instant, on réutilise la classe existante
-        return Excel::download(new \App\Exports\CollecteDetailExport($collecte, $categoriesDisponibles), "{$filename}.xlsx");
-    }
 
  /**
      * Exporter une collecte détaillée vers PDF

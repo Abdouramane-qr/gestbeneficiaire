@@ -65,7 +65,6 @@ interface CollecteShowProps {
 
 const CollecteShow: React.FC<CollecteShowProps> = ({ collecte, categoriesDisponibles }) => {
     const [activeTab, setActiveTab] = useState<string>(categoriesDisponibles[0] || '');
-    const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
     const [confirmConversion, setConfirmConversion] = useState<boolean>(false);
     const [isConverting, setIsConverting] = useState<boolean>(false);
     const [isOnline, setIsOnline] = useState(navigator.onLine);

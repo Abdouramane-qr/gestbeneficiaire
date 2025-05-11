@@ -88,18 +88,7 @@ export default function Index({ indicateurs }: IndicateursIndexProps) {
         setEditingIndicateur(null);
     };
 
-    // Fonction pour afficher le type de champ
-    // const getFieldTypeLabel = (type: string) => {
-    //     const types: { [key: string]: string } = {
-    //         'text': 'Texte',
-    //         'number': 'Nombre',
-    //         'boolean': 'Oui/Non',
-    //         'select': 'Sélection',
-    //         'date': 'Date',
-    //         'calculated': 'Calculé'
-    //     };
-    //     return types[type] || type;
-    // };
+   
 
     return (
         <AppLayout title='Analyse'>

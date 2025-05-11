@@ -24,9 +24,14 @@ const FormationsSection: React.FC<FormationsSectionProps> = ({
     formations,
     loading,
     error,
+    isOnline,
+    pendingOperationsCount,
+
     addFormation,
     updateFormation,
     deleteFormation,
+    reload,
+    synchronize,
     clearError
   } = useFormations(formationType);
 

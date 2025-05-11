@@ -633,3 +633,18 @@
 [logs] php artisan pail --timeout=0 exited with code SIGINT
 [server] php artisan serve --host 0.0.0.0 exited with code SIGINT
 [vite] npm run dev exited with code SIGINT
+
+> dev
+> vite
+
+Port 5175 is in use, trying another one...
+Port 5176 is in use, trying another one...
+Port 5177 is in use, trying another one...
+
+  VITE v6.2.6  ready in 1075 ms
+
+  ➜  Network: http://jem2.hopto.org:5178/
+
+  LARAVEL v12.10.2  plugin v1.2.0
+
+  ➜  APP_URL: http://jem2.hopto.org:8000

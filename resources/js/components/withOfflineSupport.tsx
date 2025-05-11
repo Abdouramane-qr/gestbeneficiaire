@@ -1,4 +1,4 @@
-// // components/withOfflineSupport.jsx
+
 // import React, { useState, useEffect } from 'react';
 // import { toast } from 'sonner';
 // import { useOfflineStorage } from '@/hooks/useOfflineStorage';
@@ -11,16 +11,19 @@
 // export const withOfflineSupport = (WrappedComponent) => {
 //   return function WithOfflineSupport(props) {
 //     const [isOnline, setIsOnline] = useState(navigator.onLine);
-//     const { saveOffline, syncData, pendingUploads } = useOfflineStorage();
+//     const { saveOffline, syncData, pendingUploads, isInitialized } = useOfflineStorage();
 //     const [isSubmitting, setIsSubmitting] = useState(false);
 
 //     // Surveiller les changements de connectivité
 //     useEffect(() => {
 //       const handleOnlineStatus = () => {
-//         setIsOnline(navigator.onLine);
+//         const wasOffline = !isOnline;
+//         const nowOnline = navigator.onLine;
+
+//         setIsOnline(nowOnline);
 
 //         // Si on revient en ligne et qu'il y a des données en attente, proposer de synchroniser
-//         if (navigator.onLine && pendingUploads > 0) {
+//         if (wasOffline && nowOnline && pendingUploads > 0) {
 //           toast.info(
 //             'Vous êtes de nouveau en ligne. Voulez-vous synchroniser vos données?',
 //             {
@@ -31,6 +34,8 @@
 //               duration: 8000,
 //             }
 //           );
+//         } else if (!nowOnline) {
+//           toast.warning('Vous êtes hors ligne. Les données seront sauvegardées localement.');
 //         }
 //       };
 
@@ -41,12 +46,17 @@
 //         window.removeEventListener('online', handleOnlineStatus);
 //         window.removeEventListener('offline', handleOnlineStatus);
 //       };
-//     }, [pendingUploads]);
+//     }, [isOnline, pendingUploads]);
 
 //     // Fonction pour synchroniser les données
 //     const handleSync = async () => {
 //       if (!isOnline) {
 //         toast.error('Vous êtes hors ligne. Impossible de synchroniser.');
+//         return;
+//       }
+
+//       if (!isInitialized) {
+//         toast.error('Le stockage local n\'est pas encore initialisé. Veuillez patienter...');
 //         return;
 //       }
 
@@ -76,6 +86,11 @@
 //       try {
 //         setIsSubmitting(true);
 
+//         if (!isInitialized) {
+//           toast.error('Le stockage local n\'est pas encore initialisé. Veuillez patienter...');
+//           return false;
+//         }
+
 //         const {
 //           beneficiaires_id,
 //           entreprise_id,
@@ -89,13 +104,11 @@
 
 //         if (!finalEntrepriseId) {
 //           toast.error('Veuillez sélectionner une entreprise ou un promoteur');
-//           setIsSubmitting(false);
 //           return false;
 //         }
 
 //         if (!exercice_id) {
 //           toast.error('Veuillez sélectionner un exercice');
-//           setIsSubmitting(false);
 //           return false;
 //         }
 
@@ -104,19 +117,26 @@
 
 //         if (!finalPeriodeId) {
 //           toast.error('Veuillez sélectionner une période');
-//           setIsSubmitting(false);
 //           return false;
 //         }
 
 //         // Déterminer si c'est un brouillon
 //         const isDraft = data.type_collecte === 'brouillon';
 
+//         // Ajouter le type de formulaire aux données
+//         const formattedData = {
+//           ...otherData,
+//           formType: formType // Ajouter explicitement le type de formulaire
+//         };
+
+//         console.log(`Sauvegarde offline - Entreprise: ${finalEntrepriseId}, Type: ${formType}, Période: ${finalPeriodeId}`);
+
 //         // Sauvegarder hors ligne
 //         await saveOffline(
 //           finalEntrepriseId,
 //           exercice_id,
 //           finalPeriodeId,
-//           { ...otherData, formType },
+//           formattedData,
 //           isDraft
 //         );
 
@@ -143,7 +163,7 @@
 //     );
 //   };
 // };
-// components/withOfflineSupport.jsx
+// resources/js/hooks/useFormations.ts
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
@@ -153,8 +173,8 @@ import { useOfflineStorage } from '@/hooks/useOfflineStorage';
  * @param {React.ComponentType} WrappedComponent - Le composant de formulaire à améliorer
  * @returns {React.ComponentType} - Le composant amélioré avec support hors ligne
  */
-export const withOfflineSupport = (WrappedComponent) => {
-  return function WithOfflineSupport(props) {
+const withOfflineSupport = (WrappedComponent: React.ComponentType<any>) => {
+  return function WithOfflineSupport(props: any) {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const { saveOffline, syncData, pendingUploads, isInitialized } = useOfflineStorage();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -227,7 +247,7 @@ export const withOfflineSupport = (WrappedComponent) => {
     };
 
     // Fonction pour sauvegarder les données hors ligne
-    const handleOfflineSave = async (data, formType = 'standard') => {
+    const handleOfflineSave = async (data: any, formType = 'standard') => {
       try {
         setIsSubmitting(true);
 
@@ -308,3 +328,5 @@ export const withOfflineSupport = (WrappedComponent) => {
     );
   };
 };
+
+export default withOfflineSupport;

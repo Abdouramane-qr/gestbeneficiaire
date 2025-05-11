@@ -23,6 +23,7 @@ interface PeriodeFormProps {
     };
     periodesExistantes?: Array<{
         id: number;
+        exercice_id: number;
         type_periode: string;
         numero: number;
         nom: string;
@@ -30,9 +31,8 @@ interface PeriodeFormProps {
 }
 
 export default function Form({ exercices, typesPeriodes, periode, periodesExistantes = [] }: PeriodeFormProps) {
-    const [moisOptions, setMoisOptions] = useState<{ value: string; label: string; disabled: boolean }[]>([]);
-    const [selectedType, setSelectedType] = useState<string>(periode?.type_periode || '');
-    const [numeroOptions, setNumeroOptions] = useState<{ value: number; label: string; disabled: boolean }[]>([]);
+    const [numeroOptions, setNumeroOptions] = useState<{ value: number; label: string; disabled: boolean; tooltip?: string }[]>([]);
+    const [infoMessage, setInfoMessage] = useState<string>('');
 
     const { data, setData, post, put, processing, errors } = useForm({
         exercice_id: periode?.exercice_id || '',
@@ -46,149 +46,82 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
 
     const isEdit = !!periode;
 
-    // Liste des mois en français
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const moisFrancais = [
-        { value: 'janvier', label: 'Janvier' },
-        { value: 'fevrier', label: 'Février' },
-        { value: 'mars', label: 'Mars' },
-        { value: 'avril', label: 'Avril' },
-        { value: 'mai', label: 'Mai' },
-        { value: 'juin', label: 'Juin' },
-        { value: 'juillet', label: 'Juillet' },
-        { value: 'aout', label: 'Août' },
-        { value: 'septembre', label: 'Septembre' },
-        { value: 'octobre', label: 'Octobre' },
-        { value: 'novembre', label: 'Novembre' },
-        { value: 'decembre', label: 'Décembre' },
-    ];
-
-    // Mettre à jour les options de mois disponibles quand le type de période ou l'exercice change
-    useEffect(() => {
-        if (data.type_periode === 'mensuel' && data.exercice_id) {
-            const moisUtilises = periodesExistantes
-                .filter((p) => p.type_periode === 'mensuel' && (!isEdit || p.id !== periode?.id))
-                .map((p) => p.nom.toLowerCase());
-
-            const options = moisFrancais.map((mois) => ({
-                ...mois,
-                disabled: moisUtilises.includes(mois.value.toLowerCase()),
-            }));
-
-            setMoisOptions(options);
-        }
-    }, [data.type_periode, data.exercice_id, periodesExistantes, moisFrancais, isEdit, periode?.id]);
-
-    // Mettre à jour les options de numéro quand le type de période change
+    // Mettre à jour les options de numéro quand le type de période ou l'exercice change
     useEffect(() => {
         if (data.type_periode && data.exercice_id) {
+            const exerciceSelectionne = exercices.find(e => e.id.toString() === data.exercice_id.toString());
             const numeroUtilises = periodesExistantes
-                .filter((p) => p.type_periode === data.type_periode && (!isEdit || p.id !== periode?.id))
+                .filter((p) =>
+                    p.exercice_id === Number(data.exercice_id) &&
+                    p.type_periode === data.type_periode &&
+                    (!isEdit || p.id !== periode?.id)
+                )
                 .map((p) => p.numero);
 
-            /* let maxNumero = 0;
+            let options: { value: number; label: string; disabled: boolean; tooltip?: string }[] = [];
+            let message = '';
 
-            // Définir le nombre maximum d'options selon le type de période
-            switch(data.type_periode) {
-                case 'mensuel':
-                    maxNumero = 12;
-                    break;
-                case 'trimestriel':
-                    maxNumero = 4;
-                    break;
-                case 'semestriel':
-                    maxNumero = 2;
-                    break;
-                case 'annuel':
-                    maxNumero = 1;
-                    break;
-                default:
-                    maxNumero = 0;
-            } */
-
-            /* const options = Array.from({length: maxNumero}, (_, i) => i + 1).map(num => ({
-                value: num,
-                label: num.toString(),
-                disabled: numeroUtilises.includes(num)
-            })); */
-
-            /* Added by Servais */
-            let options: React.SetStateAction<{ value: number; label: string; disabled: boolean }[]> = [];
             switch (data.type_periode) {
                 case 'mensuel':
                     options = [
-                        { value: 1, label: 'Janvier', disabled: numeroUtilises.includes(1) },
-                        { value: 2, label: 'Février', disabled: numeroUtilises.includes(2) },
-                        { value: 3, label: 'Mars', disabled: numeroUtilises.includes(3) },
-                        { value: 4, label: 'Avril', disabled: numeroUtilises.includes(4) },
-                        { value: 5, label: 'Mai', disabled: numeroUtilises.includes(5) },
-                        { value: 6, label: 'Juin', disabled: numeroUtilises.includes(6) },
-                        { value: 7, label: 'Juillet', disabled: numeroUtilises.includes(7) },
-                        { value: 8, label: 'Août', disabled: numeroUtilises.includes(8) },
-                        { value: 9, label: 'Septembre', disabled: numeroUtilises.includes(9) },
-                        { value: 10, label: 'Octobre', disabled: numeroUtilises.includes(10) },
-                        { value: 11, label: 'Novembre', disabled: numeroUtilises.includes(11) },
-                        { value: 12, label: 'Décembre', disabled: numeroUtilises.includes(12) },
+                        { value: 1, label: 'Janvier', disabled: numeroUtilises.includes(1), tooltip: numeroUtilises.includes(1) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 2, label: 'Février', disabled: numeroUtilises.includes(2), tooltip: numeroUtilises.includes(2) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 3, label: 'Mars', disabled: numeroUtilises.includes(3), tooltip: numeroUtilises.includes(3) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 4, label: 'Avril', disabled: numeroUtilises.includes(4), tooltip: numeroUtilises.includes(4) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 5, label: 'Mai', disabled: numeroUtilises.includes(5), tooltip: numeroUtilises.includes(5) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 6, label: 'Juin', disabled: numeroUtilises.includes(6), tooltip: numeroUtilises.includes(6) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 7, label: 'Juillet', disabled: numeroUtilises.includes(7), tooltip: numeroUtilises.includes(7) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 8, label: 'Août', disabled: numeroUtilises.includes(8), tooltip: numeroUtilises.includes(8) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 9, label: 'Septembre', disabled: numeroUtilises.includes(9), tooltip: numeroUtilises.includes(9) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 10, label: 'Octobre', disabled: numeroUtilises.includes(10), tooltip: numeroUtilises.includes(10) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 11, label: 'Novembre', disabled: numeroUtilises.includes(11), tooltip: numeroUtilises.includes(11) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 12, label: 'Décembre', disabled: numeroUtilises.includes(12), tooltip: numeroUtilises.includes(12) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
                     ];
+                    message = `Les mois déjà utilisés pour l'année ${exerciceSelectionne?.annee} sont désactivés. Ils seront à nouveau disponibles pour l'année suivante.`;
                     break;
                 case 'trimestriel':
                     options = [
-                        { value: 1, label: '1er Trimestre', disabled: numeroUtilises.includes(1) },
-                        { value: 2, label: '2e Trimestre', disabled: numeroUtilises.includes(2) },
-                        { value: 3, label: '3e Trimestre', disabled: numeroUtilises.includes(3) },
-                        { value: 4, label: '4e Trimestre', disabled: numeroUtilises.includes(4) },
+                        { value: 1, label: '1er Trimestre', disabled: numeroUtilises.includes(1), tooltip: numeroUtilises.includes(1) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 2, label: '2e Trimestre', disabled: numeroUtilises.includes(2), tooltip: numeroUtilises.includes(2) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 3, label: '3e Trimestre', disabled: numeroUtilises.includes(3), tooltip: numeroUtilises.includes(3) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 4, label: '4e Trimestre', disabled: numeroUtilises.includes(4), tooltip: numeroUtilises.includes(4) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
                     ];
+                    message = `Les trimestres déjà utilisés pour l'année ${exerciceSelectionne?.annee} sont désactivés. Ils seront à nouveau disponibles pour l'année suivante.`;
                     break;
                 case 'semestriel':
                     options = [
-                        { value: 1, label: '1er Semestre', disabled: numeroUtilises.includes(1) },
-                        { value: 2, label: '2e Semestre', disabled: numeroUtilises.includes(2) },
+                        { value: 1, label: '1er Semestre', disabled: numeroUtilises.includes(1), tooltip: numeroUtilises.includes(1) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
+                        { value: 2, label: '2e Semestre', disabled: numeroUtilises.includes(2), tooltip: numeroUtilises.includes(2) ? `Déjà utilisé en ${exerciceSelectionne?.annee}` : undefined },
                     ];
+                    message = `Les semestres déjà utilisés pour l'année ${exerciceSelectionne?.annee} sont désactivés. Ils seront à nouveau disponibles pour l'année suivante.`;
                     break;
                 case 'annuel':
-                    options = [{ value: 1, label: 'Année', disabled: numeroUtilises.includes(1) }];
+                    options = [{ value: 1, label: 'Année', disabled: numeroUtilises.includes(1), tooltip: numeroUtilises.includes(1) ? `Déjà utilisé en ${exerciceSelectionne?.année}` : undefined }];
+                    message = `Une seule période annuelle est autorisée par exercice. Elle sera à nouveau disponible pour l'année suivante.`;
                     break;
                 default:
                     options = [];
+                    message = '';
             }
-
-            /* End added by Servais */
 
             setNumeroOptions(options);
+            setInfoMessage(message);
         }
-    }, [data.type_periode, data.exercice_id, periodesExistantes, isEdit, periode?.id]);
+    }, [data.type_periode, data.exercice_id, periodesExistantes, exercices, isEdit, periode?.id]);
 
-    // Définir automatiquement le nom de la période pour les périodes mensuelles
+    // Définir automatiquement le nom de la période
     useEffect(() => {
         if (data.type_periode && data.numero) {
-            let nom = '';
-            switch (data.type_periode) {
-                case 'mensuel': {
-                    const moisIndex = (data.numero as number) - 1;
-                    if (moisIndex >= 0 && moisIndex < 12) {
-                        nom = moisFrancais[moisIndex].label;
-                    }
-                    break;
-                }
-                case 'trimestriel':
-                    nom = `Trimestre ${data.numero}`;
-                    break;
-                case 'semestriel':
-                    nom = `Semestre ${data.numero}`;
-                    break;
-                case 'annuel':
-                    nom = 'Année complète';
-                    break;
-                default:
-                    nom = '';
+            const option = numeroOptions.find(opt => opt.value === Number(data.numero));
+            if (option) {
+                setData('nom', option.label);
             }
-            setData('nom', nom);
         }
-    }, [data.type_periode, data.numero, setData, moisFrancais]);
+    }, [data.type_periode, data.numero, numeroOptions]);
 
     // Définir automatiquement le code de la période
     useEffect(() => {
-        if (data.type_periode && data.numero && !isEdit) {
+        if (data.type_periode && data.numero && data.exercice_id && !isEdit) {
             let prefix = '';
             switch (data.type_periode) {
                 case 'mensuel':
@@ -210,43 +143,37 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
 
             setData('code', `${prefix}${data.numero}/${annee}`);
         }
-    }, [data.type_periode, data.numero, data.exercice_id, isEdit, exercices, setData]);
+    }, [data.type_periode, data.numero, data.exercice_id, isEdit, exercices]);
 
-    // Définir automatiquement les dates de début et fin
+    // Définir automatiquement les dates
     useEffect(() => {
         if (data.exercice_id && data.type_periode && data.numero && !isEdit) {
             const exercice = exercices.find((e) => e.id.toString() === data.exercice_id.toString());
             if (!exercice) return;
 
-            // Créer une date à partir de l'année de l'exercice
             const annee = exercice.annee;
-            let dateDebut = new Date(annee, 0, 1); // 1er janvier de l'année
-            let dateFin = new Date(annee, 11, 31); // 31 décembre de l'année
+            let dateDebut = new Date(annee, 0, 1);
+            let dateFin = new Date(annee, 11, 31);
 
             switch (data.type_periode) {
                 case 'mensuel':
-                    // Mois: de 1 à 12
                     dateDebut = new Date(annee, (data.numero as number) - 1, 1);
-                    dateFin = new Date(annee, data.numero as number, 0); // Dernier jour du mois
+                    dateFin = new Date(annee, data.numero as number, 0);
                     break;
                 case 'trimestriel':
-                    // Trimestre: de 1 à 4
                     dateDebut = new Date(annee, ((data.numero as number) - 1) * 3, 1);
                     dateFin = new Date(annee, (data.numero as number) * 3, 0);
                     break;
                 case 'semestriel':
-                    // Semestre: de 1 à 2
                     dateDebut = new Date(annee, ((data.numero as number) - 1) * 6, 1);
                     dateFin = new Date(annee, (data.numero as number) * 6, 0);
                     break;
                 case 'annuel':
-                    // Année: généralement 1 seule période
                     dateDebut = new Date(annee, 0, 1);
                     dateFin = new Date(annee, 11, 31);
                     break;
             }
 
-            // Formatage des dates pour input type="date"
             const formatDate = (date: Date) => {
                 return date.toISOString().split('T')[0];
             };
@@ -254,7 +181,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
             setData('date_debut', formatDate(dateDebut));
             setData('date_fin', formatDate(dateFin));
         }
-    }, [data.exercice_id, data.type_periode, data.numero, isEdit, exercices, setData]);
+    }, [data.exercice_id, data.type_periode, data.numero, isEdit, exercices]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -288,6 +215,22 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                             Retour
                         </a>
                     </div>
+
+                    {/* Zone d'information */}
+                    {infoMessage && (
+                        <div className="mb-6 rounded-md bg-blue-50 p-4">
+                            <div className="flex">
+                                <div className="flex-shrink-0">
+                                    <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm text-blue-700">{infoMessage}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                     <div className="overflow-hidden bg-white p-6 shadow-xl sm:rounded-lg">
                         <form onSubmit={handleSubmit}>
@@ -334,6 +277,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                         className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
                                         value={data.code}
                                         onChange={(e) => setData('code', e.target.value)}
+                                        readOnly={!isEdit}
                                     />
                                     {errors.code && <p className="mt-1 text-sm text-red-600">{errors.code}</p>}
                                 </div>
@@ -342,7 +286,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                     <>
                                         <div className="col-span-1">
                                             <label htmlFor="type_periode" className="block text-sm font-medium text-gray-700">
-                                                Frequence
+                                                Fréquence
                                             </label>
                                             <select
                                                 id="type_periode"
@@ -350,8 +294,6 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                                 value={data.type_periode}
                                                 onChange={(e) => {
                                                     setData('type_periode', e.target.value);
-                                                    setSelectedType(e.target.value);
-                                                    // Réinitialiser le numéro pour éviter des valeurs invalides
                                                     setData('numero', 1);
                                                 }}
                                             >
@@ -367,7 +309,7 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
 
                                         <div className="col-span-1">
                                             <label htmlFor="numero" className="block text-sm font-medium text-gray-700">
-                                                Periode
+                                                Période
                                             </label>
                                             <select
                                                 id="numero"
@@ -375,15 +317,18 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                                 value={data.numero}
                                                 onChange={(e) => {
                                                     setData('numero', Number(e.target.value));
-                                                    const option = numeroOptions?.find((p) => p?.value === Number(e.target.value));
-                                                    setData('nom', option?.label || '');
                                                 }}
                                                 disabled={!data.type_periode || numeroOptions.length === 0}
                                             >
-                                                <option value="">Sélectionner un numéro</option>
+                                                <option value="">Sélectionner une période</option>
                                                 {numeroOptions.map((option) => (
-                                                    <option key={option.value} value={option.value} disabled={option.disabled}>
-                                                        {option.label} {option.disabled ? '(déjà utilisé)' : ''}
+                                                    <option
+                                                        key={option.value}
+                                                        value={option.value}
+                                                        disabled={option.disabled}
+                                                        title={option.tooltip}
+                                                    >
+                                                        {option.label} {option.disabled ? '(utilisé)' : ''}
                                                     </option>
                                                 ))}
                                             </select>
@@ -400,34 +345,10 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
                                                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:outline-none"
                                                 value={data.nom}
                                                 onChange={(e) => setData('nom', e.target.value)}
-                                                placeholder={getDefaultNomPeriode(data.type_periode, data.numero)}
-                                                disabled={data.type_periode === 'mensuel'} // Désactiver pour mensuel si nécessaire
+                                                readOnly
                                             />
                                             {errors.nom && <p className="mt-1 text-sm text-red-600">{errors.nom}</p>}
                                         </div>
-
-                                        {/* <div className="col-span-1 hidden">
-                                            <label htmlFor="nom" className="block text-sm font-medium text-gray-700">
-                                                Nom de la période
-                                            </label>
-                                            {data.type_periode === 'mensuel' ? (
-                                                <div className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-gray-100 rounded-md">
-                                                    {data.nom || "Sélectionnez un mois"}
-                                                </div>
-                                            ) : (
-                                                <input
-                                                    type="text"
-                                                    id="nom"
-                                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                                    value={data.nom}
-                                                    onChange={(e) => setData('nom', e.target.value)}
-                                                    placeholder={getDefaultNomPeriode(data.type_periode, data.numero)}
-                                                />
-                                            )}
-                                            {errors.nom && (
-                                                <p className="mt-1 text-sm text-red-600">{errors.nom}</p>
-                                            )}
-                                        </div> */}
                                     </>
                                 )}
 
@@ -497,38 +418,4 @@ export default function Form({ exercices, typesPeriodes, periode, periodesExista
             </div>
         </AppLayout>
     );
-}
-
-// Liste des mois en français (définie en dehors de la fonction)
-const moisFrancaisDefault = [
-    { value: 'janvier', label: 'Janvier' },
-    { value: 'fevrier', label: 'Février' },
-    { value: 'mars', label: 'Mars' },
-    { value: 'avril', label: 'Avril' },
-    { value: 'mai', label: 'Mai' },
-    { value: 'juin', label: 'Juin' },
-    { value: 'juillet', label: 'Juillet' },
-    { value: 'aout', label: 'Août' },
-    { value: 'septembre', label: 'Septembre' },
-    { value: 'octobre', label: 'Octobre' },
-    { value: 'novembre', label: 'Novembre' },
-    { value: 'decembre', label: 'Décembre' },
-];
-
-// Fonction pour générer un nom par défaut selon le type et le numéro de période
-function getDefaultNomPeriode(typePeriode: string | number, numero: string | number): string {
-    if (!typePeriode || !numero) return '';
-    switch (typePeriode) {
-        case 'mensuel':
-            { const moisIndex = Number(numero) - 1;
-            return moisFrancaisDefault[moisIndex]?.label || ''; }
-        case 'trimestriel':
-            return `Trimestre ${numero}`;
-        case 'semestriel':
-            return `Semestre ${numero}`;
-        case 'annuel':
-            return 'Année complète';
-        default:
-            return '';
-    }
 }

@@ -9,15 +9,16 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
 {
     /**
      * Définition des indicateurs annuels avec leurs formules et dépendances
+     * avec des libellés plus clairs pour l'UX
      */
     protected function getDefinitionsIndicateurs(): array
     {
         return [
-            // Ratios de Rentabilité et de solvabilité de l'entreprise
-            'Ratios de Rentabilité et de solvabilité de l\'entreprise' => [
+            // Ratios de rentabilité et solvabilité
+            'Indicateurs Financiers et de Rentabilité' => [
                 'r_n_exploitation_aimp' => [
-                    'libelle' => 'Rendement des fonds propres (ROE)',
-                    'definition' => 'Résultat net d\'exploitation après impôts / Moyenne des capitaux propres',
+                    'libelle' => 'Rentabilité des Fonds Propres (ROE)',
+                    'definition' => 'Mesure la capacité de l\'entreprise à générer des profits à partir des fonds propres investis',
                     'unite' => '%',
                     'valeur_cible' => '10% min',
                     'formule' => 'r_n_exploitation_aimp / moyenne_capitaux_propre * 100',
@@ -27,8 +28,8 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
                     ]
                 ],
                 'autosuffisance' => [
-                    'libelle' => 'Autosuffisance opérationnelle',
-                    'definition' => 'Produits d\'exploitation / (Charges financières + Charges d\'exploitation)',
+                    'libelle' => 'Niveau d\'Autosuffisance Opérationnelle',
+                    'definition' => 'Capacité de l\'entreprise à couvrir ses charges par ses propres produits',
                     'unite' => '',
                     'valeur_cible' => '15% min',
                     'formule' => 'produit_exploitation / (charges_financières + charges_exploitation)',
@@ -39,8 +40,8 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
                     ]
                 ],
                 'marge_beneficiaire' => [
-                    'libelle' => 'Marge bénéficiaire',
-                    'definition' => 'Résultat net d\'exploitation / Produits d\'exploitation',
+                    'libelle' => 'Marge Bénéficiaire',
+                    'definition' => 'Pourcentage de profit par rapport au chiffre d\'affaires',
                     'unite' => '%',
                     'valeur_cible' => '0,2',
                     'formule' => 'resultat_net_exploitation / produit_exploitation * 100',
@@ -50,8 +51,8 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
                     ]
                 ],
                 'ratio_charges_financieres' => [
-                    'libelle' => 'Ratio de charges financières',
-                    'definition' => 'Intérêts et frais financiers / dettes de financement',
+                    'libelle' => 'Taux d\'Endettement',
+                    'definition' => 'Ratio des charges financières par rapport aux dettes de financement',
                     'unite' => '%',
                     'valeur_cible' => '12% max',
                     'formule' => 'charges_financières / dette_financement * 100',
@@ -60,49 +61,50 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
                         'dette_financement'
                     ]
                 ],
+                // Indicateurs bruts avec libellés améliorés
                 'charges_financières' => [
-                    'libelle' => 'Charges financières',
-                    'definition' => 'Montant des intérêts et frais financiers',
+                    'libelle' => 'Total des Charges Financières',
+                    'definition' => 'Montant total des intérêts et frais financiers payés',
                     'unite' => 'FCFA',
                     'valeur_cible' => '',
                     'formule' => null,
                     'dependances' => []
                 ],
                 'dette_financement' => [
-                    'libelle' => 'Dettes de financement',
-                    'definition' => 'Montant total des dettes de financement',
+                    'libelle' => 'Total des Dettes de Financement',
+                    'definition' => 'Ensemble des emprunts à long et moyen terme',
                     'unite' => 'FCFA',
                     'valeur_cible' => '',
                     'formule' => null,
                     'dependances' => []
                 ],
                 'moyenne_capitaux_propre' => [
-                    'libelle' => 'Moyenne des capitaux propres',
-                    'definition' => 'Moyenne des capitaux propres sur la période',
+                    'libelle' => 'Capitaux Propres Moyens',
+                    'definition' => 'Moyenne annuelle des capitaux propres',
                     'unite' => 'FCFA',
                     'valeur_cible' => '',
                     'formule' => null,
                     'dependances' => []
                 ],
                 'produit_exploitation' => [
-                    'libelle' => 'Produits d\'exploitation',
-                    'definition' => 'Montant total des produits d\'exploitation',
+                    'libelle' => 'Chiffre d\'Affaires Total',
+                    'definition' => 'Revenus totaux générés par l\'exploitation',
                     'unite' => 'FCFA',
                     'valeur_cible' => '',
                     'formule' => null,
                     'dependances' => []
                 ],
                 'charges_exploitation' => [
-                    'libelle' => 'Charges d\'exploitation',
-                    'definition' => 'Montant total des charges d\'exploitation',
+                    'libelle' => 'Total des Charges d\'Exploitation',
+                    'definition' => 'Coûts directs liés à l\'activité principale',
                     'unite' => 'FCFA',
                     'valeur_cible' => '',
                     'formule' => null,
                     'dependances' => []
                 ],
                 'resultat_net_exploitation' => [
-                    'libelle' => 'Résultat net d\'exploitation',
-                    'definition' => 'Résultat net d\'exploitation',
+                    'libelle' => 'Bénéfice Net d\'Exploitation',
+                    'definition' => 'Profit après déduction de toutes les charges',
                     'unite' => 'FCFA',
                     'valeur_cible' => '',
                     'formule' => null,
@@ -110,51 +112,84 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
                 ],
             ],
 
-            // Indicateurs de trésorerie de l'entreprise du promoteur
-            'Indicateurs de trésorerie de l\'entreprise du promoteur' => [
+            // Indicateurs de trésorerie
+            'Gestion de la Trésorerie et du Crédit' => [
                 'nombres_credits' => [
-                    'libelle' => 'Nombre de crédits reçus',
-                    'definition' => 'Nombre de crédits reçus au cours de l\'année N-1',
+                    'libelle' => 'Nombre de Crédits Obtenus',
+                    'definition' => 'Nombre total de prêts accordés à l\'entreprise',
                     'unite' => '',
                     'valeur_cible' => '',
                     'formule' => null,
                     'dependances' => []
                 ],
                 'montant_credit' => [
-                    'libelle' => 'Montant cumulé des crédits reçus',
-                    'definition' => 'Montant total des crédits reçus au cours de l\'année N-1',
+                    'libelle' => 'Montant Total des Crédits',
+                    'definition' => 'Somme cumulée de tous les crédits reçus',
                     'unite' => 'FCFA',
                     'valeur_cible' => '',
                     'formule' => null,
                     'dependances' => []
                 ],
+                'montant_moyen_credit' => [
+                    'libelle' => 'Montant Moyen par Crédit',
+                    'definition' => 'Valeur moyenne des crédits obtenus',
+                    'unite' => 'FCFA',
+                    'valeur_cible' => '',
+                    'formule' => 'nombres_credits > 0 ? montant_credit / nombres_credits : 0',
+                    'dependances' => [
+                        'nombres_credits',
+                        'montant_credit'
+                    ]
+                ],
+                'taux_endettement' => [
+                    'libelle' => 'Taux d\'Endettement Global',
+                    'definition' => 'Ratio des dettes totales sur les capitaux propres',
+                    'unite' => '%',
+                    'valeur_cible' => '150% max',
+                    'formule' => 'dette_financement / moyenne_capitaux_propre * 100',
+                    'dependances' => [
+                        'dette_financement',
+                        'moyenne_capitaux_propre'
+                    ]
+                ],
             ],
 
-            // Indicateurs de performance Projet
-            'Indicateurs de performance Projet' => [
+            // Indicateurs de performance projet
+            'Impact et Performance du Projet' => [
                 'prop_revenu_accru_h' => [
-                    'libelle' => 'Proportion d\'hommes avec revenus accrus',
-                    'definition' => 'Proportion des jeunes hommes bénéficiaires qui ont augmenté leurs revenus grâce au projet',
+                    'libelle' => 'Hommes avec Revenus Améliorés',
+                    'definition' => 'Pourcentage de bénéficiaires masculins ayant augmenté leurs revenus',
                     'unite' => '%',
                     'valeur_cible' => 'Promoteurs',
                     'formule' => null,
                     'dependances' => []
                 ],
                 'prop_revenu_accru_f' => [
-                    'libelle' => 'Proportion de femmes avec revenus accrus',
-                    'definition' => 'Proportion des jeunes femmes bénéficiaires qui ont augmenté leurs revenus grâce au projet',
+                    'libelle' => 'Femmes avec Revenus Améliorés',
+                    'definition' => 'Pourcentage de bénéficiaires féminines ayant augmenté leurs revenus',
                     'unite' => '%',
                     'valeur_cible' => 'Promoteurs',
                     'formule' => null,
                     'dependances' => []
                 ],
                 'acces_financement' => [
-                    'libelle' => 'Nombre de promoteurs bénéficiaires de crédit',
-                    'definition' => 'Nombre de promoteurs qui ont accès à un crédit grâce au projet',
+                    'libelle' => 'Bénéficiaires ayant Accès au Crédit',
+                    'definition' => 'Nombre de promoteurs qui ont obtenu un financement',
                     'unite' => '',
                     'valeur_cible' => 'Promoteurs',
                     'formule' => null,
                     'dependances' => []
+                ],
+                'taux_revenus_ameliores' => [
+                    'libelle' => 'Taux Global d\'Amélioration des Revenus',
+                    'definition' => 'Pourcentage total de bénéficiaires avec des revenus accrus',
+                    'unite' => '%',
+                    'valeur_cible' => '70% min',
+                    'formule' => '(prop_revenu_accru_h + prop_revenu_accru_f) / 2',
+                    'dependances' => [
+                        'prop_revenu_accru_h',
+                        'prop_revenu_accru_f'
+                    ]
                 ],
             ],
         ];
@@ -164,7 +199,7 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
      * Calculer les indicateurs spécifiques à la période annuelle
      *
      * @param array $donneesCollecte Les données brutes de la collecte
-     * @param array $donneesReference Données de référence (autres périodes, exercices précédents, etc.)
+     * @param array $donneesReference Données de référence
      * @return array Les données complétées avec les indicateurs calculés
      */
     public function calculerIndicateurs(array $donneesCollecte, array $donneesReference = []): array
@@ -179,12 +214,7 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
 
             foreach ($indicateurs as $id => $definition) {
                 // Si l'indicateur existe déjà dans les données saisies, on ne le recalcule pas
-                if (isset($resultat[$categorie][$id])) {
-                    continue;
-                }
-
-                // Si l'indicateur n'a pas de formule de calcul, on passe au suivant
-                if (empty($definition['formule'])) {
+                if (isset($resultat[$categorie][$id]) || empty($definition['formule'])) {
                     continue;
                 }
 
@@ -193,13 +223,25 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
                 $variablesValeurs = [];
 
                 foreach ($definition['dependances'] as $dep) {
+                    // Chercher dans la même catégorie d'abord
                     if (isset($resultat[$categorie][$dep])) {
                         $variablesValeurs[$dep] = $resultat[$categorie][$dep];
-                    } elseif (isset($donneesReference[$categorie][$dep])) {
-                        $variablesValeurs[$dep] = $donneesReference[$categorie][$dep];
                     } else {
-                        $dependancesDispo = false;
-                        break;
+                        // Chercher dans d'autres catégories
+                        $found = false;
+                        foreach ($resultat as $cat => $inds) {
+                            if (isset($inds[$dep])) {
+                                $variablesValeurs[$dep] = $inds[$dep];
+                                $found = true;
+                                break;
+                            }
+                        }
+
+                        if (!$found) {
+                            $dependancesDispo = false;
+                            Log::info("Dépendance manquante pour $id: $dep");
+                            break;
+                        }
                     }
                 }
 
@@ -208,6 +250,12 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
                     try {
                         $valeur = $this->evaluerFormule($definition['formule'], $variablesValeurs);
                         $resultat[$categorie][$id] = $valeur;
+
+                        // Log pour débogage
+                        Log::info("Calculé $categorie.$id = $valeur", [
+                            'formule' => $definition['formule'],
+                            'variables' => $variablesValeurs
+                        ]);
                     } catch (\Exception $e) {
                         Log::error("Erreur de calcul pour l'indicateur $id: " . $e->getMessage());
                     }
@@ -220,7 +268,6 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
 
     /**
      * Récupérer les données de référence pour les calculs
-     * (Par exemple, données de l'exercice précédent pour calculer les évolutions)
      *
      * @param int|null $exerciceId
      * @param int|null $entrepriseId
@@ -228,9 +275,7 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
      */
     public function getDonneesReference(?int $exerciceId = null, ?int $entrepriseId = null): array
     {
-        // Récupérer les données de l'exercice précédent si nécessaire
         if ($exerciceId) {
-            // Logique pour obtenir l'exercice précédent
             $exercicePrecedentId = $this->getExercicePrecedent($exerciceId);
 
             if ($exercicePrecedentId) {
@@ -256,10 +301,6 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
                             foreach ($indicateurs as $id => $valeur) {
                                 if (!isset($donnees[$categorie][$id])) {
                                     $donnees[$categorie][$id] = $valeur;
-                                } else {
-                                    // Logique d'agrégation (moyenne, somme, dernier, etc.)
-                                    // Pour l'exemple, on prend la dernière valeur
-                                    $donnees[$categorie][$id] = $valeur;
                                 }
                             }
                         }
@@ -281,17 +322,12 @@ class IndicateurAnnuelCalculateur extends IndicateurCalculateurBase
      */
     private function getExercicePrecedent(int $exerciceId): ?int
     {
-        // Cette méthode nécessiterait d'accéder à la table des exercices
-        // Pour cet exemple, je l'implémente de manière simplifiée
-
-        // Récupérer l'exercice actuel pour connaître son année
         $exercice = \App\Models\Exercice::find($exerciceId);
 
         if (!$exercice) {
             return null;
         }
 
-        // Chercher un exercice avec une année précédente
         $exercicePrecedent = \App\Models\Exercice::where('annee', $exercice->annee - 1)
             ->first();
 
