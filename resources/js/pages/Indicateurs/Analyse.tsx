@@ -2816,44 +2816,68 @@ const Analyse: React.FC<AnalyseProps> = ({ auth, exercices, entreprises, default
     const totalPages = Math.ceil(calculatedIndicatorsData.length / itemsPerPage);
 
     // Exporter vers Excel
-   const exportToExcel = (categorie?: string, exportAll = false) => {
-    // Créer l'objet de base pour les paramètres
-    const baseParams = {
-        periode_type: activePeriode,
-        include_basic_info: exportOptions.includeBasicInfo ? '1' : '0',
-        include_metadata: exportOptions.includeMetadata ? '1' : '0',
-        format_nice: exportOptions.formatNice ? '1' : '0',
-    };
+const exportToExcel = (categorie?: string, exportAll = false) => {
+    try {
+        // Indiquer que l'export commence (décommentez si vous utilisez un état pour le chargement)
+        // setIsExporting(true);
+        // toast.info('Préparation de l\'export Excel...');
 
-    // Ajouter soit export_all ou categorie selon le cas
-    const exportParams = exportAll
-        ? { ...baseParams, export_all: '1' }
-        : { ...baseParams, ...(categorie ? { categorie } : {}) };
+        // Vérifier qu'au moins un filtre est sélectionné pour les grands exports
+        if (exportAll && !selectedExerciceId && !selectedEntrepriseId && !selectedBeneficiaireId &&
+            !selectedRegion && !selectedCommune && !selectedSecteur && !selectedBeneficiaireType) {
+            console.warn('Aucun filtre sélectionné, l\'export pourrait contenir beaucoup de données');
+            // Décommentez si vous souhaitez demander confirmation
+            // if (!confirm('Aucun filtre n\'est sélectionné. L\'export pourrait être volumineux. Continuer ?')) {
+            //    return;
+            // }
+        }
 
-    // Créer l'objet URLSearchParams
-    const params = new URLSearchParams(exportParams);
+        // Créer l'objet de base pour les paramètres
+        const baseParams = {
+            periode_type: activePeriode,
+            include_basic_info: exportOptions.includeBasicInfo ? '1' : '0',
+            include_metadata: exportOptions.includeMetadata ? '1' : '0',
+            format_nice: exportOptions.formatNice ? '1' : '0',
+        };
 
-    // Ajouter les filtres conditionnellement
-    if (selectedExerciceId)
-        params.append('exercice_id', selectedExerciceId.toString());
+        // Ajouter soit export_all ou categorie selon le cas
+        const exportParams = exportAll
+            ? { ...baseParams, export_all: '1' }
+            : { ...baseParams, ...(categorie ? { categorie } : {}) };
 
-    // Gérer la sélection bénéficiaire/entreprise selon le type de période
-    if (isOccasionnelle && selectedBeneficiaireId)
-        params.append('beneficiaire_id', selectedBeneficiaireId.toString());
-    else if (selectedEntrepriseId)
-        params.append('entreprise_id', selectedEntrepriseId.toString());
+        // Créer l'objet URLSearchParams
+        const params = new URLSearchParams(exportParams);
 
-    // Ajouter les filtres avancés
-    if (selectedRegion) params.append('region', selectedRegion);
-    if (selectedCommune) params.append('commune', selectedCommune);
-    if (selectedSecteur) params.append('secteur', selectedSecteur);
-    if (selectedBeneficiaireType) params.append('beneficiaire_type', selectedBeneficiaireType);
+        // Ajouter les filtres conditionnellement
+        if (selectedExerciceId)
+            params.append('exercice_id', selectedExerciceId.toString());
 
-    // Afficher les paramètres dans la console pour débogage (à retirer en production)
-    console.log('Export params:', Object.fromEntries(params.entries()));
+        // Gérer la sélection bénéficiaire/entreprise selon le type de période
+        if (isOccasionnelle && selectedBeneficiaireId)
+            params.append('beneficiaire_id', selectedBeneficiaireId.toString());
+        else if (selectedEntrepriseId)
+            params.append('entreprise_id', selectedEntrepriseId.toString());
 
-    // Rediriger vers l'URL d'export
-    window.location.href = `/api/indicateurs/export-excel?${params.toString()}`;
+        // Ajouter les filtres avancés
+        if (selectedRegion) params.append('region', selectedRegion);
+        if (selectedCommune) params.append('commune', selectedCommune);
+        if (selectedSecteur) params.append('secteur', selectedSecteur);
+        if (selectedBeneficiaireType) params.append('beneficiaire_type', selectedBeneficiaireType);
+
+        // Afficher les paramètres dans la console pour débogage (à retirer en production)
+        console.log('Export params:', Object.fromEntries(params.entries()));
+
+        // Rediriger vers l'URL d'export
+        window.location.href = `/api/indicateurs/export-excel?${params.toString()}`;
+
+    } catch (error) {
+        console.error('Erreur lors de la préparation de l\'export:', error);
+        // Afficher un message d'erreur à l'utilisateur (décommentez si vous utilisez un système de notification)
+        // toast.error('Une erreur est survenue lors de la préparation de l\'export');
+
+        // Si vous utilisez un état pour le chargement, le réinitialiser
+        // setIsExporting(false);
+    }
 };
 
 

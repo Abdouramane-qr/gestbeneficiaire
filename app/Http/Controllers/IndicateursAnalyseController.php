@@ -10,6 +10,8 @@ use App\Strategies\{
     ExercicePrecedentStrategy,
     DefaultPeriodeStrategy
 };
+use App\Exports\SimpleIndicateursExport;
+use App\Exports\MultiSheetIndicateursExport;
 use App\Services\IndicateursAnalyseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -2797,20 +2799,20 @@ protected function generateExportFileName(array $validated, array $filters, bool
 public function exportExcel(Request $request)
 {
     try {
-
-  // Convertir explicitement export_all en booléen si présent
+        // Convertir explicitement export_all en booléen si présent
         if ($request->has('export_all')) {
             $request->merge(['export_all' => filter_var($request->input('export_all'), FILTER_VALIDATE_BOOLEAN)]);
         }
 
         $validated = $this->validateExportRequest($request);
-
-        // Préparer les filtres pour l'export
         $filters = array_filter($validated);
+        $exportAll = $request->has('export_all') ? (bool)$request->input('export_all') : false;
+        $includeBasicInfo = $request->has('include_basic_info') ? (bool)$request->input('include_basic_info') : true;
+        $includeMetadata = $request->has('include_metadata') ? (bool)$request->input('include_metadata') : true;
+        $formatNice = $request->has('format_nice') ? (bool)$request->input('format_nice') : true;
 
         // Déterminer l'entreprise pour l'export
         $entrepriseId = $this->determinerEntrepriseOptimale($filters['exercice_id'] ?? null);
-
         if (isset($filters['entreprise_id'])) {
             $entrepriseId = $filters['entreprise_id'];
         }
@@ -2818,14 +2820,7 @@ public function exportExcel(Request $request)
         // Obtenir l'année
         $annee = $this->getExerciceAnnee($filters['exercice_id'] ?? null);
 
-        // Récupérer les options d'export
-        $exportAll = $request->has('export_all') ? (bool)$request->input('export_all') : false;
-        $includeBasicInfo = $request->has('include_basic_info') ? (bool)$request->input('include_basic_info') : true;
-        $includeMetadata = $request->has('include_metadata') ? (bool)$request->input('include_metadata') : true;
-        $formatNice = $request->has('format_nice') ? (bool)$request->input('format_nice') : true;
-
-
-         // Débogage avant la création de l'exportateur
+        // Log des paramètres pour le débogage
         Log::info('Paramètres d\'export', [
             'entrepriseId' => $entrepriseId,
             'annee' => $annee,
@@ -2836,23 +2831,258 @@ public function exportExcel(Request $request)
             'includeMetadata' => $includeMetadata,
             'formatNice' => $formatNice
         ]);
-        // Créer l'exportateur avec tous les filtres et options
-        $exporter = new \App\Exports\IndicateursExport(
-            $entrepriseId,
-            $annee,
-            $validated['periode_type'],
-            $filters,
-            $exportAll,
-            $includeBasicInfo,
-            $includeMetadata,
-            $formatNice
-        );
+
+        // Préparation des données pour l'export multi-feuilles
+        $sheetsData = [];
+
+        // 1. FEUILLE D'INFORMATIONS GÉNÉRALES
+        if ($includeBasicInfo) {
+            // Récupérer l'entreprise avec ses relations
+            $entreprise = \App\Models\Entreprise::with([
+                'beneficiaire',
+                'beneficiaire.ong',
+                'beneficiaire.institutionFinanciere',
+                'beneficiaire.coaches',
+                'ong',
+                'institutionFinanciere'
+            ])->find($entrepriseId);
+
+            if (!$entreprise) {
+                Log::warning("Entreprise avec ID $entrepriseId non trouvée");
+            }
+
+            // Récupérer les collectes associées pour la période spécifiée
+            $collectesQuery = \App\Models\Collecte::with(['exercice', 'user', 'periode'])
+                ->where('entreprise_id', $entrepriseId);
+
+            // Appliquer les filtres de période
+            if ($validated['periode_type'] !== 'Occasionnelle') {
+                $collectesQuery->where(function($query) use ($validated) {
+                    $query->where('periode', 'like', '%' . $validated['periode_type'] . '%')
+                          ->orWhereHas('periode', function($q) use ($validated) {
+                              $q->where('type_periode', 'like', '%' . strtolower(substr($validated['periode_type'], 0, -2)) . '%');
+                          });
+                });
+            } else {
+                $collectesQuery->where('type_collecte', 'Exceptionnelle');
+            }
+
+            // Filtre par exercice si spécifié
+            if (isset($filters['exercice_id'])) {
+                $collectesQuery->where('exercice_id', $filters['exercice_id']);
+            }
+
+            $collectes = $collectesQuery->orderBy('date_collecte', 'desc')->get();
+
+            $infoGeneralesData = [];
+
+            // Informations de base de l'entreprise
+            $infoGeneralesData[] = ['id_entreprise', $entreprise ? $entreprise->id : 'N/A'];
+            $infoGeneralesData[] = ['nom_entreprise', $entreprise ? $entreprise->nom_entreprise : 'N/A'];
+
+            // Informations de collecte
+            if ($collectes->isNotEmpty()) {
+                $collecte = $collectes->first();
+
+                $infoGeneralesData[] = ['exercice', $collecte->exercice ? $collecte->exercice->annee : $annee];
+                $infoGeneralesData[] = ['frequence', $validated['periode_type']];
+                $infoGeneralesData[] = ['periode', $collecte->periode ? ($collecte->periode->nom ?? $collecte->periode) : $validated['periode_type']];
+                $infoGeneralesData[] = ['statut', $collecte->status ?? 'Collecté'];
+                $infoGeneralesData[] = ['date_collecte', $collecte->date_collecte ? $collecte->date_collecte->format('Y-m-d') : 'N/A'];
+                $infoGeneralesData[] = ['type_collecte', $collecte->type_collecte ?? 'Standard'];
+                $infoGeneralesData[] = ['collecte_par', $collecte->user ? $collecte->user->name : 'N/A'];
+                $infoGeneralesData[] = ['date_creation', $collecte->created_at ? $collecte->created_at->format('Y-m-d H:i:s') : 'N/A'];
+                $infoGeneralesData[] = ['date_modification', $collecte->updated_at ? $collecte->updated_at->format('Y-m-d H:i:s') : 'N/A'];
+            } else {
+                // Valeurs par défaut si pas de collecte
+                $infoGeneralesData[] = ['exercice', $annee];
+                $infoGeneralesData[] = ['frequence', $validated['periode_type']];
+                $infoGeneralesData[] = ['periode', 'N/A'];
+                $infoGeneralesData[] = ['statut', 'Non collecté'];
+                $infoGeneralesData[] = ['date_collecte', 'N/A'];
+                $infoGeneralesData[] = ['type_collecte', 'N/A'];
+                $infoGeneralesData[] = ['collecte_par', 'N/A'];
+                $infoGeneralesData[] = ['date_creation', 'N/A'];
+                $infoGeneralesData[] = ['date_modification', 'N/A'];
+            }
+
+            // Informations sur l'ONG et l'institution financière
+            $ong = null;
+            $institutionFinanciere = null;
+
+            // Vérifier d'abord les relations directes de l'entreprise
+            if ($entreprise) {
+                if ($entreprise->ong) {
+                    $ong = $entreprise->ong;
+                }
+                if ($entreprise->institutionFinanciere) {
+                    $institutionFinanciere = $entreprise->institutionFinanciere;
+                }
+
+                // Ensuite vérifier via le bénéficiaire si nécessaire
+                if (!$ong && $entreprise->beneficiaire && $entreprise->beneficiaire->ong) {
+                    $ong = $entreprise->beneficiaire->ong;
+                }
+                if (!$institutionFinanciere && $entreprise->beneficiaire && $entreprise->beneficiaire->institutionFinanciere) {
+                    $institutionFinanciere = $entreprise->beneficiaire->institutionFinanciere;
+                }
+            }
+
+            $infoGeneralesData[] = ['ong', $ong ? $ong->nom : 'N/A'];
+
+            // Gestion des coaches
+            $coaches = 'N/A';
+            if ($entreprise && $entreprise->beneficiaire) {
+                $beneficiaire = $entreprise->beneficiaire;
+
+                try {
+                    if ($beneficiaire->coaches instanceof \Illuminate\Database\Eloquent\Collection && $beneficiaire->coaches->isNotEmpty()) {
+                        $coaches = $beneficiaire->coaches->map(function($coach) {
+                            return $coach->nom . ' ' . $coach->prenom;
+                        })->implode(', ');
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Erreur lors de la récupération des coaches: " . $e->getMessage());
+                    $coaches = 'Erreur: ' . $e->getMessage();
+                }
+            }
+
+            $infoGeneralesData[] = ['coaches', $coaches];
+
+            // Informations géographiques
+            $province = 'N/A';
+            if ($entreprise && $entreprise->beneficiaire && !empty($entreprise->beneficiaire->provinces)) {
+                $province = $entreprise->beneficiaire->provinces;
+            }
+
+            $infoGeneralesData[] = ['province', $province];
+            $infoGeneralesData[] = ['region', $entreprise ? $entreprise->ville : 'N/A'];
+            $infoGeneralesData[] = ['secteur_activite', $entreprise ? $entreprise->secteur_activite : 'N/A'];
+
+            // Institution financière
+            $infoGeneralesData[] = ['institutionFinanciere', $institutionFinanciere ? $institutionFinanciere->nom : 'N/A'];
+
+            $sheetsData['Informations Générales'] = [
+                'headers' => ['Attribut', 'Valeur'],
+                'data' => $infoGeneralesData
+            ];
+        }
+
+        // 2. FEUILLES DES INDICATEURS
+        // Récupérer les données selon la catégorie ou toutes les catégories
+        $params = ['periode_type' => $validated['periode_type']];
+        if (isset($filters['exercice_id'])) $params['exercice_id'] = $filters['exercice_id'];
+        if (isset($filters['entreprise_id'])) $params['entreprise_id'] = $filters['entreprise_id'];
+        if (isset($filters['beneficiaire_id'])) $params['beneficiaire_id'] = $filters['beneficiaire_id'];
+        if (isset($filters['region'])) $params['region'] = $filters['region'];
+        if (isset($filters['commune'])) $params['commune'] = $filters['commune'];
+        if (isset($filters['secteur'])) $params['secteur'] = $filters['secteur'];
+        if (isset($filters['beneficiaire_type'])) $params['beneficiaire_type'] = $filters['beneficiaire_type'];
+
+        $response = $this->getAnalyseData(new \Illuminate\Http\Request($params));
+
+        if ($response->getStatusCode() === 200) {
+            $responseData = json_decode($response->getContent(), true);
+
+            if ($responseData['success']) {
+                $indicateursData = $responseData['data'];
+
+                if ($exportAll) {
+                    // Une feuille par catégorie d'indicateurs
+                    foreach ($indicateursData as $categorie => $indicateurs) {
+                        if (empty($indicateurs)) continue;
+
+                        $categorieData = [];
+                        foreach ($indicateurs as $indicateur) {
+                            $categorieData[] = [
+                                $indicateur['id'],
+                                $indicateur['label'],
+                                $indicateur['value'],
+                                $indicateur['target'],
+                                $indicateur['unite'],
+                                $indicateur['definition'],
+                                $indicateur['is_calculated'] ? 'Oui' : 'Non'
+                            ];
+                        }
+
+                        $sheetsData[$categorie] = [
+                            'headers' => ['ID', 'Indicateur', 'Valeur', 'Cible', 'Unité', 'Définition', 'Calculé'],
+                            'data' => $categorieData
+                        ];
+                    }
+                } else if (isset($filters['categorie']) && isset($indicateursData[$filters['categorie']])) {
+                    // Exporter uniquement la catégorie spécifiée
+                    $categorieData = [];
+                    foreach ($indicateursData[$filters['categorie']] as $indicateur) {
+                        $categorieData[] = [
+                            $indicateur['id'],
+                            $indicateur['label'],
+                            $indicateur['value'],
+                            $indicateur['target'],
+                            $indicateur['unite'],
+                            $indicateur['definition'],
+                            $indicateur['is_calculated'] ? 'Oui' : 'Non'
+                        ];
+                    }
+
+                    $sheetsData[$filters['categorie']] = [
+                        'headers' => ['ID', 'Indicateur', 'Valeur', 'Cible', 'Unité', 'Définition', 'Calculé'],
+                        'data' => $categorieData
+                    ];
+                }
+            }
+        }
+
+        // 3. FEUILLE DE MÉTADONNÉES
+        if ($includeMetadata) {
+            $metadataData = [
+                ['Date d\'exportation', now()->format('Y-m-d H:i:s')],
+                ['Période exportée', $validated['periode_type']],
+                ['Année', $annee],
+                ['', ''],
+                ['Filtres appliqués', ''],
+            ];
+
+            foreach ($filters as $key => $value) {
+                if ($value && $key !== 'exercice_id' && $key !== 'entreprise_id' && $key !== 'beneficiaires_id') {
+                    $metadataData[] = [ucfirst(str_replace('_', ' ', $key)), $value];
+                }
+            }
+
+            $metadataData[] = ['', ''];
+            $metadataData[] = ['Statistiques', ''];
+            $metadataData[] = ['Date et heure d\'exportation', now()->format('d/m/Y H:i:s')];
+            $metadataData[] = ['Type d\'exportation', isset($filters['categorie']) ? 'Par catégorie' : 'Complet'];
+            $metadataData[] = ['Format libellés', $formatNice ? 'Optimisé' : 'Brut'];
+
+            $metadataData[] = ['', ''];
+            $metadataData[] = ['Informations système', ''];
+            $metadataData[] = ['Version de l\'application', '3.1.0'];
+            $metadataData[] = ['Générée par', 'Module d\'export d\'indicateurs'];
+            $metadataData[] = ['Utilisateur', auth()->user()->name ?? 'N/A'];
+
+            $sheetsData['Métadonnées'] = [
+                'headers' => ['Attribut', 'Valeur'],
+                'data' => $metadataData
+            ];
+        }
+
+        // S'assurer qu'il y a au moins une feuille
+        if (empty($sheetsData)) {
+            $sheetsData['Données vides'] = [
+                'headers' => ['Message'],
+                'data' => [['Aucune donnée disponible pour les critères sélectionnés']]
+            ];
+        }
+
+        // Créer l'export multi-feuilles
+        $export = new MultiSheetIndicateursExport($sheetsData);
 
         // Générer un nom de fichier personnalisé
         $fileName = $this->generateExportFileName($validated, $filters, $exportAll);
 
         // Lancer le téléchargement
-        return \Maatwebsite\Excel\Facades\Excel::download($exporter, $fileName);
+        return \Maatwebsite\Excel\Facades\Excel::download($export, $fileName);
     } catch (\Illuminate\Validation\ValidationException $e) {
         return response()->json([
             'success' => false,
@@ -2867,79 +3097,10 @@ public function exportExcel(Request $request)
             'trace' => $e->getTraceAsString(),
             'params' => $request->all()
         ]);
+
         return response()->json([
             'success' => false,
             'message' => 'Une erreur est survenue lors de l\'exportation',
-            'error' => config('app.debug') ? $e->getMessage() : 'Erreur serveur interne',
-        ], 500);
-    }
-}
-
-/**
- * Export de toutes les données sans condition
- */
-public function exportAllData(Request $request)
-{
-    try {
-
-                $request->merge(['export_all' => true]);
-
-        // Récupérer les paramètres de base pour l'export
-        $periodeType = $request->input('periode_type', 'Trimestrielle');
-        $exerciceId = $request->input('exercice_id');
-
-        // Déterminer l'entreprise pour l'export
-        $entrepriseId = null;
-
-        if ($request->has('entreprise_id')) {
-            $entrepriseId = $request->input('entreprise_id');
-        } else {
-            $entrepriseId = $this->determinerEntrepriseOptimale($exerciceId);
-        }
-
-        // Obtenir l'année
-        $annee = $this->getExerciceAnnee($exerciceId);
-
-        // Récupérer les options d'export
-        $includeBasicInfo = $request->has('include_basic_info') ? (bool)$request->input('include_basic_info') : true;
-        $includeMetadata = $request->has('include_metadata') ? (bool)$request->input('include_metadata') : true;
-        $formatNice = $request->has('format_nice') ? (bool)$request->input('format_nice') : true;
-
-        // Créer l'exportateur avec l'option export_all à true
-        $exporter = new \App\Exports\IndicateursExport(
-            $entrepriseId,
-            $annee,
-            $periodeType,
-            [
-                'exercice_id' => $exerciceId,
-                'entreprise_id' => $request->input('entreprise_id'),
-                'beneficiaire_id' => $request->input('beneficiaire_id'),
-                'region' => $request->input('region'),
-                'commune' => $request->input('commune'),
-                'secteur' => $request->input('secteur'),
-                'beneficiaire_type' => $request->input('beneficiaire_type')
-            ],
-            true, // export_all = true
-            $includeBasicInfo,
-            $includeMetadata,
-            $formatNice
-        );
-
-        // Générer un nom de fichier personnalisé
-        $fileName = "export_complet_indicateurs_{$periodeType}_" . date('Y-m-d') . '.xlsx';
-
-        // Lancer le téléchargement
-        return \Maatwebsite\Excel\Facades\Excel::download($exporter, $fileName);
-    } catch (\Exception $e) {
-        Log::error('Erreur lors de l\'exportation complète des données', [
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Une erreur est survenue lors de l\'exportation complète',
             'error' => config('app.debug') ? $e->getMessage() : 'Erreur serveur interne',
         ], 500);
     }

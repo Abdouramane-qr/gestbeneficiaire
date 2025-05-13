@@ -57,10 +57,10 @@ class Entreprise extends Model
     }
 // App\Models\Entreprise.php
 
-public function collectes()
-{
-    return $this->hasMany(Collecte::class, 'entreprise_id');
-}
+// public function collectes()
+// {
+//     return $this->hasMany(Collecte::class, 'entreprise_id');
+// }
 
     // Accesseur pour obtenir le nom du promoteur (bénéficiaire)
     public function getNomPromoteurAttribute()
