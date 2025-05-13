@@ -487,7 +487,7 @@ class AnalyseController extends Controller
             'communes' => DB::table('beneficiaires')->select('communes')->distinct()->pluck('communes')
         ];
 
-        return Inertia::render('Analyses/Index', [
+        return Inertia::render('Analyses/Synthese', [
             'exerciceActif' => $exerciceActif,
             'exercices' => $exercices,
             'periodes' => $periodes,

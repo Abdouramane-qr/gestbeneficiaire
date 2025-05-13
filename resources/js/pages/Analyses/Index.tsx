@@ -186,6 +186,7 @@
 // import AppLayout from '@/layouts/app-layout';
 // import IndicateurCalculator, { IndicateurField, PeriodeName } from '@/Utils/IndicateurCalculator';
 // import Dashboard from './dbs';
+// import AnalyseIndicateurs from '@/components/Analyse/IndicateurDetailModal';
 
 // interface Indicateur {
 //     indicateur_id: number;

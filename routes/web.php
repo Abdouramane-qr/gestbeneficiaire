@@ -193,7 +193,13 @@ Route::prefix('api')->group(function () {
         Route::get('/indicateurs/exercices', [IndicateursAnalyseController::class, 'getExercices']);
         Route::get('/indicateurs/entreprises', [IndicateursAnalyseController::class, 'getEntreprises']);
         Route::get('/indicateurs/analyse-integree', [IndicateursAnalyseController::class, 'showAnalyseIntegree'])
+
     ->name('indicateurs.analyse-integree');
+    // Route pour l'export Excel standard
+//Route::get('/api/indicateurs/export-excel', [IndicateursAnalyseController::class, 'exportExcel'])->name('indicateurs.export-excel');
+
+// Route pour l'export complet de toutes les données
+Route::get('/api/indicateurs/export-all', [IndicateursAnalyseController::class, 'exportAllData'])->name('indicateurs.export-all');
     });
 });
 Route::get('/api/beneficiaires', [IndicateursAnalyseController::class, 'getBeneficiaires'])
@@ -204,8 +210,7 @@ Route::get('/api/beneficiaires', [IndicateursAnalyseController::class, 'getBenef
 
 
 
-// Groupe de routes pour les formations avec middleware d'authentification approprié// routes/web.php
-// routes/web.php// routes/api.php
+
 // routes/api.php
 Route::middleware(['auth'])->group(function () {
     // Routes pour les formations
@@ -215,5 +220,32 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/formations/{id}', [FormationController::class, 'update'])->name('formations.update');
     Route::delete('/formations/{id}', [FormationController::class, 'destroy'])->name('formations.destroy');
 });
+
+
+
+//------------------------------Debugage------------------------------//
+
+// Routes de débogage pour l'export Excel (temporaires)
+Route::prefix('debug')->middleware(['auth'])->group(function () {
+    // Diagnostiquer les relations
+    Route::get('/relations', function () {
+        return response()->json(App\Debug\ExportDebugger::diagnoseRelations());
+    });
+
+    // Tester l'export sans générer de fichier
+    Route::get('/test-export/{entrepriseId?}/{annee?}/{periodeType?}', function ($entrepriseId = null, $annee = null, $periodeType = 'Annuelle') {
+        // Utiliser les valeurs par défaut si non spécifiées
+        $entrepriseId = $entrepriseId ?? 4; // Remplacez par l'ID qui pose problème
+        $annee = $annee ?? date('Y');
+
+        return response()->json(App\Debug\ExportDebugger::testExport($entrepriseId, $annee, $periodeType));
+    });
+
+    // Tester la récupération des coaches pour un bénéficiaire spécifique
+    Route::get('/test-coaches/{beneficiaireId}', function ($beneficiaireId) {
+        return response()->json(App\Debug\ExportDebugger::testCoachesRetrieval($beneficiaireId));
+    });
+});
+
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

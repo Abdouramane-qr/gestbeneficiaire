@@ -468,14 +468,6 @@ interface IndicateurDetail {
   entreprises: Set<number>;
 }
 
-interface CategorieDetail {
-  nom: string;
-  count: number;
-  valeurTotale: number;
-  valeurMoyenne: number;
-  indicateursListe: IndicateurDetail[];
-}
-
 interface EntrepriseDetail {
   id: number;
   nom: string;
@@ -845,6 +837,30 @@ const RapportSynthetique: React.FC<RapportSynthetiqueProps> = ({
           {/* Onglet Aperçu (à compléter) */}
           <TabsContent value="apercu" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Carte des tendances */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Tendances des indicateurs</CardTitle>
+                  <CardDescription>Évolution des indicateurs sur la période</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span>En hausse</span>
+                      <span className="font-medium text-green-600">{statistiquesTendances.hausse} ({statistiquesTendances.pourcentageHausse.toFixed(1)}%)</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>En baisse</span>
+                      <span className="font-medium text-red-600">{statistiquesTendances.baisse} ({statistiquesTendances.pourcentageBaisse.toFixed(1)}%)</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>Stable</span>
+                      <span className="font-medium text-gray-600">{statistiquesTendances.stable} ({statistiquesTendances.pourcentageStable.toFixed(1)}%)</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card className="md:col-span-2">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">Aperçu des indicateurs par catégorie</CardTitle>

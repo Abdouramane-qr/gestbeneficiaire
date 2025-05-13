@@ -727,7 +727,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 // Composant pour le rendu du label personnalisé dans le PieChart
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
+const renderCustomizedLabel = ({ cx, cy, midAngle, outerRadius, percent, index, name }: any) => {
   const RADIAN = Math.PI / 180;
   const radius = outerRadius * 1.1;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);

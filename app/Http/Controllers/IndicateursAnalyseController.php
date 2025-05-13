@@ -1083,75 +1083,11 @@ class IndicateursAnalyseController extends Controller
     }
 
 
-    public function exportExcel(Request $request)
-    {
-        try {
-            $validated = $this->validateExportRequest($request);
 
-            // Préparer les filtres pour l'export
-            $filters = array_filter($validated);
-
-            // Déterminer l'entreprise pour l'export
-            $entrepriseId = $this->determinerEntrepriseOptimale($filters['exercice_id'] ?? null);
-
-            if (isset($filters['entreprise_id'])) {
-                $entrepriseId = $filters['entreprise_id'];
-            }
-
-            // Obtenir l'année
-            $annee = $this->getExerciceAnnee($filters['exercice_id'] ?? null);
-
-            // Créer l'exportateur avec tous les filtres
-            $exporter = new \App\Exports\IndicateursExport(
-                $entrepriseId,
-                $annee,
-                $validated['periode_type'],
-                $filters
-            );
-
-            // Générer un nom de fichier personnalisé
-            $fileName = $this->generateExportFileName($validated, $filters);
-
-            // Lancer le téléchargement
-            return \Maatwebsite\Excel\Facades\Excel::download($exporter, $fileName);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur de validation',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Erreur lors de l\'exportation Excel', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Une erreur est survenue lors de l\'exportation',
-                'error' => config('app.debug') ? $e->getMessage() : 'Erreur serveur interne',
-            ], 500);
-        }
-    }
 
     /**
      * Valide la requête d'export
      */
-    private function validateExportRequest(Request $request): array
-    {
-        return $request->validate([
-            'periode_type' => 'required|string|in:Trimestrielle,Semestrielle,Annuelle,Occasionnelle',
-            'categorie' => 'nullable|string|max:255',
-            'exercice_id' => 'nullable|integer|exists:exercices,id',
-            'entreprise_id' => 'nullable|integer|exists:entreprises,id',
-            'beneficiaire_id' => 'nullable|integer|exists:beneficiaires,id',
-            'region' => 'nullable|string|max:255',
-            'commune' => 'nullable|string|max:255',
-            'secteur' => 'nullable|string|max:255',
-            'beneficiaire_type' => 'nullable|string|max:255',
-        ]);
-    }
 
     /**
      * Obtient l'année d'un exercice
@@ -1192,30 +1128,7 @@ class IndicateursAnalyseController extends Controller
     /**
      * Génère un nom de fichier personnalisé pour l'export
      */
-    protected function generateExportFileName(array $validated, array $filters): string
-    {
-        $parts = ['indicateurs', $validated['periode_type']];
 
-        if (isset($validated['categorie'])) {
-            $parts[] = \Illuminate\Support\Str::slug($validated['categorie']);
-        }
-
-        if (isset($filters['region'])) {
-            $parts[] = 'region-' . \Illuminate\Support\Str::slug($filters['region']);
-        }
-
-        if (isset($filters['secteur'])) {
-            $parts[] = 'secteur-' . \Illuminate\Support\Str::slug($filters['secteur']);
-        }
-
-        if (isset($filters['beneficiaire_type'])) {
-            $parts[] = 'type-' . \Illuminate\Support\Str::slug($filters['beneficiaire_type']);
-        }
-
-        $parts[] = date('Y-m-d');
-
-        return implode('_', $parts) . '.xlsx';
-    }
 
     /**
      * Obtenir les variations de période
@@ -2825,6 +2738,212 @@ class IndicateursAnalyseController extends Controller
             'periodes' => $periodes,
         ]);
     }
+    //---------------------------------------------------------------------------------------------------------------
+    /**
+ * Valide la requête d'export
+ */
+private function validateExportRequest(Request $request): array
+{
+    return $request->validate([
+        'periode_type' => 'required|string|in:Trimestrielle,Semestrielle,Annuelle,Occasionnelle',
+        'categorie' => 'nullable|string|max:255',
+        'exercice_id' => 'nullable|integer|exists:exercices,id',
+        'entreprise_id' => 'nullable|integer|exists:entreprises,id',
+        'beneficiaire_id' => 'nullable|integer|exists:beneficiaires,id',
+        'region' => 'nullable|string|max:255',
+        'commune' => 'nullable|string|max:255',
+        'secteur' => 'nullable|string|max:255',
+        'beneficiaire_type' => 'nullable|string|max:255',
+        'export_all' => 'nullable|boolean',
+        'include_basic_info' => 'nullable|boolean',
+        'include_metadata' => 'nullable|boolean',
+        'format_nice' => 'nullable|boolean',
+    ]);
+}
+
+/**
+ * Génère un nom de fichier personnalisé pour l'export
+ */
+protected function generateExportFileName(array $validated, array $filters, bool $exportAll = false): string
+{
+    $parts = ['indicateurs', $validated['periode_type']];
+
+    if ($exportAll) {
+        $parts[] = 'export_complet';
+    } else if (isset($validated['categorie'])) {
+        $parts[] = \Illuminate\Support\Str::slug($validated['categorie']);
+    }
+
+    if (isset($filters['region'])) {
+        $parts[] = 'region-' . \Illuminate\Support\Str::slug($filters['region']);
+    }
+
+    if (isset($filters['secteur'])) {
+        $parts[] = 'secteur-' . \Illuminate\Support\Str::slug($filters['secteur']);
+    }
+
+    if (isset($filters['beneficiaire_type'])) {
+        $parts[] = 'type-' . \Illuminate\Support\Str::slug($filters['beneficiaire_type']);
+    }
+
+    $parts[] = date('Y-m-d');
+
+    return implode('_', $parts) . '.xlsx';
+}
+
+/**
+ * Export Excel des indicateurs
+ */
+public function exportExcel(Request $request)
+{
+    try {
+
+  // Convertir explicitement export_all en booléen si présent
+        if ($request->has('export_all')) {
+            $request->merge(['export_all' => filter_var($request->input('export_all'), FILTER_VALIDATE_BOOLEAN)]);
+        }
+
+        $validated = $this->validateExportRequest($request);
+
+        // Préparer les filtres pour l'export
+        $filters = array_filter($validated);
+
+        // Déterminer l'entreprise pour l'export
+        $entrepriseId = $this->determinerEntrepriseOptimale($filters['exercice_id'] ?? null);
+
+        if (isset($filters['entreprise_id'])) {
+            $entrepriseId = $filters['entreprise_id'];
+        }
+
+        // Obtenir l'année
+        $annee = $this->getExerciceAnnee($filters['exercice_id'] ?? null);
+
+        // Récupérer les options d'export
+        $exportAll = $request->has('export_all') ? (bool)$request->input('export_all') : false;
+        $includeBasicInfo = $request->has('include_basic_info') ? (bool)$request->input('include_basic_info') : true;
+        $includeMetadata = $request->has('include_metadata') ? (bool)$request->input('include_metadata') : true;
+        $formatNice = $request->has('format_nice') ? (bool)$request->input('format_nice') : true;
+
+
+         // Débogage avant la création de l'exportateur
+        Log::info('Paramètres d\'export', [
+            'entrepriseId' => $entrepriseId,
+            'annee' => $annee,
+            'periodeType' => $validated['periode_type'],
+            'filters' => $filters,
+            'exportAll' => $exportAll,
+            'includeBasicInfo' => $includeBasicInfo,
+            'includeMetadata' => $includeMetadata,
+            'formatNice' => $formatNice
+        ]);
+        // Créer l'exportateur avec tous les filtres et options
+        $exporter = new \App\Exports\IndicateursExport(
+            $entrepriseId,
+            $annee,
+            $validated['periode_type'],
+            $filters,
+            $exportAll,
+            $includeBasicInfo,
+            $includeMetadata,
+            $formatNice
+        );
+
+        // Générer un nom de fichier personnalisé
+        $fileName = $this->generateExportFileName($validated, $filters, $exportAll);
+
+        // Lancer le téléchargement
+        return \Maatwebsite\Excel\Facades\Excel::download($exporter, $fileName);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Erreur de validation',
+            'errors' => $e->errors(),
+        ], 422);
+    } catch (\Exception $e) {
+        Log::error('Erreur détaillée lors de l\'exportation Excel', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString(),
+            'params' => $request->all()
+        ]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Une erreur est survenue lors de l\'exportation',
+            'error' => config('app.debug') ? $e->getMessage() : 'Erreur serveur interne',
+        ], 500);
+    }
+}
+
+/**
+ * Export de toutes les données sans condition
+ */
+public function exportAllData(Request $request)
+{
+    try {
+
+                $request->merge(['export_all' => true]);
+
+        // Récupérer les paramètres de base pour l'export
+        $periodeType = $request->input('periode_type', 'Trimestrielle');
+        $exerciceId = $request->input('exercice_id');
+
+        // Déterminer l'entreprise pour l'export
+        $entrepriseId = null;
+
+        if ($request->has('entreprise_id')) {
+            $entrepriseId = $request->input('entreprise_id');
+        } else {
+            $entrepriseId = $this->determinerEntrepriseOptimale($exerciceId);
+        }
+
+        // Obtenir l'année
+        $annee = $this->getExerciceAnnee($exerciceId);
+
+        // Récupérer les options d'export
+        $includeBasicInfo = $request->has('include_basic_info') ? (bool)$request->input('include_basic_info') : true;
+        $includeMetadata = $request->has('include_metadata') ? (bool)$request->input('include_metadata') : true;
+        $formatNice = $request->has('format_nice') ? (bool)$request->input('format_nice') : true;
+
+        // Créer l'exportateur avec l'option export_all à true
+        $exporter = new \App\Exports\IndicateursExport(
+            $entrepriseId,
+            $annee,
+            $periodeType,
+            [
+                'exercice_id' => $exerciceId,
+                'entreprise_id' => $request->input('entreprise_id'),
+                'beneficiaire_id' => $request->input('beneficiaire_id'),
+                'region' => $request->input('region'),
+                'commune' => $request->input('commune'),
+                'secteur' => $request->input('secteur'),
+                'beneficiaire_type' => $request->input('beneficiaire_type')
+            ],
+            true, // export_all = true
+            $includeBasicInfo,
+            $includeMetadata,
+            $formatNice
+        );
+
+        // Générer un nom de fichier personnalisé
+        $fileName = "export_complet_indicateurs_{$periodeType}_" . date('Y-m-d') . '.xlsx';
+
+        // Lancer le téléchargement
+        return \Maatwebsite\Excel\Facades\Excel::download($exporter, $fileName);
+    } catch (\Exception $e) {
+        Log::error('Erreur lors de l\'exportation complète des données', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Une erreur est survenue lors de l\'exportation complète',
+            'error' => config('app.debug') ? $e->getMessage() : 'Erreur serveur interne',
+        ], 500);
+    }
+}
 
     /**
      * Obtenir la liste des bénéficiaires (API)
